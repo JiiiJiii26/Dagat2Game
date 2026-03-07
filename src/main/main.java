@@ -15,14 +15,57 @@ public class Main {
     private static BoardPanel enemyBoardPanel;
     private static JLabel statusLabel;
     private static boolean playerTurn = true;
+    private static String selectedDifficulty = "Medium"; 
     
     public static void main(String[] args) {
         frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
+        frame.setSize(900, 700);
+        frame.setLocationRelativeTo(null);
         
-        showPlacementScreen();
+        showMainMenu();
     }
+    
+   private static void showMainMenu() {
+    MainMenuPanel menuPanel = new MainMenuPanel(new MainMenuPanel.MenuListener() {
+        @Override
+        public void onStartGame() {
+            showPlacementScreen();
+        }
+        
+        @Override
+        public void on1v1Mode() {
+            JOptionPane.showMessageDialog(frame,
+                "🌊 1v1 Multiplayer coming soon!\n\nPlay against AI for now.",
+                "Coming Soon",
+                JOptionPane.INFORMATION_MESSAGE);
+            showPlacementScreen();
+        }
+        
+        @Override
+        public void onOptions() {
+            showOptionsScreen();
+        }
+        
+        @Override
+        public void onExit() {
+            int confirm = JOptionPane.showConfirmDialog(frame,
+                "Are you sure you want to exit?",
+                "Exit Tidebound",
+                JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                System.exit(0);
+            }
+        }
+    });
+    
+    frame.getContentPane().removeAll();
+    frame.add(menuPanel, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+    frame.setVisible(true);
+}
     
     private static void showPlacementScreen() {
         PlacementPanel placementPanel = new PlacementPanel(new PlacementPanel.PlacementListener() {
@@ -35,15 +78,15 @@ public class Main {
         
         frame.getContentPane().removeAll();
         frame.add(placementPanel, BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        frame.revalidate();
+        frame.repaint();
     }
     
     private static void showDifficultyScreen() {
         DifficultyPanel difficultyPanel = new DifficultyPanel(new DifficultyPanel.DifficultyListener() {
             @Override
             public void onDifficultySelected(String difficulty) {
+                selectedDifficulty = difficulty;
                 aiPlayer = new AIPlayer(difficulty);
                 showGameScreen(difficulty);
             }
@@ -51,8 +94,6 @@ public class Main {
         
         frame.getContentPane().removeAll();
         frame.add(difficultyPanel, BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
         frame.revalidate();
         frame.repaint();
     }
@@ -62,23 +103,48 @@ public class Main {
         frame.setLayout(new BorderLayout());
         
         
-       JLabel titleLabel = new JLabel("🌊 TIDEBOUND - " + difficulty + " MODE 🌊", SwingConstants.CENTER);
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(new Color(25, 25, 112));
+        
+        JButton menuButton = new JButton("🏠 MENU");
+        menuButton.setFont(new Font("Arial", Font.BOLD, 14));
+        menuButton.setBackground(new Color(70, 130, 180));
+        menuButton.setForeground(Color.WHITE);
+        menuButton.addActionListener(e -> showMainMenu());
+        topPanel.add(menuButton, BorderLayout.WEST);
+        
+        
+        JLabel titleLabel = new JLabel("🌊 TIDEBOUND - " + difficulty + " MODE 🌊", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
+        titleLabel.setForeground(new Color(173, 216, 230));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        topPanel.add(titleLabel, BorderLayout.CENTER);
+        
+        
+        topPanel.add(new JPanel(), BorderLayout.EAST);
         
         
         JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        boardsPanel.setBackground(new Color(25, 25, 112));
         boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
         
         JPanel playerPanel = new JPanel(new BorderLayout());
-        playerPanel.add(new JLabel("YOUR FLEET", SwingConstants.CENTER), BorderLayout.NORTH);
+        playerPanel.setBackground(new Color(25, 25, 112));
+        JLabel playerLabel = new JLabel("YOUR FLEET", SwingConstants.CENTER);
+        playerLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        playerLabel.setForeground(Color.WHITE);
+        playerPanel.add(playerLabel, BorderLayout.NORTH);
         playerBoardPanel = new BoardPanel(true, playerBoard);
         playerPanel.add(playerBoardPanel, BorderLayout.CENTER);
         
         
         JPanel enemyPanel = new JPanel(new BorderLayout());
-        enemyPanel.add(new JLabel("ENEMY WATERS", SwingConstants.CENTER), BorderLayout.NORTH);
+        enemyPanel.setBackground(new Color(25, 25, 112));
+        JLabel enemyLabel = new JLabel("ENEMY WATERS", SwingConstants.CENTER);
+        enemyLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        enemyLabel.setForeground(Color.WHITE);
+        enemyPanel.add(enemyLabel, BorderLayout.NORTH);
         enemyBoardPanel = new BoardPanel(false, aiPlayer.getBoard());
         
         
@@ -98,17 +164,17 @@ public class Main {
         
         
         JPanel statusPanel = new JPanel();
+        statusPanel.setBackground(new Color(25, 25, 112));
         statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
         statusLabel = new JLabel("YOUR TURN - Click on enemy waters!", SwingConstants.CENTER);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        statusLabel.setForeground(Color.WHITE);
         statusPanel.add(statusLabel);
         
-        frame.add(titleLabel, BorderLayout.NORTH);
+        frame.add(topPanel, BorderLayout.NORTH);
         frame.add(boardsPanel, BorderLayout.CENTER);
         frame.add(statusPanel, BorderLayout.SOUTH);
         
-        frame.pack();
-        frame.setLocationRelativeTo(null);
         frame.revalidate();
         frame.repaint();
         
@@ -122,11 +188,15 @@ public class Main {
         
         
         if (aiPlayer.allShipsSunk()) {
-            JOptionPane.showMessageDialog(frame, 
-                "🎉 VICTORY! The tides are with you! 🎉", 
-                "Tidebound Victor", 
-                JOptionPane.INFORMATION_MESSAGE);
-            showPlacementScreen(); 
+            int playAgain = JOptionPane.showConfirmDialog(frame, 
+                "🎉 VICTORY! The tides are with you! 🎉\n\nPlay again?",
+                "Tidebound Victor",
+                JOptionPane.YES_NO_OPTION);
+            if (playAgain == JOptionPane.YES_OPTION) {
+                showMainMenu();
+            } else {
+                System.exit(0);
+            }
             return;
         }
         
@@ -159,17 +229,22 @@ public class Main {
         
         
         if (playerBoard.allShipsSunk()) {
-            JOptionPane.showMessageDialog(frame, 
-                "💀 The tides have turned against you... 💀", 
-                "Tidebound Defeat", 
-                JOptionPane.ERROR_MESSAGE);
-            showPlacementScreen(); 
+            int playAgain = JOptionPane.showConfirmDialog(frame,
+                "💀 The tides have turned against you... 💀\n\nPlay again?",
+                "Tidebound Defeat",
+                JOptionPane.YES_NO_OPTION);
+            if (playAgain == JOptionPane.YES_OPTION) {
+                showMainMenu();
+            } else {
+                System.exit(0);
+            }
             return;
         }
         
         
         playerTurn = true;
         statusLabel.setText("YOUR TURN - Click on enemy waters!");
-        statusLabel.setForeground(Color.BLACK);
+        statusLabel.setForeground(Color.WHITE);
     }
 }
+

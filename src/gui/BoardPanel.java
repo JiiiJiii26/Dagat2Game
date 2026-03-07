@@ -1,12 +1,10 @@
 package gui;
 
-import javax.swing.*;
+import game.ShotResult;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.*;
 import models.Board;
 import models.Cell;
-import game.ShotResult;
 import models.Ship; 
 
 
@@ -55,15 +53,12 @@ public class BoardPanel extends JPanel {
                     button.setBackground(Cell.SHIP_GREEN);
                 }
                 
-                button.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        JButton clicked = (JButton) e.getSource();
-                        int r = (int) clicked.getClientProperty("row");
-                        int c = (int) clicked.getClientProperty("col");
-                        handleClick(r, c);
-                    }
-                });
+               button.addActionListener(e -> {
+    JButton clicked = (JButton) e.getSource();
+    int r = (int) clicked.getClientProperty("row");
+    int c = (int) clicked.getClientProperty("col");
+    handleClick(r, c);
+});
                 
                 gridButtons[row][col] = button;
                 add(button);
@@ -82,17 +77,7 @@ public class BoardPanel extends JPanel {
         }
     }
 }
-    public BoardPanel(boolean isPlayerBoard, Board existingBoard) {
-    this.isPlayerBoard = isPlayerBoard;
-    this.board = existingBoard;  
-    
-    setLayout(new GridLayout(SIZE, SIZE));
-    setPreferredSize(new Dimension(400, 400));
-    
-    gridButtons = new JButton[SIZE][SIZE];
-    
-    initializeButtons();
-}
+   
 
     public Board getBoard() {
         return board;
@@ -107,23 +92,25 @@ public void setEnemyClickHandler(EnemyClickHandler handler) {
 }
 public void updateCell(int row, int col, ShotResult result) {
     switch(result) {
-        case HIT:
+        case HIT -> {
             gridButtons[row][col].setBackground(Cell.HIT_RED);
             gridButtons[row][col].setText("💥");
-            break;
-        case MISS:
+            }
+        case MISS -> {
             gridButtons[row][col].setBackground(Cell.MISS_GRAY);
             gridButtons[row][col].setText("•");
-            break;
-        case SUNK:
+            }
+        case SUNK -> {
             gridButtons[row][col].setBackground(Cell.HIT_RED);
             gridButtons[row][col].setText("💀");
-            break;
-        default:
-            break;
+            }
+        default -> {
+            }
     }
 }
 }
+
+
 
 
 
