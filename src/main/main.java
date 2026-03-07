@@ -7,7 +7,7 @@ import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
 
-public class Main {
+public class main {
     private static JFrame frame;
     private static Board playerBoard;
     private static AIPlayer aiPlayer;
