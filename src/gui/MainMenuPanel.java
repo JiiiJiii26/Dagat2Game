@@ -1,11 +1,14 @@
-﻿package gui;
+package gui;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class MainMenuPanel extends JPanel {
@@ -16,18 +19,25 @@ public class MainMenuPanel extends JPanel {
     private JButton exitButton;
     private final MenuListener listener;
 
-    
+    // --- Particle lists ---
     private final ArrayList<SmokeParticle> smokeList = new ArrayList<>();
     private final ArrayList<SplashParticle> splashList = new ArrayList<>();
     private final ArrayList<CannonFlash> flashList = new ArrayList<>();
     private final Random random = new Random();
 
-    
+    // Title drawn in paintComponent — TITLE_SIZE only affects visuals, never the
+    // layout
+    private static final int TITLE_SIZE = 300; // visual size of the title image (pixels)
+    private static final int TITLE_Y = 20; // y-position of title on screen
+    private static final int TITLE_SPACER_H = 280; // FIXED spacer height — completely independent of TITLE_SIZE
+    private Image scaledTitle;
+
+    // Cannon fire positions (roughly where the ships are in the image)
     private static final int[][] CANNON_POSITIONS = {
             { 400, 420 }, { 520, 400 }, { 650, 380 }, { 750, 360 }, { 900, 370 }
     };
 
-    
+    // Water splash positions
     private static final int[][] SPLASH_POSITIONS = {
             { 150, 500 }, { 250, 480 }, { 350, 510 }, { 800, 460 }, { 950, 490 }, { 1100, 470 }, { 1200, 500 }
     };
@@ -47,11 +57,17 @@ public class MainMenuPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(25, 25, 112));
 
-        add(createTitlePanel(), BorderLayout.NORTH);
+        // Load & scale the title image once at startup
+        ImageIcon rawTitle = new ImageIcon("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/title.png");
+        scaledTitle = rawTitle.getImage().getScaledInstance(TITLE_SIZE, TITLE_SIZE, Image.SCALE_SMOOTH);
+
+        // Fixed-height spacer reserves space for the painted title; buttons stay in
+        // CENTER permanently
+        add(createTitleSpacer(), BorderLayout.NORTH);
         add(createButtonPanel(), BorderLayout.CENTER);
         add(createFooterPanel(), BorderLayout.SOUTH);
 
-        
+        // Master animation timer — drives ALL effects at 60fps
         Timer masterTimer = new Timer(16, e -> {
             spawnParticles();
             updateParticles();
@@ -60,10 +76,10 @@ public class MainMenuPanel extends JPanel {
         masterTimer.start();
     }
 
-    
+    // ===================== PARTICLE SPAWNING =====================
 
     private void spawnParticles() {
-        
+        // Spawn smoke continuously from ship positions
         if (random.nextInt(3) == 0) {
             int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
             smokeList.add(new SmokeParticle(
@@ -72,11 +88,11 @@ public class MainMenuPanel extends JPanel {
                     random.nextInt(8) + 6));
         }
 
-        
+        // Randomly trigger cannon flashes
         if (random.nextInt(60) == 0) {
             int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
             flashList.add(new CannonFlash(pos[0], pos[1]));
-            
+            // Spawn a burst of smoke with each cannon fire
             for (int i = 0; i < 8; i++) {
                 smokeList.add(new SmokeParticle(
                         pos[0] + random.nextInt(40) - 20,
@@ -85,7 +101,7 @@ public class MainMenuPanel extends JPanel {
             }
         }
 
-        
+        // Randomly trigger water splashes
         if (random.nextInt(40) == 0) {
             int[] pos = SPLASH_POSITIONS[random.nextInt(SPLASH_POSITIONS.length)];
             int cx = pos[0] + random.nextInt(60) - 30;
@@ -116,7 +132,7 @@ public class MainMenuPanel extends JPanel {
         }
     }
 
-    
+    // ===================== PAINT =====================
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -124,63 +140,63 @@ public class MainMenuPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        
-        ImageIcon bg = new ImageIcon("assets/naval.png");
+        // Background
+        ImageIcon bg = new ImageIcon("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/naval.jpg");
         g2.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), null);
 
-        
+        // Draw title image centered horizontally — purely visual, never affects layout
+        if (scaledTitle != null) {
+            int tx = (getWidth() - TITLE_SIZE) / 2;
+            g2.drawImage(scaledTitle, tx, TITLE_Y, null);
+        }
+
+        // Draw cannon flashes (behind smoke)
         for (CannonFlash f : flashList)
             f.draw(g2);
-        
+        // Draw smoke
         for (SmokeParticle s : smokeList)
             s.draw(g2);
-        
+        // Draw water splashes
         for (SplashParticle p : splashList)
             p.draw(g2);
 
         g2.dispose();
     }
 
-    
+    // ===================== PANELS =====================
 
-    private JPanel createTitlePanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(40, 0, 20, 0));
-
-        JLabel titleLabel = new JLabel(new ImageIcon(
-                new ImageIcon("assets/title.png")
-                        .getImage().getScaledInstance(600, 120, Image.SCALE_SMOOTH)));
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(titleLabel);
-
-        return panel;
+    /** Fixed-height spacer — height is a constant, NEVER tied to TITLE_SIZE. */
+    private JPanel createTitleSpacer() {
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        spacer.setPreferredSize(new Dimension(0, TITLE_SPACER_H));
+        return spacer;
     }
 
     private JPanel createButtonPanel() {
+        // BoxLayout respects setMaximumSize, ensuring buttons are EXACTLY the right
+        // size
         JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.insets = new Insets(8, 100, 8, 100);
-
-        startButton = createPNG3DButton("assets/btn_start.png");
-        vsButton = createPNG3DButton("assets/btn_multi.png");
-        optionsButton = createPNG3DButton("assets/btn_options.png");
-        exitButton = createPNG3DButton("assets/btn_exit.png");
+        startButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_start.png");
+        vsButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_multi.png");
+        optionsButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_options.png");
+        exitButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_exit.png");
 
         startButton.addActionListener(e -> listener.onStartGame());
         vsButton.addActionListener(e -> listener.on1v1Mode());
         optionsButton.addActionListener(e -> listener.onOptions());
         exitButton.addActionListener(e -> listener.onExit());
 
-        panel.add(startButton, gbc);
-        panel.add(vsButton, gbc);
-        panel.add(optionsButton, gbc);
-        panel.add(exitButton, gbc);
+        panel.add(Box.createVerticalGlue());
+        for (JButton btn : new JButton[] { startButton, vsButton, optionsButton, exitButton }) {
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+            panel.add(btn);
+            panel.add(Box.createVerticalStrut(14));
+        }
+        panel.add(Box.createVerticalGlue());
 
         return panel;
     }
@@ -198,29 +214,38 @@ public class MainMenuPanel extends JPanel {
         return panel;
     }
 
-    
+    // ===================== BUTTON =====================
 
     private JButton createPNG3DButton(String imagePath) {
-        ImageIcon icon = new ImageIcon(imagePath);
-        MediaTracker tracker = new MediaTracker(this);
-        tracker.addImage(icon.getImage(), 0);
+        // ── ImageIO.read is FULLY SYNCHRONOUS — no MediaTracker, no async surprises ──
+        BufferedImage original = null;
         try {
-            tracker.waitForAll();
-        } catch (InterruptedException e) {
+            original = ImageIO.read(new File(imagePath));
+        } catch (IOException e) {
             e.printStackTrace();
+        }
+        if (original == null) {
+            JButton fallback = new JButton("?");
+            return fallback;
         }
 
-        Image scaled = icon.getImage().getScaledInstance(380, 65, Image.SCALE_SMOOTH);
-        ImageIcon scaledIcon = new ImageIcon(scaled);
-        MediaTracker tracker2 = new MediaTracker(this);
-        tracker2.addImage(scaledIcon.getImage(), 0);
-        try {
-            tracker2.waitForAll();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        int origW = original.getWidth();
+        int origH = original.getHeight();
+        int targetH = 160; // ← change ONLY this to resize all buttons
+        int targetW = (origH > 0) ? (targetH * origW / origH) : 300;
+
+        // Synchronous scaling via BufferedImage — exact size guaranteed
+        BufferedImage scaled = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D gs = scaled.createGraphics();
+        gs.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        gs.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        gs.drawImage(original, 0, 0, targetW, targetH, null);
+        gs.dispose();
 
         Image hoverImg = makeBrighter(scaled);
+        final int btnW = targetW + 8;
+        final int btnH = targetH + 8;
+        System.out.println("[Button] " + new File(imagePath).getName() + " → " + btnW + "×" + btnH);
 
         JButton button = new JButton() {
             private boolean pressed = false;
@@ -270,7 +295,17 @@ public class MainMenuPanel extends JPanel {
 
             @Override
             public Dimension getPreferredSize() {
-                return new Dimension(395, 72);
+                return new Dimension(btnW, btnH);
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(btnW, btnH);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return new Dimension(btnW, btnH);
             }
         };
 
@@ -294,7 +329,7 @@ public class MainMenuPanel extends JPanel {
         return buffered;
     }
 
-    
+    // ===================== PARTICLE CLASSES =====================
 
     class SmokeParticle {
         float x, y, vx, vy, size, alpha;
@@ -340,7 +375,7 @@ public class MainMenuPanel extends JPanel {
         boolean update() {
             x += vx;
             y += vy;
-            vy += 0.3f; 
+            vy += 0.3f; // gravity
             alpha -= 0.025f;
             return alpha <= 0;
         }
@@ -372,11 +407,11 @@ public class MainMenuPanel extends JPanel {
         }
 
         void draw(Graphics2D g2) {
-            
+            // Outer orange glow
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha * 0.5f)));
             g2.setColor(new Color(255, 120, 0));
             g2.fillOval((int) (x - size), (int) (y - size), (int) (size * 2), (int) (size * 2));
-            
+            // Inner bright white/yellow core
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha)));
             g2.setColor(new Color(255, 240, 100));
             g2.fillOval((int) (x - size / 3), (int) (y - size / 3), (int) (size * 0.7f), (int) (size * 0.7f));

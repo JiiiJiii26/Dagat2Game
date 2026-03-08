@@ -1,4 +1,4 @@
-﻿package main;
+package main;
 
 import gui.*;
 import models.Board;
@@ -7,7 +7,7 @@ import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
 
-public class Main {
+public class main {
     private static JFrame frame;
     private static Board playerBoard;
     private static AIPlayer aiPlayer;
@@ -21,7 +21,8 @@ public class Main {
         frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
-        frame.setSize(900, 700);
+        frame.setMinimumSize(new Dimension(900, 700));
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setLocationRelativeTo(null);
 
         showMainMenu();
@@ -45,7 +46,7 @@ public class Main {
 
             @Override
             public void onOptions() {
-                
+                // showOptionsScreen(); //
             }
 
             @Override
@@ -232,4 +233,3 @@ public class Main {
         statusLabel.setForeground(Color.WHITE);
     }
 }
-

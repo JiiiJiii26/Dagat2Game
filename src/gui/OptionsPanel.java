@@ -22,7 +22,7 @@ public class OptionsPanel extends JPanel {
         setBackground(new Color(25, 25, 112));
         
         
-        JLabel titleLabel = new JLabel("⚙️ OPTIONS", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("âš™ï¸ OPTIONS", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 48));
         titleLabel.setForeground(new Color(173, 216, 230));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
@@ -102,7 +102,7 @@ public class OptionsPanel extends JPanel {
         bottomPanel.setBackground(new Color(25, 25, 112));
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(30, 0, 50, 0));
         
-        backButton = new JButton("🔙 BACK TO MENU");
+        backButton = new JButton("ðŸ”™ BACK TO MENU");
         backButton.setFont(new Font("Arial", Font.BOLD, 24));
         backButton.setForeground(Color.WHITE);
         backButton.setBackground(new Color(70, 130, 180));

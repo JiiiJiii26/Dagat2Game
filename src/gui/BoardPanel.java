@@ -94,15 +94,15 @@ public void updateCell(int row, int col, ShotResult result) {
     switch(result) {
         case HIT -> {
             gridButtons[row][col].setBackground(Cell.HIT_RED);
-            gridButtons[row][col].setText("💥");
+            gridButtons[row][col].setText("ðŸ’¥");
             }
         case MISS -> {
             gridButtons[row][col].setBackground(Cell.MISS_GRAY);
-            gridButtons[row][col].setText("•");
+            gridButtons[row][col].setText("â€¢");
             }
         case SUNK -> {
             gridButtons[row][col].setBackground(Cell.HIT_RED);
-            gridButtons[row][col].setText("💀");
+            gridButtons[row][col].setText("ðŸ’€");
             }
         default -> {
             }

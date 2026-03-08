@@ -31,19 +31,19 @@ public class DifficultyPanel extends JPanel {
         
         easyButton = createDifficultyButton(
             "EASY", 
-            "🌊 Random shots - Perfect for beginners",
+            "ðŸŒŠ Random shots - Perfect for beginners",
             new Color(144, 238, 144)
         );
         
         mediumButton = createDifficultyButton(
             "MEDIUM", 
-            "🎯 Smart targeting - Avoids repeats",
+            "ðŸŽ¯ Smart targeting - Avoids repeats",
             new Color(255, 215, 0)
         );
         
         hardButton = createDifficultyButton(
             "HARD", 
-            "💀 Hunting mode - Chases hits",
+            "ðŸ’€ Hunting mode - Chases hits",
             new Color(255, 99, 71)
         );
         
