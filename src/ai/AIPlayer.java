@@ -140,3 +140,4 @@ public class AIPlayer {
         return board.allShipsSunk();
     }
 }
+

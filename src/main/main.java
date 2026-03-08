@@ -7,7 +7,7 @@ import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
 
-public class main {
+public class Main {
     private static JFrame frame;
     private static Board playerBoard;
     private static AIPlayer aiPlayer;
@@ -15,10 +15,10 @@ public class main {
     private static BoardPanel enemyBoardPanel;
     private static JLabel statusLabel;
     private static boolean playerTurn = true;
-    private static String selectedDifficulty = "Medium";
+    
 
     public static void main(String[] args) {
-        frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
+        frame = new JFrame("?? Tidebound - Naval Battle ??");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
         frame.setMinimumSize(new Dimension(900, 700));
@@ -38,7 +38,7 @@ public class main {
             @Override
             public void on1v1Mode() {
                 JOptionPane.showMessageDialog(frame,
-                        "🌊 1v1 Multiplayer coming soon!\n\nPlay against AI for now.",
+                        "?? 1v1 Multiplayer coming soon!\n\nPlay against AI for now.",
                         "Coming Soon",
                         JOptionPane.INFORMATION_MESSAGE);
                 showPlacementScreen();
@@ -46,7 +46,7 @@ public class main {
 
             @Override
             public void onOptions() {
-                // showOptionsScreen(); //
+                
             }
 
             @Override
@@ -106,14 +106,14 @@ public class main {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(new Color(25, 25, 112));
 
-        JButton menuButton = new JButton("🏠 MENU");
+        JButton menuButton = new JButton("?? MENU");
         menuButton.setFont(new Font("Arial", Font.BOLD, 14));
         menuButton.setBackground(new Color(70, 130, 180));
         menuButton.setForeground(Color.WHITE);
         menuButton.addActionListener(e -> showMainMenu());
         topPanel.add(menuButton, BorderLayout.WEST);
 
-        JLabel titleLabel = new JLabel("🌊 TIDEBOUND - " + difficulty + " MODE 🌊", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("?? TIDEBOUND - " + difficulty + " MODE ??", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
         titleLabel.setForeground(new Color(173, 216, 230));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
@@ -171,7 +171,7 @@ public class main {
         frame.revalidate();
         frame.repaint();
 
-        System.out.println("⚓ Battle started against " + difficulty + " AI!");
+        System.out.println("? Battle started against " + difficulty + " AI!");
     }
 
     private static void handlePlayerTurn(int row, int col) {
@@ -181,7 +181,7 @@ public class main {
 
         if (aiPlayer.allShipsSunk()) {
             int playAgain = JOptionPane.showConfirmDialog(frame,
-                    "🎉 VICTORY! The tides are with you! 🎉\n\nPlay again?",
+                    "?? VICTORY! The tides are with you! ??\n\nPlay again?",
                     "Tidebound Victor",
                     JOptionPane.YES_NO_OPTION);
             if (playAgain == JOptionPane.YES_OPTION) {
@@ -217,7 +217,7 @@ public class main {
 
         if (playerBoard.allShipsSunk()) {
             int playAgain = JOptionPane.showConfirmDialog(frame,
-                    "💀 The tides have turned against you... 💀\n\nPlay again?",
+                    "?? The tides have turned against you... ??\n\nPlay again?",
                     "Tidebound Defeat",
                     JOptionPane.YES_NO_OPTION);
             if (playAgain == JOptionPane.YES_OPTION) {
@@ -233,3 +233,4 @@ public class main {
         statusLabel.setForeground(Color.WHITE);
     }
 }
+
