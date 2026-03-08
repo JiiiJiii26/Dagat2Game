@@ -1,4 +1,4 @@
-package main;
+﻿package main;
 
 import gui.*;
 import models.Board;
@@ -7,7 +7,7 @@ import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
 
-public class main {
+public class Main {
     private static JFrame frame;
     private static Board playerBoard;
     private static AIPlayer aiPlayer;
@@ -45,7 +45,7 @@ public class main {
 
             @Override
             public void onOptions() {
-                // showOptionsScreen(); //
+                
             }
 
             @Override
@@ -232,3 +232,4 @@ public class main {
         statusLabel.setForeground(Color.WHITE);
     }
 }
+

@@ -1,4 +1,4 @@
-package gui;
+﻿package gui;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -16,18 +16,18 @@ public class MainMenuPanel extends JPanel {
     private JButton exitButton;
     private final MenuListener listener;
 
-    // --- Particle lists ---
+    
     private final ArrayList<SmokeParticle> smokeList = new ArrayList<>();
     private final ArrayList<SplashParticle> splashList = new ArrayList<>();
     private final ArrayList<CannonFlash> flashList = new ArrayList<>();
     private final Random random = new Random();
 
-    // Cannon fire positions (roughly where the ships are in the image)
+    
     private static final int[][] CANNON_POSITIONS = {
             { 400, 420 }, { 520, 400 }, { 650, 380 }, { 750, 360 }, { 900, 370 }
     };
 
-    // Water splash positions
+    
     private static final int[][] SPLASH_POSITIONS = {
             { 150, 500 }, { 250, 480 }, { 350, 510 }, { 800, 460 }, { 950, 490 }, { 1100, 470 }, { 1200, 500 }
     };
@@ -51,7 +51,7 @@ public class MainMenuPanel extends JPanel {
         add(createButtonPanel(), BorderLayout.CENTER);
         add(createFooterPanel(), BorderLayout.SOUTH);
 
-        // Master animation timer — drives ALL effects at 60fps
+        
         Timer masterTimer = new Timer(16, e -> {
             spawnParticles();
             updateParticles();
@@ -60,10 +60,10 @@ public class MainMenuPanel extends JPanel {
         masterTimer.start();
     }
 
-    // ===================== PARTICLE SPAWNING =====================
+    
 
     private void spawnParticles() {
-        // Spawn smoke continuously from ship positions
+        
         if (random.nextInt(3) == 0) {
             int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
             smokeList.add(new SmokeParticle(
@@ -72,11 +72,11 @@ public class MainMenuPanel extends JPanel {
                     random.nextInt(8) + 6));
         }
 
-        // Randomly trigger cannon flashes
+        
         if (random.nextInt(60) == 0) {
             int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
             flashList.add(new CannonFlash(pos[0], pos[1]));
-            // Spawn a burst of smoke with each cannon fire
+            
             for (int i = 0; i < 8; i++) {
                 smokeList.add(new SmokeParticle(
                         pos[0] + random.nextInt(40) - 20,
@@ -85,7 +85,7 @@ public class MainMenuPanel extends JPanel {
             }
         }
 
-        // Randomly trigger water splashes
+        
         if (random.nextInt(40) == 0) {
             int[] pos = SPLASH_POSITIONS[random.nextInt(SPLASH_POSITIONS.length)];
             int cx = pos[0] + random.nextInt(60) - 30;
@@ -116,7 +116,7 @@ public class MainMenuPanel extends JPanel {
         }
     }
 
-    // ===================== PAINT =====================
+    
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -124,24 +124,24 @@ public class MainMenuPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Background
-        ImageIcon bg = new ImageIcon("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/naval.png");
+        
+        ImageIcon bg = new ImageIcon("assets/naval.png");
         g2.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), null);
 
-        // Draw cannon flashes (behind smoke)
+        
         for (CannonFlash f : flashList)
             f.draw(g2);
-        // Draw smoke
+        
         for (SmokeParticle s : smokeList)
             s.draw(g2);
-        // Draw water splashes
+        
         for (SplashParticle p : splashList)
             p.draw(g2);
 
         g2.dispose();
     }
 
-    // ===================== PANELS =====================
+    
 
     private JPanel createTitlePanel() {
         JPanel panel = new JPanel();
@@ -150,7 +150,7 @@ public class MainMenuPanel extends JPanel {
         panel.setBorder(BorderFactory.createEmptyBorder(40, 0, 20, 0));
 
         JLabel titleLabel = new JLabel(new ImageIcon(
-                new ImageIcon("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/title.png")
+                new ImageIcon("assets/title.png")
                         .getImage().getScaledInstance(600, 120, Image.SCALE_SMOOTH)));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(titleLabel);
@@ -167,10 +167,10 @@ public class MainMenuPanel extends JPanel {
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.insets = new Insets(8, 100, 8, 100);
 
-        startButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_start.png");
-        vsButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_multi.png");
-        optionsButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_options.png");
-        exitButton = createPNG3DButton("C:/Users/Nicco/Desktop/JavaProject/Dagat2Game/assets/btn_exit.png");
+        startButton = createPNG3DButton("assets/btn_start.png");
+        vsButton = createPNG3DButton("assets/btn_multi.png");
+        optionsButton = createPNG3DButton("assets/btn_options.png");
+        exitButton = createPNG3DButton("assets/btn_exit.png");
 
         startButton.addActionListener(e -> listener.onStartGame());
         vsButton.addActionListener(e -> listener.on1v1Mode());
@@ -198,7 +198,7 @@ public class MainMenuPanel extends JPanel {
         return panel;
     }
 
-    // ===================== BUTTON =====================
+    
 
     private JButton createPNG3DButton(String imagePath) {
         ImageIcon icon = new ImageIcon(imagePath);
@@ -294,7 +294,7 @@ public class MainMenuPanel extends JPanel {
         return buffered;
     }
 
-    // ===================== PARTICLE CLASSES =====================
+    
 
     class SmokeParticle {
         float x, y, vx, vy, size, alpha;
@@ -340,7 +340,7 @@ public class MainMenuPanel extends JPanel {
         boolean update() {
             x += vx;
             y += vy;
-            vy += 0.3f; // gravity
+            vy += 0.3f; 
             alpha -= 0.025f;
             return alpha <= 0;
         }
@@ -372,11 +372,11 @@ public class MainMenuPanel extends JPanel {
         }
 
         void draw(Graphics2D g2) {
-            // Outer orange glow
+            
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha * 0.5f)));
             g2.setColor(new Color(255, 120, 0));
             g2.fillOval((int) (x - size), (int) (y - size), (int) (size * 2), (int) (size * 2));
-            // Inner bright white/yellow core
+            
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha)));
             g2.setColor(new Color(255, 240, 100));
             g2.fillOval((int) (x - size / 3), (int) (y - size / 3), (int) (size * 0.7f), (int) (size * 0.7f));
