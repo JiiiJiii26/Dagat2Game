@@ -15,6 +15,7 @@ public class Main {
     private static BoardPanel enemyBoardPanel;
     private static JLabel statusLabel;
     private static boolean playerTurn = true;
+     private static String selectedDifficulty = "Medium";
     
 
     public static void main(String[] args) {

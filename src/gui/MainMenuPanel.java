@@ -69,7 +69,11 @@ public class MainMenuPanel extends JPanel {
     
     private void loadTitleImage() {
         try {
-            
+            System.out.println("Current dir: " + System.getProperty("user.dir"));
+        
+        File titleFile = new File("assets/title.png");
+        System.out.println("Title file exists: " + titleFile.exists());
+        System.out.println("Title file path: " + titleFile.getAbsolutePath());
             ImageIcon rawTitle = new ImageIcon("assets/title.png");
             scaledTitle = rawTitle.getImage().getScaledInstance(
                 TITLE_SIZE, TITLE_SIZE, Image.SCALE_SMOOTH);
