@@ -10,7 +10,7 @@ public class AIPlayer {
     private Board board;
     private String difficulty;
     private Random random;
-    private int lastHitX, lastHitY;
+    //private int lastHitX, lastHitY;
     private boolean huntingMode;
     private ArrayList<int[]> huntTargets;
     private ArrayList<int[]> potentialTargets;
