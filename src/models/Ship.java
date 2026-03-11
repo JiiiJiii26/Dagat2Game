@@ -9,6 +9,12 @@ public class Ship {
     private boolean isSunk;
     private ArrayList<Coordinate> positions;
     
+    
+    private boolean isHidden = false;
+    private boolean isRevealed = false;
+    private boolean isReinforced = false;
+    private int damageTaken = 0;
+    
     public Ship(String name, int size) {
         this.name = name;
         this.size = size;
@@ -25,6 +31,7 @@ public class Ship {
         for (Coordinate pos : positions) {
             if (pos.getX() == x && pos.getY() == y) {
                 hits++;
+                damageTaken++;
                 if (hits >= size) {
                     isSunk = true;
                 }
@@ -46,6 +53,57 @@ public class Ship {
         return size;
     }
     
+
+    
+    public void setHidden(boolean hidden) {
+        this.isHidden = hidden;
+    }
+    
+    public boolean isHidden() {
+        return isHidden;
+    }
+    
+    public void setRevealed(boolean revealed) {
+        this.isRevealed = revealed;
+    }
+    
+    public boolean isRevealed() {
+        return isRevealed;
+    }
+    
+    public void setReinforced(boolean reinforced) {
+        this.isReinforced = reinforced;
+    }
+    
+    public boolean isReinforced() {
+        return isReinforced;
+    }
+    
+    public boolean isDamaged() {
+        return hits > 0 && hits < size;
+    }
+    
+    public void repair() {
+        if (hits > 0) {
+            hits--;
+            damageTaken--;
+            if (hits < size) {
+                isSunk = false;
+            }
+        }
+    }
+    
+    public int getHits() {
+        return hits;
+    }
+    
+    public int getDamageTaken() {
+        return damageTaken;
+    }
+    
+    public int getRemainingHealth() {
+        return size - hits;
+    }
     
     public static class Coordinate {
         private int x, y;
@@ -59,9 +117,3 @@ public class Ship {
         public int getY() { return y; }
     }
 }
-
-
-
-
-
-
