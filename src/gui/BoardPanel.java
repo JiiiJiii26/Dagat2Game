@@ -92,22 +92,22 @@ public void setEnemyClickHandler(EnemyClickHandler handler) {
 }
 public void updateCell(int row, int col, ShotResult result) {
     switch(result) {
-        case HIT -> {
+        case HIT:
             gridButtons[row][col].setBackground(Cell.HIT_RED);
-            gridButtons[row][col].setText("ðŸ’¥");
-            }
-        case MISS -> {
+            gridButtons[row][col].setText("💥");
+            break;
+        case MISS:
             gridButtons[row][col].setBackground(Cell.MISS_GRAY);
-            gridButtons[row][col].setText("â€¢");
-            }
-        case SUNK -> {
+            gridButtons[row][col].setText("•");
+            break;
+        case SUNK:
             gridButtons[row][col].setBackground(Cell.HIT_RED);
-            gridButtons[row][col].setText("ðŸ’€");
-            }
-        default -> {
-            }
+            gridButtons[row][col].setText("💀");
+            break;
+        default:
+            break;
     }
-}
+ }
 }
 
 
