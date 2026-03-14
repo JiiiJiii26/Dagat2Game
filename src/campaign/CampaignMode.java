@@ -711,48 +711,94 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
 
 private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     Valerius valerius = (Valerius) playerCharacter;
-    Color color = isPlayer ? Color.CYAN : Color.RED;
     
     
-    JButton radarBtn = new JButton("📡 Radar Overload");
-    radarBtn.setBackground(color);
+    JButton radarBtn = new JButton("📡 Radar Overload (50)");
+    radarBtn.setBackground(new Color(169, 169, 169)); 
+    radarBtn.setForeground(Color.WHITE);
+    radarBtn.setToolTipText("Disable enemy skills for 2 turns");
+    radarBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    radarBtn.setFocusPainted(false);
+    
+    String status1 = valerius.getSkillStatus(1);
+    if (!status1.equals("Ready!")) {
+        radarBtn.setEnabled(false);
+        radarBtn.setText("📡 Radar Overload (" + status1 + ")");
+    }
+    
     radarBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
             boolean used = valerius.useRadarOverload();
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "Radar Overload! Enemy skills disabled!", 
+                    "📡 RADAR OVERLOAD ACTIVATED!\n\n" +
+                    "Enemy radar systems are jammed!\n" +
+                    "Enemy skills are DISABLED for 2 turns!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            } else {
+                JOptionPane.showMessageDialog(frame, 
+                    "❌ Cannot use Radar Overload!\n\n" + valerius.getSkillStatus(1), 
+                    "Skill Not Ready", 
+                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
     panel.add(radarBtn);
     
     
-    JButton barrierBtn = new JButton("🛡️ Kinetic Barrier");
-    barrierBtn.setBackground(color);
+    JButton barrierBtn = new JButton("🛡️ Kinetic Barrier (90)");
+    barrierBtn.setBackground(new Color(100, 149, 237)); 
+    barrierBtn.setForeground(Color.WHITE);
+    barrierBtn.setToolTipText("Shield a 3x3 area - blocks all damage for 1 turn");
+    barrierBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    barrierBtn.setFocusPainted(false);
+    
+    String status2 = valerius.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        barrierBtn.setEnabled(false);
+        barrierBtn.setText("🛡️ Kinetic Barrier (" + status2 + ")");
+    }
+    
     barrierBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
+            
             String input = JOptionPane.showInputDialog(frame, 
-                "Enter center coordinates (row,col):", 
-                "Barrier Target", 
+                "🛡️ KINETIC BARRIER\n\n" +
+                "Enter center coordinates (row,col):\n" +
+                "Example: 5,5 for a 3x3 shield area\n\n" +
+                "All cells in this area will be protected!", 
+                "Barrier Placement", 
                 JOptionPane.QUESTION_MESSAGE);
+                
             if (input != null) {
                 try {
                     String[] parts = input.split(",");
                     int x = Integer.parseInt(parts[0].trim());
                     int y = Integer.parseInt(parts[1].trim());
-                    boolean used = valerius.useKineticBarrier(playerBoard, x, y);
-                    if (used) {
+                    
+                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
+                        boolean used = valerius.useKineticBarrier(playerBoard, x, y);
+                        if (used) {
+                            JOptionPane.showMessageDialog(frame, 
+                                "🛡️ KINETIC BARRIER DEPLOYED!\n\n" +
+                                "A 3x3 energy shield surrounds (" + x + "," + y + ").\n" +
+                                "All shots in this area will be blocked for 1 turn!\n\n" +
+                                "\"Nothing gets past the Iron Shoreline.\"", 
+                                "Skill Used", 
+                                JOptionPane.INFORMATION_MESSAGE);
+                            refreshUI();
+                        }
+                    } else {
                         JOptionPane.showMessageDialog(frame, 
-                            "Kinetic Barrier deployed!", 
-                            "Skill Used", 
-                            JOptionPane.INFORMATION_MESSAGE);
+                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame, 
-                        "Invalid coordinates!", 
+                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
                         "Error", 
                         JOptionPane.ERROR_MESSAGE);
                 }
@@ -762,30 +808,61 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     panel.add(barrierBtn);
     
     
-    JButton railgunBtn = new JButton("🎯 Orbital Railgun");
-    railgunBtn.setBackground(color);
+    JButton railgunBtn = new JButton("🎯 Orbital Railgun (280)");
+    railgunBtn.setBackground(Color.RED);
+    railgunBtn.setForeground(Color.WHITE);
+    railgunBtn.setToolTipText("Fire at a single cell. If it hits, reveals adjacent cells");
+    railgunBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    railgunBtn.setFocusPainted(false);
+    
+    String status3 = valerius.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        railgunBtn.setEnabled(false);
+        railgunBtn.setText("🎯 Orbital Railgun (" + status3 + ")");
+    }
+    
     railgunBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
+            
             String input = JOptionPane.showInputDialog(frame, 
-                "Enter target coordinates (row,col):", 
+                "🎯 ORBITAL RAILGUN\n\n" +
+                "Enter target coordinates (row,col):\n" +
+                "Example: 5,5\n\n" +
+                "If it hits a ship, adjacent cells will be scanned!", 
                 "Railgun Target", 
                 JOptionPane.QUESTION_MESSAGE);
+                
             if (input != null) {
                 try {
                     String[] parts = input.split(",");
                     int x = Integer.parseInt(parts[0].trim());
                     int y = Integer.parseInt(parts[1].trim());
-                    ShotResult result = valerius.useOrbitalRailgun(enemyBoard, x, y);
-                    if (result != ShotResult.INVALID) {
-                        enemyBoardPanel.updateCell(x, y, result);
+                    
+                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
+                        ShotResult result = valerius.useOrbitalRailgun(enemyBoard, x, y);
+                        if (result != ShotResult.INVALID) {
+                            String message = "🎯 ORBITAL RAILGUN FIRED!\n\n" +
+                                             "Target: (" + x + "," + y + ")\n" +
+                                             "Result: " + result + "\n\n";
+                            
+                            if (result == ShotResult.HIT || result == ShotResult.SUNK) {
+                                message += "Impact reveals adjacent cells!\n" +
+                                          "Check the console for details.";
+                            }
+                            
+                            JOptionPane.showMessageDialog(frame, message, "Skill Used", JOptionPane.INFORMATION_MESSAGE);
+                            enemyBoardPanel.updateCell(x, y, result);
+                            refreshUI();
+                        }
+                    } else {
                         JOptionPane.showMessageDialog(frame, 
-                            "Orbital Railgun fired!", 
-                            "Skill Used", 
-                            JOptionPane.INFORMATION_MESSAGE);
+                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame, 
-                        "Invalid coordinates!", 
+                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
                         "Error", 
                         JOptionPane.ERROR_MESSAGE);
                 }
@@ -793,6 +870,35 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
         }
     });
     panel.add(railgunBtn);
+    
+    
+    if (valerius.areEnemySkillsDisabled()) {
+        JLabel disabledLabel = new JLabel("🚫 Enemy skills disabled", SwingConstants.CENTER);
+        disabledLabel.setForeground(Color.RED);
+        disabledLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(disabledLabel);
+    }
+    
+    if (valerius.getShieldedCellsCount() > 0) {
+        JLabel shieldLabel = new JLabel("🛡️ " + valerius.getShieldedCellsCount() + " cells shielded", 
+                                        SwingConstants.CENTER);
+        shieldLabel.setForeground(Color.CYAN);
+        shieldLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(shieldLabel);
+    }
+    
+    if (valerius.isScrapperResolveActive()) {
+        JLabel resolveLabel = new JLabel("⚡ Scrapper's Resolve ACTIVE", SwingConstants.CENTER);
+        resolveLabel.setForeground(Color.ORANGE);
+        resolveLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(resolveLabel);
+    }
+    
+    
+    JLabel manaLabel = new JLabel(valerius.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
 }
 
 private void addSkyeSkills(JPanel panel, boolean isPlayer) {
@@ -1057,6 +1163,9 @@ private JPanel createBoardsPanel() {
  private void handlePlayerAttack(int row, int col) {
     ShotResult result;
     
+    if (playerCharacter instanceof Valerius) {
+    ((Valerius) playerCharacter).updateTurnCounter();
+}
 
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
@@ -1090,6 +1199,10 @@ private JPanel createBoardsPanel() {
 
 private void enemyTurn() {
     
+    if (playerCharacter instanceof Valerius) {
+    ((Valerius) playerCharacter).updateTurnCounter();
+}
+    
     if (playerCharacter instanceof Skye) {
         Skye skye = (Skye) playerCharacter;
         if (skye.shouldSkipEnemyTurn()) {
@@ -1111,6 +1224,10 @@ private void enemyTurn() {
     int y = random.nextInt(10);
     
     ShotResult result = playerBoard.fire(x, y);
+    if (playerCharacter instanceof Valerius) {
+        Valerius valerius = (Valerius) playerCharacter;
+        result = valerius.applyBarrier(x, y, result);
+    }
     
      if (playerCharacter instanceof Skye) {
         Skye skye = (Skye) playerCharacter;
@@ -1131,6 +1248,9 @@ private void enemyTurn() {
     } else {
         playerBoardPanel.updateCell(x, y, result);
     }
+    if (playerCharacter instanceof Kael) {
+    ((Kael) playerCharacter).updateTurnCounter();
+}
     
     refreshUI();
     
@@ -1138,9 +1258,7 @@ private void enemyTurn() {
         gameOver();
         return;
     }
-    if (playerCharacter instanceof Kael) {
-    ((Kael) playerCharacter).updateTurnCounter();
-}
+    
     
     playerTurn = true;
 }

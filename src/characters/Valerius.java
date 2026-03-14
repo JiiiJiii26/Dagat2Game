@@ -32,13 +32,17 @@ public class Valerius extends GameCharacter {
     
     private boolean scrapperResolveActive = false;
     private double damageReduction = 0.0;
+    private boolean resolveTriggered = false;
+    
+    
+    private ArrayList<String> scannedCells = new ArrayList<>();
     
     public Valerius() {
         super(
             "Valerius — The Iron Shoreline",
             "A disgraced engineer turned one-man fortress. He refuses to sink.",
             2400, 
-            100,  
+            100,
             new Color(169, 169, 169)  
         );
         this.currentMana = MAX_MANA;
@@ -63,6 +67,7 @@ public class Valerius extends GameCharacter {
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {
             currentMana -= cost;
+            System.out.println("⚙️ Valerius spent " + cost + " mana. Remaining: " + currentMana);
         }
     }
     
@@ -88,28 +93,38 @@ public class Valerius extends GameCharacter {
         
         
         double healthPercent = (double)currentHealth / maxHealth;
-        if (!scrapperResolveActive && healthPercent < 0.2) {
+        if (!scrapperResolveActive && healthPercent < 0.2 && !resolveTriggered) {
             activateScrapperResolve();
         }
     }
     
     private void activateScrapperResolve() {
         scrapperResolveActive = true;
+        resolveTriggered = true;
         damageReduction = 0.1;
         System.out.println("⚡ VALERIUS: \"I've survived worse than you.\"");
         System.out.println("🛡️ Scrapper's Resolve activated! Permanent 10% damage reduction!");
     }
     
+    public boolean isScrapperResolveActive() {
+        return scrapperResolveActive;
+    }
+    
+    public double getDamageReduction() {
+        return damageReduction;
+    }
+    
+    
     
     
     public boolean useRadarOverload() {
         if (radarOverloadCooldown > 0) {
-            System.out.println("Radar Overload is on cooldown for " + radarOverloadCooldown + " more turns");
+            System.out.println("⏳ Radar Overload is on cooldown for " + radarOverloadCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(50)) {
-            System.out.println("Not enough mana! Need 50 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
             return false;
         }
         
@@ -132,19 +147,23 @@ public class Valerius extends GameCharacter {
     
     
     
+    
     public boolean useKineticBarrier(Board playerBoard, int centerX, int centerY) {
         if (kineticBarrierCooldown > 0) {
-            System.out.println("Kinetic Barrier is on cooldown for " + kineticBarrierCooldown + " more turns");
+            System.out.println("⏳ Kinetic Barrier is on cooldown for " + kineticBarrierCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(90)) {
-            System.out.println("Not enough mana! Need 90 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 90 mana, have " + currentMana);
             return false;
         }
         
         System.out.println("🛡️ VALERIUS uses KINETIC BARRIER: \"Nothing gets past the Iron Shoreline.\"");
         spendMana(90);
+        
+        
+        shieldedCells.clear();
         
         
         int minX = Math.max(0, centerX - 1);
@@ -171,24 +190,25 @@ public class Valerius extends GameCharacter {
         return shieldedCells.contains(cellKey) && barrierActiveTurns > 0;
     }
     
-    public int applyBarrier(int x, int y, int incomingDamage) {
+    public ShotResult applyBarrier(int x, int y, ShotResult incomingShot) {
         if (isCellShielded(x, y)) {
-            System.out.println("🛡️ Kinetic Barrier at (" + x + "," + y + ") blocked all damage!");
-            return 0; 
+            System.out.println("🛡️ Kinetic Barrier at (" + x + "," + y + ") blocked the shot!");
+            return ShotResult.MISS; 
         }
-        return incomingDamage;
+        return incomingShot;
     }
+    
     
     
     
     public ShotResult useOrbitalRailgun(Board enemyBoard, int targetX, int targetY) {
         if (orbitalRailgunCooldown > 0) {
-            System.out.println("Orbital Railgun is on cooldown for " + orbitalRailgunCooldown + " more turns");
+            System.out.println("⏳ Orbital Railgun is on cooldown for " + orbitalRailgunCooldown + " more turns");
             return ShotResult.INVALID;
         }
         
         if (!hasEnoughMana(280)) {
-            System.out.println("Not enough mana! Need 280 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 280 mana, have " + currentMana);
             return ShotResult.INVALID;
         }
         
@@ -198,23 +218,30 @@ public class Valerius extends GameCharacter {
         
         ShotResult result = enemyBoard.fire(targetX, targetY);
         
-        
-        int damage = random.nextInt(201) + 400; 
-        System.out.println("💥 Railgun deals " + damage + " damage at (" + targetX + "," + targetY + ")!");
+        System.out.println("💥 Railgun strikes (" + targetX + "," + targetY + "): " + result);
         
         
-        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
-        
-        for (int[] dir : directions) {
-            int nx = targetX + dir[0];
-            int ny = targetY + dir[1];
+        if (result == ShotResult.HIT || result == ShotResult.SUNK) {
+            System.out.println("🔍 Railgun impact reveals adjacent cells:");
             
-            if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
-                Cell adjacentCell = enemyBoard.getCell(nx, ny);
-                if (adjacentCell.hasShip()) {
-                    System.out.println("🔍 Adjacent cell (" + nx + "," + ny + ") contains a SHIP!");
-                } else {
-                    System.out.println("🔍 Adjacent cell (" + nx + "," + ny + ") is empty.");
+            int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+            
+            for (int[] dir : directions) {
+                int nx = targetX + dir[0];
+                int ny = targetY + dir[1];
+                
+                if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+                    Cell adjacentCell = enemyBoard.getCell(nx, ny);
+                    String cellKey = nx + "," + ny;
+                    
+                    if (adjacentCell.hasShip()) {
+                        System.out.println("   • (" + nx + "," + ny + ") contains a SHIP! (scratched)");
+                    } else {
+                        System.out.println("   • (" + nx + "," + ny + ") is empty.");
+                    }
+                    
+                    
+                    scannedCells.add(cellKey);
                 }
             }
         }
@@ -223,13 +250,23 @@ public class Valerius extends GameCharacter {
         return result;
     }
     
+    public boolean isCellScanned(int x, int y) {
+        return scannedCells.contains(x + "," + y);
+    }
+    
     
     
     public void updateTurnCounter() {
         
-        if (radarOverloadCooldown > 0) radarOverloadCooldown--;
-        if (kineticBarrierCooldown > 0) kineticBarrierCooldown--;
-        if (orbitalRailgunCooldown > 0) orbitalRailgunCooldown--;
+        if (radarOverloadCooldown > 0) {
+            radarOverloadCooldown--;
+        }
+        if (kineticBarrierCooldown > 0) {
+            kineticBarrierCooldown--;
+        }
+        if (orbitalRailgunCooldown > 0) {
+            orbitalRailgunCooldown--;
+        }
         
         
         regenerateMana(10);
@@ -251,6 +288,11 @@ public class Valerius extends GameCharacter {
                 System.out.println("🛡️ Kinetic Barrier has faded.");
             }
         }
+        
+        
+        if (random.nextInt(10) == 0) {
+            scannedCells.clear();
+        }
     }
     
     
@@ -259,7 +301,7 @@ public class Valerius extends GameCharacter {
         switch(skillNum) {
             case 1: 
                 if (radarOverloadCooldown > 0) {
-                    return "Cooldown: " + radarOverloadCooldown + " turns";
+                    return "Cooldown: " + radarOverloadCooldown + " turn" + (radarOverloadCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(50)) {
                     return "Need 50 mana";
                 } else {
@@ -267,7 +309,7 @@ public class Valerius extends GameCharacter {
                 }
             case 2: 
                 if (kineticBarrierCooldown > 0) {
-                    return "Cooldown: " + kineticBarrierCooldown + " turns";
+                    return "Cooldown: " + kineticBarrierCooldown + " turn" + (kineticBarrierCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(90)) {
                     return "Need 90 mana";
                 } else {
@@ -275,7 +317,7 @@ public class Valerius extends GameCharacter {
                 }
             case 3: 
                 if (orbitalRailgunCooldown > 0) {
-                    return "Cooldown: " + orbitalRailgunCooldown + " turns";
+                    return "Cooldown: " + orbitalRailgunCooldown + " turn" + (orbitalRailgunCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(280)) {
                     return "Need 280 mana";
                 } else {
@@ -301,12 +343,8 @@ public class Valerius extends GameCharacter {
         return bar.toString();
     }
     
-    public boolean isScrapperResolveActive() {
-        return scrapperResolveActive;
-    }
-    
-    public double getDamageReduction() {
-        return damageReduction;
+    public int getShieldedCellsCount() {
+        return shieldedCells.size();
     }
     
     @Override
