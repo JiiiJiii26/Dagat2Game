@@ -332,7 +332,7 @@ public class CampaignMode {
 }
 private JPanel createPlayerCharacterPanel() {
     JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(new Color(0, 50, 0)); 
+    panel.setBackground(new Color(0, 50, 0));
     panel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 3));
     
     
@@ -346,6 +346,31 @@ private JPanel createPlayerCharacterPanel() {
     portraitLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
     portraitLabel.setForeground(Color.WHITE);
     panel.add(portraitLabel, BorderLayout.CENTER);
+    
+    
+    JPanel skillsPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+    skillsPanel.setBackground(new Color(0, 50, 0));
+    skillsPanel.setBorder(BorderFactory.createTitledBorder(
+        BorderFactory.createLineBorder(Color.GREEN),
+        "SKILLS",
+        TitledBorder.CENTER,
+        TitledBorder.TOP,
+        new Font("Arial", Font.BOLD, 10),
+        Color.GREEN
+    ));
+    
+    
+    if (playerCharacter instanceof Jiji) {
+        addJijiSkills(skillsPanel, true);
+    } else if (playerCharacter instanceof Kael) {
+        addKaelSkills(skillsPanel, true);
+    } else if (playerCharacter instanceof Valerius) {
+        addValeriusSkills(skillsPanel, true);
+    } else if (playerCharacter instanceof Skye) {
+        addSkyeSkills(skillsPanel, true);
+    }
+    
+    panel.add(skillsPanel, BorderLayout.WEST);
     
     
     int totalShips = playerBoard.getShips().size();
@@ -364,23 +389,21 @@ private JPanel createPlayerCharacterPanel() {
     shipsLabel.setForeground(Color.WHITE);
     shipCounterPanel.add(shipsLabel);
     
-    
     JPanel shipIconsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
     shipIconsPanel.setBackground(new Color(0, 50, 0));
     
     for (int i = 0; i < totalShips; i++) {
         JLabel shipIcon;
         if (i < remainingShips) {
-            shipIcon = new JLabel("🚢"); 
+            shipIcon = new JLabel("🚢");
             shipIcon.setForeground(Color.GREEN);
         } else {
-            shipIcon = new JLabel("💀"); 
+            shipIcon = new JLabel("💀");
             shipIcon.setForeground(Color.RED);
         }
         shipIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
         shipIconsPanel.add(shipIcon);
     }
-    
     
     JLabel countLabel = new JLabel(remainingShips + "/" + totalShips + " ships", SwingConstants.CENTER);
     countLabel.setFont(new Font("Arial", Font.BOLD, 12));
@@ -391,6 +414,318 @@ private JPanel createPlayerCharacterPanel() {
     panel.add(shipCounterPanel, BorderLayout.SOUTH);
     
     return panel;
+}
+private void addJijiSkills(JPanel panel, boolean isPlayer) {
+    Jiji jiji = (Jiji) playerCharacter;
+    Color color = isPlayer ? Color.CYAN : Color.RED;
+    
+    
+    JButton dataLeechBtn = new JButton("🔓 Data Leech");
+    dataLeechBtn.setBackground(color);
+    dataLeechBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = jiji.useDataLeech(enemyBoard);
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Data Leech used! 2 cells revealed!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            }
+        }
+    });
+    panel.add(dataLeechBtn);
+    
+    
+    JButton overclockBtn = new JButton("⚡ Overclock");
+    overclockBtn.setBackground(color);
+    overclockBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = jiji.useOverclock();
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Overclock activated! Next shot fires twice!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    });
+    panel.add(overclockBtn);
+    
+    
+    JButton systemBtn = new JButton("💻 System Overload");
+    systemBtn.setBackground(color);
+    systemBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = jiji.useSystemOverload(enemyBoard);
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "System Overload! Enemy skill disabled!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    });
+    panel.add(systemBtn);
+}
+
+private void addKaelSkills(JPanel panel, boolean isPlayer) {
+    Kael kael = (Kael) playerCharacter;
+    Color color = isPlayer ? Color.CYAN : Color.RED;
+    
+    
+    JButton silentBtn = new JButton("🌫️ Silent Drift");
+    silentBtn.setBackground(color);
+    silentBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = kael.useSilentDrift(playerBoard);
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Silent Drift! One ship hidden!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            }
+        }
+    });
+    panel.add(silentBtn);
+    
+    
+    JButton sonarBtn = new JButton("📡 Sonar Pulse");
+    sonarBtn.setBackground(color);
+    sonarBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = kael.useSonarPulse(enemyBoard);
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Sonar Pulse! Hidden enemy revealed!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    });
+    panel.add(sonarBtn);
+    
+    
+    JButton depthBtn = new JButton("💣 Depth Charge");
+    depthBtn.setBackground(color);
+    depthBtn.addActionListener(e -> {
+        if (isPlayer) {
+            
+            String input = JOptionPane.showInputDialog(frame, 
+                "Enter target coordinates (row,col):", 
+                "Depth Charge Target", 
+                JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    String[] parts = input.split(",");
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    int damage = kael.useDepthChargeBarrage(enemyBoard, x, y);
+                    if (damage > 0) {
+                        JOptionPane.showMessageDialog(frame, 
+                            "Depth Charge dealt " + damage + " damage!", 
+                            "Skill Used", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "Invalid coordinates!", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    });
+    panel.add(depthBtn);
+    
+    
+    JButton tempestBtn = new JButton("🌪️ Tempest Lock");
+    tempestBtn.setBackground(Color.YELLOW);
+    tempestBtn.addActionListener(e -> {
+        if (isPlayer) {
+            String input = JOptionPane.showInputDialog(frame, 
+                "Enter center coordinates (row,col):", 
+                "Tempest Lock Target", 
+                JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    String[] parts = input.split(",");
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    int damage = kael.useTempestLock(enemyBoard, x, y);
+                    if (damage > 0) {
+                        JOptionPane.showMessageDialog(frame, 
+                            "Tempest Lock dealt " + damage + " damage!", 
+                            "ULTIMATE!", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "Invalid coordinates!", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    });
+    panel.add(tempestBtn);
+}
+
+private void addValeriusSkills(JPanel panel, boolean isPlayer) {
+    Valerius valerius = (Valerius) playerCharacter;
+    Color color = isPlayer ? Color.CYAN : Color.RED;
+    
+    
+    JButton radarBtn = new JButton("📡 Radar Overload");
+    radarBtn.setBackground(color);
+    radarBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = valerius.useRadarOverload();
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Radar Overload! Enemy skills disabled!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    });
+    panel.add(radarBtn);
+    
+    
+    JButton barrierBtn = new JButton("🛡️ Kinetic Barrier");
+    barrierBtn.setBackground(color);
+    barrierBtn.addActionListener(e -> {
+        if (isPlayer) {
+            String input = JOptionPane.showInputDialog(frame, 
+                "Enter center coordinates (row,col):", 
+                "Barrier Target", 
+                JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    String[] parts = input.split(",");
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    boolean used = valerius.useKineticBarrier(playerBoard, x, y);
+                    if (used) {
+                        JOptionPane.showMessageDialog(frame, 
+                            "Kinetic Barrier deployed!", 
+                            "Skill Used", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "Invalid coordinates!", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    });
+    panel.add(barrierBtn);
+    
+    
+    JButton railgunBtn = new JButton("🎯 Orbital Railgun");
+    railgunBtn.setBackground(color);
+    railgunBtn.addActionListener(e -> {
+        if (isPlayer) {
+            String input = JOptionPane.showInputDialog(frame, 
+                "Enter target coordinates (row,col):", 
+                "Railgun Target", 
+                JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    String[] parts = input.split(",");
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    ShotResult result = valerius.useOrbitalRailgun(enemyBoard, x, y);
+                    if (result != ShotResult.INVALID) {
+                        enemyBoardPanel.updateCell(x, y, result);
+                        JOptionPane.showMessageDialog(frame, 
+                            "Orbital Railgun fired!", 
+                            "Skill Used", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "Invalid coordinates!", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    });
+    panel.add(railgunBtn);
+}
+
+private void addSkyeSkills(JPanel panel, boolean isPlayer) {
+    Skye skye = (Skye) playerCharacter;
+    Color color = isPlayer ? Color.CYAN : Color.RED;
+    
+    
+    JButton catSwarmBtn = new JButton("🐱 Cat Swarm");
+    catSwarmBtn.setBackground(color);
+    catSwarmBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = skye.useCatSwarm(enemyBoard);
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Cat Swarm! Enemy ships scrambled!\n" + skye.getRandomCatSound(), 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    });
+    panel.add(catSwarmBtn);
+    
+    
+    JButton laserBtn = new JButton("🔴 Laser Pointer");
+    laserBtn.setBackground(color);
+    laserBtn.addActionListener(e -> {
+        if (isPlayer) {
+            boolean used = skye.useLaserPointer();
+            if (used) {
+                JOptionPane.showMessageDialog(frame, 
+                    "Laser Pointer! Enemy skips next turn!", 
+                    "Skill Used", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    });
+    panel.add(laserBtn);
+    
+    
+    JButton catnipBtn = new JButton("🌿 Catnip Explosion");
+    catnipBtn.setBackground(color);
+    catnipBtn.addActionListener(e -> {
+        if (isPlayer) {
+            String input = JOptionPane.showInputDialog(frame, 
+                "Enter target coordinates (row,col):", 
+                "Catnip Target", 
+                JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    String[] parts = input.split(",");
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    int damage = skye.useCatnipExplosion(enemyBoard, x, y);
+                    if (damage > 0) {
+                        enemyBoardPanel.updateCell(x, y, ShotResult.HIT);
+                        JOptionPane.showMessageDialog(frame, 
+                            "Catnip Explosion deals " + damage + " damage!\nEnemies are distracted!", 
+                            "Skill Used", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "Invalid coordinates!", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    });
+    panel.add(catnipBtn);
 }
 
 private JPanel createEnemyCharacterPanel(CampaignWave wave) {
@@ -490,11 +825,19 @@ private JPanel createBoardsPanel() {
 }
     
  private void handlePlayerAttack(int row, int col) {
-    ShotResult result = enemyBoard.fire(row, col);
+    
+    ShotResult result;
+    if (playerCharacter instanceof Jiji) {
+        Jiji jiji = (Jiji) playerCharacter;
+        result = jiji.applyOverclock(enemyBoard, row, col);
+    } else {
+        result = enemyBoard.fire(row, col);
+    }
+    
     enemyBoardPanel.updateCell(row, col, result);
     
     
-    refreshShipCounters();
+    refreshUI();
     
     if (enemyBoard.allShipsSunk()) {
         waveComplete();
@@ -596,5 +939,9 @@ private void refreshCharacterPanels() {
             this.waveColor = color;
         }
     }
+    private void refreshUI() {
+    
+    createBattleUI(waves.get(currentWaveIndex));
+}
 }
 
