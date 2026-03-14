@@ -276,7 +276,7 @@ public class CampaignMode {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
     
-    // Top panel with wave info
+    
     JPanel topPanel = new JPanel(new BorderLayout());
     topPanel.setBackground(new Color(25, 25, 112));
     topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -289,7 +289,7 @@ public class CampaignMode {
     waveLabel.setForeground(wave.waveColor);
     topPanel.add(waveLabel, BorderLayout.CENTER);
     
-    // === MAIN BATTLE PANEL WITH 3 COLUMNS ===
+    
     JPanel battlePanel = new JPanel(new GridBagLayout());
     battlePanel.setBackground(new Color(25, 25, 112));
     
@@ -297,22 +297,22 @@ public class CampaignMode {
     gbc.fill = GridBagConstraints.BOTH;
     gbc.weighty = 1.0;
     
-    // === LEFT COLUMN: PLAYER CHARACTER ===
+    
     gbc.gridx = 0;
     gbc.weightx = 0.2;
     battlePanel.add(createPlayerCharacterPanel(), gbc);
     
-    // === CENTER COLUMN: GAME BOARDS ===
+    
     gbc.gridx = 1;
     gbc.weightx = 0.6;
     battlePanel.add(createBoardsPanel(), gbc);
     
-    // === RIGHT COLUMN: ENEMY CHARACTER ===
+    
     gbc.gridx = 2;
     gbc.weightx = 0.2;
     battlePanel.add(createEnemyCharacterPanel(wave), gbc);
     
-    // Status panel at bottom
+    
     JPanel statusPanel = new JPanel();
     statusPanel.setBackground(new Color(25, 25, 112));
     statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
@@ -331,22 +331,22 @@ public class CampaignMode {
 }
 private JPanel createPlayerCharacterPanel() {
     JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(new Color(0, 50, 0)); // Dark green for player
+    panel.setBackground(new Color(0, 50, 0)); 
     panel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 3));
     
-    // Character name
+    
     JLabel nameLabel = new JLabel(playerCharacter.getName(), SwingConstants.CENTER);
     nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     nameLabel.setForeground(Color.WHITE);
     panel.add(nameLabel, BorderLayout.NORTH);
     
-    // Character portrait/emoji
+    
     JLabel portraitLabel = new JLabel(getCharacterEmoji(playerCharacter), SwingConstants.CENTER);
     portraitLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
     portraitLabel.setForeground(Color.WHITE);
     panel.add(portraitLabel, BorderLayout.CENTER);
     
-    // Health bar
+    
     JProgressBar healthBar = new JProgressBar(0, playerCharacter.getMaxHealth());
     healthBar.setValue(playerCharacter.getCurrentHealth());
     healthBar.setForeground(Color.GREEN);
@@ -359,22 +359,22 @@ private JPanel createPlayerCharacterPanel() {
 
 private JPanel createEnemyCharacterPanel(CampaignWave wave) {
     JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(new Color(50, 0, 0)); // Dark red for enemy
+    panel.setBackground(new Color(50, 0, 0)); 
     panel.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
     
-    // Enemy name
+    
     JLabel nameLabel = new JLabel(currentEnemy.getName(), SwingConstants.CENTER);
     nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     nameLabel.setForeground(Color.WHITE);
     panel.add(nameLabel, BorderLayout.NORTH);
     
-    // Enemy portrait/emoji
+    
     JLabel portraitLabel = new JLabel(getCharacterEmoji(currentEnemy), SwingConstants.CENTER);
     portraitLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
     portraitLabel.setForeground(wave.waveColor);
     panel.add(portraitLabel, BorderLayout.CENTER);
     
-    // Health bar
+    
     JProgressBar healthBar = new JProgressBar(0, currentEnemy.getMaxHealth());
     healthBar.setValue(currentEnemy.getCurrentHealth());
     healthBar.setForeground(Color.RED);
@@ -417,10 +417,10 @@ private JPanel createBoardsPanel() {
     ShotResult result = enemyBoard.fire(row, col);
     enemyBoardPanel.updateCell(row, col, result);
     
-    // Update enemy health (simulated - you'll need actual health logic)
+    
     if (result == ShotResult.HIT || result == ShotResult.SUNK) {
-        // Reduce enemy health - you'll need to implement this properly
-        // currentEnemy.takeDamage(calculateDamage());
+        
+        
     }
     
     if (enemyBoard.allShipsSunk()) {
@@ -443,9 +443,9 @@ private JPanel createBoardsPanel() {
     ShotResult result = playerBoard.fire(x, y);
     playerBoardPanel.updateCell(x, y, result);
     
-    // Update player health (simulated)
+    
     if (result == ShotResult.HIT || result == ShotResult.SUNK) {
-        // playerCharacter.takeDamage(calculateDamage());
+        
     }
     
     System.out.println(currentEnemy.getName() + " fired at (" + x + ", " + y + ") - " + result);
@@ -457,13 +457,13 @@ private JPanel createBoardsPanel() {
     
     playerTurn = true;
     
-    // Refresh the UI to show updated health
+    
     refreshCharacterPanels();
 }
 
 private void refreshCharacterPanels() {
-    // This will recreate the battle UI to show updated health
-    // You could also update just the health bars directly
+    
+    
     createBattleUI(waves.get(currentWaveIndex));
 }
     
@@ -532,3 +532,4 @@ private void refreshCharacterPanels() {
         }
     }
 }
+
