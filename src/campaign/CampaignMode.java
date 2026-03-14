@@ -13,6 +13,7 @@ import java.util.Random;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.FlowLayout;
 
 
 import characters.*;
@@ -347,12 +348,47 @@ private JPanel createPlayerCharacterPanel() {
     panel.add(portraitLabel, BorderLayout.CENTER);
     
     
-    JProgressBar healthBar = new JProgressBar(0, playerCharacter.getMaxHealth());
-    healthBar.setValue(playerCharacter.getCurrentHealth());
-    healthBar.setForeground(Color.GREEN);
-    healthBar.setStringPainted(true);
-    healthBar.setString(playerCharacter.getCurrentHealth() + "/" + playerCharacter.getMaxHealth() + " HP");
-    panel.add(healthBar, BorderLayout.SOUTH);
+    int totalShips = playerBoard.getShips().size();
+    int remainingShips = 0;
+    for (Ship ship : playerBoard.getShips()) {
+        if (!ship.isSunk()) {
+            remainingShips++;
+        }
+    }
+    
+    JPanel shipCounterPanel = new JPanel(new GridLayout(2, 1));
+    shipCounterPanel.setBackground(new Color(0, 50, 0));
+    
+    JLabel shipsLabel = new JLabel("🚢 FLEET STATUS", SwingConstants.CENTER);
+    shipsLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    shipsLabel.setForeground(Color.WHITE);
+    shipCounterPanel.add(shipsLabel);
+    
+    
+    JPanel shipIconsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+    shipIconsPanel.setBackground(new Color(0, 50, 0));
+    
+    for (int i = 0; i < totalShips; i++) {
+        JLabel shipIcon;
+        if (i < remainingShips) {
+            shipIcon = new JLabel("🚢"); 
+            shipIcon.setForeground(Color.GREEN);
+        } else {
+            shipIcon = new JLabel("💀"); 
+            shipIcon.setForeground(Color.RED);
+        }
+        shipIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        shipIconsPanel.add(shipIcon);
+    }
+    
+    
+    JLabel countLabel = new JLabel(remainingShips + "/" + totalShips + " ships", SwingConstants.CENTER);
+    countLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    countLabel.setForeground(Color.WHITE);
+    shipCounterPanel.add(shipIconsPanel);
+    shipCounterPanel.add(countLabel);
+    
+    panel.add(shipCounterPanel, BorderLayout.SOUTH);
     
     return panel;
 }
@@ -375,14 +411,54 @@ private JPanel createEnemyCharacterPanel(CampaignWave wave) {
     panel.add(portraitLabel, BorderLayout.CENTER);
     
     
-    JProgressBar healthBar = new JProgressBar(0, currentEnemy.getMaxHealth());
-    healthBar.setValue(currentEnemy.getCurrentHealth());
-    healthBar.setForeground(Color.RED);
-    healthBar.setStringPainted(true);
-    healthBar.setString(currentEnemy.getCurrentHealth() + "/" + currentEnemy.getMaxHealth() + " HP");
-    panel.add(healthBar, BorderLayout.SOUTH);
+    int totalShips = enemyBoard.getShips().size();
+    int remainingShips = 0;
+    for (Ship ship : enemyBoard.getShips()) {
+        if (!ship.isSunk()) {
+            remainingShips++;
+        }
+    }
+    
+    JPanel shipCounterPanel = new JPanel(new GridLayout(2, 1));
+    shipCounterPanel.setBackground(new Color(50, 0, 0));
+    
+    JLabel shipsLabel = new JLabel("🚢 ENEMY FLEET", SwingConstants.CENTER);
+    shipsLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    shipsLabel.setForeground(Color.WHITE);
+    shipCounterPanel.add(shipsLabel);
+    
+    
+    JPanel shipIconsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+    shipIconsPanel.setBackground(new Color(50, 0, 0));
+    
+    for (int i = 0; i < totalShips; i++) {
+        JLabel shipIcon;
+        if (i < remainingShips) {
+            shipIcon = new JLabel("🚢"); 
+            shipIcon.setForeground(Color.RED);
+        } else {
+            shipIcon = new JLabel("💀"); 
+            shipIcon.setForeground(Color.GRAY);
+        }
+        shipIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        shipIconsPanel.add(shipIcon);
+    }
+    
+    
+    JLabel countLabel = new JLabel(remainingShips + "/" + totalShips + " ships", SwingConstants.CENTER);
+    countLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    countLabel.setForeground(Color.WHITE);
+    shipCounterPanel.add(shipIconsPanel);
+    shipCounterPanel.add(countLabel);
+    
+    panel.add(shipCounterPanel, BorderLayout.SOUTH);
     
     return panel;
+}
+private void refreshShipCounters() {
+    
+    
+    createBattleUI(waves.get(currentWaveIndex));
 }
 
 private String getCharacterEmoji(GameCharacter character) {
@@ -413,15 +489,12 @@ private JPanel createBoardsPanel() {
     return panel;
 }
     
-   private void handlePlayerAttack(int row, int col) {
+ private void handlePlayerAttack(int row, int col) {
     ShotResult result = enemyBoard.fire(row, col);
     enemyBoardPanel.updateCell(row, col, result);
     
     
-    if (result == ShotResult.HIT || result == ShotResult.SUNK) {
-        
-        
-    }
+    refreshShipCounters();
     
     if (enemyBoard.allShipsSunk()) {
         waveComplete();
@@ -434,21 +507,16 @@ private JPanel createBoardsPanel() {
     timer.setRepeats(false);
     timer.start();
 }
-    
-   private void enemyTurn() {
-    Random rand = new Random();
-    int x = rand.nextInt(10);
-    int y = rand.nextInt(10);
+
+private void enemyTurn() {
+    int x = random.nextInt(10);
+    int y = random.nextInt(10);
     
     ShotResult result = playerBoard.fire(x, y);
     playerBoardPanel.updateCell(x, y, result);
     
     
-    if (result == ShotResult.HIT || result == ShotResult.SUNK) {
-        
-    }
-    
-    System.out.println(currentEnemy.getName() + " fired at (" + x + ", " + y + ") - " + result);
+    refreshShipCounters();
     
     if (playerBoard.allShipsSunk()) {
         gameOver();
@@ -456,9 +524,6 @@ private JPanel createBoardsPanel() {
     }
     
     playerTurn = true;
-    
-    
-    refreshCharacterPanels();
 }
 
 private void refreshCharacterPanels() {
