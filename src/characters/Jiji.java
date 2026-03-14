@@ -2,6 +2,7 @@ package characters;
 
 import models.Board;
 import models.Cell;
+import models.Ship;
 import game.ShotResult;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -10,10 +11,8 @@ import java.util.Random;
 public class Jiji extends GameCharacter {
     
     private Random random = new Random();
-    private int turnsSinceLastFirewall = 0;
-    private boolean decoyActive = false;
-    private ArrayList<String> disabledEnemySkills = new ArrayList<>();
-    private boolean nextShotEnhanced = false;
+    private int currentMana;
+    private static final int MAX_MANA = 450;
     
     
     private int dataLeechCooldown = 0;
@@ -21,8 +20,17 @@ public class Jiji extends GameCharacter {
     private int systemOverloadCooldown = 0;
     
     
-    private int currentMana;
-    private static final int MAX_MANA = 450;
+    private boolean nextShotEnhanced = false;
+    private boolean firewallActive = false;
+    private int firewallTurns = 0;
+    private int turnsSinceLastFirewall = 0;
+    
+    
+    private ArrayList<String> revealedCells = new ArrayList<>();
+    
+    
+    private ArrayList<String> disabledEnemySkills = new ArrayList<>();
+    private int skillDisableTurns = 0;
     
     public Jiji() {
         super(
@@ -54,6 +62,7 @@ public class Jiji extends GameCharacter {
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {
             currentMana -= cost;
+            System.out.println("💰 Jiji spent " + cost + " mana. Remaining: " + currentMana);
         }
     }
     
@@ -68,12 +77,12 @@ public class Jiji extends GameCharacter {
     
     public boolean useDataLeech(Board enemyBoard) {
         if (dataLeechCooldown > 0) {
-            System.out.println("Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
+            System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(50)) {
-            System.out.println("Not enough mana! Need 50 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
             return false;
         }
         
@@ -83,37 +92,44 @@ public class Jiji extends GameCharacter {
         
         int revealed = 0;
         int attempts = 0;
+        StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals:\n");
         
         while (revealed < 2 && attempts < 100) {
             int x = random.nextInt(10);
             int y = random.nextInt(10);
+            String cellKey = x + "," + y;
             Cell cell = enemyBoard.getCell(x, y);
             
-            if (!cell.isFiredUpon()) {
-                
-                
-                System.out.println("📡 Data Leech reveals: Cell (" + x + "," + y + 
-                                 ") has " + (cell.hasShip() ? "SHIP" : "nothing"));
+            if (!cell.isFiredUpon() && !revealedCells.contains(cellKey)) {
+                revealedCells.add(cellKey);
+                String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
+                resultMessage.append("• (").append(x).append(",").append(y).append("): ").append(content).append("\n");
                 revealed++;
             }
             attempts++;
         }
+        
+        System.out.println(resultMessage.toString());
         
         dataLeechCooldown = 1; 
         System.out.println("✅ Data Leech complete! " + revealed + " cells revealed.");
         return true;
     }
     
+    public boolean isCellRevealed(int x, int y) {
+        return revealedCells.contains(x + "," + y);
+    }
+    
     
     
     public boolean useOverclock() {
         if (overclockCooldown > 0) {
-            System.out.println("Overclock is on cooldown for " + overclockCooldown + " more turns");
+            System.out.println("⏳ Overclock is on cooldown for " + overclockCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(120)) {
-            System.out.println("Not enough mana! Need 120 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 120 mana, have " + currentMana);
             return false;
         }
         
@@ -138,6 +154,7 @@ public class Jiji extends GameCharacter {
         
         
         ShotResult result1 = enemyBoard.fire(x, y);
+        int damage1 = random.nextInt(101) + 150; 
         
         
         int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
@@ -150,12 +167,10 @@ public class Jiji extends GameCharacter {
         y2 = Math.max(0, Math.min(9, y2));
         
         ShotResult result2 = enemyBoard.fire(x2, y2);
-        
-        
-        int damage1 = random.nextInt(101) + 150; 
         int damage2 = random.nextInt(101) + 150;
-        System.out.println("💥 First shot damage: " + damage1);
-        System.out.println("💥 Second shot damage: " + damage2);
+        
+        System.out.println("💥 First shot: " + result1 + " (damage: " + damage1 + ")");
+        System.out.println("💥 Second shot: " + result2 + " (damage: " + damage2 + ")");
         System.out.println("💥 Total damage: " + (damage1 + damage2));
         
         
@@ -172,12 +187,12 @@ public class Jiji extends GameCharacter {
     
     public boolean useSystemOverload(Board enemyBoard) {
         if (systemOverloadCooldown > 0) {
-            System.out.println("System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
+            System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(400)) {
-            System.out.println("Not enough mana! Need 400 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
             return false;
         }
         
@@ -185,9 +200,13 @@ public class Jiji extends GameCharacter {
         spendMana(400);
         
         
-        String[] enemySkills = {"Radar Scan", "Barrage", "Peek", "Emergency Repair"};
+        String[] enemySkills = {"Radar Scan", "Barrage", "Peek", "Emergency Repair", 
+                                "Silent Drift", "Sonar Pulse", "Depth Charge", "Tempest Lock",
+                                "Radar Overload", "Kinetic Barrier", "Orbital Railgun",
+                                "Cat Swarm", "Laser Pointer", "Catnip Explosion"};
         String disabledSkill = enemySkills[random.nextInt(enemySkills.length)];
         disabledEnemySkills.add(disabledSkill);
+        skillDisableTurns = 3;
         
         System.out.println("🛑 Enemy skill '" + disabledSkill + "' is disabled for 3 turns!");
         
@@ -195,42 +214,63 @@ public class Jiji extends GameCharacter {
         int damage = random.nextInt(151) + 250; 
         System.out.println("💥 System Overload deals " + damage + " damage!");
         
+        
+        for (int i = 0; i < 10; i++) {
+            int x = random.nextInt(10);
+            int y = random.nextInt(10);
+            Cell cell = enemyBoard.getCell(x, y);
+            if (cell.hasShip() && !cell.isFiredUpon()) {
+                ShotResult result = enemyBoard.fire(x, y);
+                System.out.println("🎯 Hit at (" + x + "," + y + ")");
+                break;
+            }
+        }
+        
         systemOverloadCooldown = 5; 
         return true;
     }
     
     public boolean isSkillDisabled(String skillName) {
-        return disabledEnemySkills.contains(skillName);
+        return disabledEnemySkills.contains(skillName) && skillDisableTurns > 0;
     }
     
     
     
     public void updateTurnCounter() {
-        turnsSinceLastFirewall++;
-        
         
         if (dataLeechCooldown > 0) dataLeechCooldown--;
         if (overclockCooldown > 0) overclockCooldown--;
         if (systemOverloadCooldown > 0) systemOverloadCooldown--;
         
         
+        if (skillDisableTurns > 0) {
+            skillDisableTurns--;
+            if (skillDisableTurns <= 0) {
+                disabledEnemySkills.clear();
+                System.out.println("✅ Enemy skills are no longer disabled.");
+            }
+        }
+        
+        
         regenerateMana(20);
         
         
+        turnsSinceLastFirewall++;
         if (turnsSinceLastFirewall >= 4) {
             activateFirewall();
         }
     }
     
     private void activateFirewall() {
-        decoyActive = true;
+        firewallActive = true;
+        firewallTurns = 1; 
         turnsSinceLastFirewall = 0;
         System.out.println("🛡️ FIREWALL ACTIVE! Next hit will be blocked!");
     }
     
     public boolean checkFirewall(int x, int y, ShotResult incomingShot) {
-        if (decoyActive && (incomingShot == ShotResult.HIT || incomingShot == ShotResult.SUNK)) {
-            decoyActive = false;
+        if (firewallActive && (incomingShot == ShotResult.HIT || incomingShot == ShotResult.SUNK)) {
+            firewallActive = false;
             System.out.println("🛡️ Firewall blocked a hit at (" + x + "," + y + ")! \"You can't hack what you can't find...\"");
             return true; 
         }
@@ -251,7 +291,7 @@ public class Jiji extends GameCharacter {
         switch(skillNum) {
             case 1: 
                 if (dataLeechCooldown > 0) {
-                    return "Cooldown: " + dataLeechCooldown + " turns";
+                    return "Cooldown: " + dataLeechCooldown + " turn" + (dataLeechCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(50)) {
                     return "Need 50 mana";
                 } else {
@@ -291,5 +331,13 @@ public class Jiji extends GameCharacter {
         }
         bar.append("] " + currentMana + "/" + MAX_MANA + " mana");
         return bar.toString();
+    }
+    
+    public boolean isFirewallActive() {
+        return firewallActive;
+    }
+    
+    public boolean isNextShotEnhanced() {
+        return nextShotEnhanced;
     }
 }

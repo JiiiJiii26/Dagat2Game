@@ -417,56 +417,115 @@ private JPanel createPlayerCharacterPanel() {
 }
 private void addJijiSkills(JPanel panel, boolean isPlayer) {
     Jiji jiji = (Jiji) playerCharacter;
-    Color color = isPlayer ? Color.CYAN : Color.RED;
     
     
-    JButton dataLeechBtn = new JButton("🔓 Data Leech");
-    dataLeechBtn.setBackground(color);
+    JButton dataLeechBtn = new JButton("🔓 Data Leech (50)");
+    dataLeechBtn.setBackground(new Color(100, 200, 255));
+    dataLeechBtn.setToolTipText("Reveal 2 random cells");
     dataLeechBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
             boolean used = jiji.useDataLeech(enemyBoard);
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "Data Leech used! 2 cells revealed!", 
+                    "📡 Data Leech used! Check console for revealed cells!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
                 refreshUI();
+            } else {
+                JOptionPane.showMessageDialog(frame, 
+                    "❌ Cannot use Data Leech!\n" + jiji.getSkillStatus(1), 
+                    "Skill Not Ready", 
+                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
+    
+    
+    String status1 = jiji.getSkillStatus(1);
+    if (!status1.equals("Ready!")) {
+        dataLeechBtn.setEnabled(false);
+        dataLeechBtn.setText("🔓 Data Leech (" + status1 + ")");
+    }
     panel.add(dataLeechBtn);
     
     
-    JButton overclockBtn = new JButton("⚡ Overclock");
-    overclockBtn.setBackground(color);
+    JButton overclockBtn = new JButton("⚡ Overclock (120)");
+    overclockBtn.setBackground(new Color(200, 150, 50));
+    overclockBtn.setToolTipText("Next shot fires twice");
     overclockBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
             boolean used = jiji.useOverclock();
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "Overclock activated! Next shot fires twice!", 
+                    "⚡ Overclock activated! Next shot fires twice!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            } else {
+                JOptionPane.showMessageDialog(frame, 
+                    "❌ Cannot use Overclock!\n" + jiji.getSkillStatus(2), 
+                    "Skill Not Ready", 
+                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
+    
+    String status2 = jiji.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        overclockBtn.setEnabled(false);
+        overclockBtn.setText("⚡ Overclock (" + status2 + ")");
+    }
     panel.add(overclockBtn);
     
     
-    JButton systemBtn = new JButton("💻 System Overload");
-    systemBtn.setBackground(color);
+    JButton systemBtn = new JButton("💻 System Overload (400)");
+    systemBtn.setBackground(new Color(200, 50, 50));
+    systemBtn.setToolTipText("Disable enemy skill + damage");
     systemBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
             boolean used = jiji.useSystemOverload(enemyBoard);
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "System Overload! Enemy skill disabled!", 
-                    "Skill Used", 
+                    "💻 System Overload! Enemy skill disabled!", 
+                    "ULTIMATE!", 
                     JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            } else {
+                JOptionPane.showMessageDialog(frame, 
+                    "❌ Cannot use System Overload!\n" + jiji.getSkillStatus(3), 
+                    "Skill Not Ready", 
+                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
+    
+    String status3 = jiji.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        systemBtn.setEnabled(false);
+        systemBtn.setText("💻 System Overload (" + status3 + ")");
+    }
     panel.add(systemBtn);
+    
+    
+    JLabel manaLabel = new JLabel(jiji.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
+    
+    
+    if (jiji.isFirewallActive()) {
+        JLabel firewallLabel = new JLabel("🛡️ FIREWALL ACTIVE", SwingConstants.CENTER);
+        firewallLabel.setForeground(Color.GREEN);
+        firewallLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(firewallLabel);
+    }
+    
+    if (jiji.isNextShotEnhanced()) {
+        JLabel overclockLabel = new JLabel("⚡ OVERCLOCK READY", SwingConstants.CENTER);
+        overclockLabel.setForeground(Color.YELLOW);
+        overclockLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(overclockLabel);
+    }
 }
 
 private void addKaelSkills(JPanel panel, boolean isPlayer) {
@@ -837,6 +896,10 @@ private JPanel createBoardsPanel() {
     enemyBoardPanel.updateCell(row, col, result);
     
     
+    if (playerCharacter instanceof Jiji) {
+        ((Jiji) playerCharacter).updateTurnCounter();
+    }
+    
     refreshUI();
     
     if (enemyBoard.allShipsSunk()) {
@@ -852,14 +915,30 @@ private JPanel createBoardsPanel() {
 }
 
 private void enemyTurn() {
+    
+    if (playerCharacter instanceof Jiji) {
+        ((Jiji) playerCharacter).updateTurnCounter();
+    }
+    
     int x = random.nextInt(10);
     int y = random.nextInt(10);
     
     ShotResult result = playerBoard.fire(x, y);
-    playerBoardPanel.updateCell(x, y, result);
     
     
-    refreshShipCounters();
+    if (playerCharacter instanceof Jiji) {
+        Jiji jiji = (Jiji) playerCharacter;
+        if (jiji.checkFirewall(x, y, result)) {
+            
+            System.out.println("🛡️ Firewall blocked the hit!");
+        } else {
+            playerBoardPanel.updateCell(x, y, result);
+        }
+    } else {
+        playerBoardPanel.updateCell(x, y, result);
+    }
+    
+    refreshUI();
     
     if (playerBoard.allShipsSunk()) {
         gameOver();
