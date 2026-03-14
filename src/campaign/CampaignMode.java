@@ -70,7 +70,7 @@ private void useEnemySkill() {
     
     System.out.println("🤖 Enemy AI considering skill use...");
     
-    // Don't use skills if player has Radar Overload active (Valerius)
+    
     if (playerCharacter instanceof Valerius) {
         Valerius valerius = (Valerius) playerCharacter;
         if (valerius.areEnemySkillsDisabled()) {
@@ -79,9 +79,9 @@ private void useEnemySkill() {
         }
     }
     
-    // Random chance to use skill
+    
     if (enemyRandom.nextInt(100) < enemySkillChance) {
-        // Choose which skill based on enemy type
+        
         if (currentEnemy instanceof Jiji) {
             useJijiEnemySkill();
         } else if (currentEnemy instanceof Kael) {
@@ -99,25 +99,25 @@ private void useEnemySkill() {
 private void useJijiEnemySkill() {
     Jiji enemyJiji = (Jiji) currentEnemy;
     
-    // Choose random skill
+    
     int skillChoice = enemyRandom.nextInt(3);
     
     switch(skillChoice) {
-        case 0: // Data Leech
+        case 0: 
             if (enemyJiji.hasEnoughMana(50)) {
                 System.out.println("🔓 Enemy Jiji uses DATA LEECH!");
                 enemyJiji.useDataLeech(playerBoard);
                 showEnemySkillMessage("Jiji uses Data Leech on your fleet!");
             }
             break;
-        case 1: // Overclock
+        case 1: 
             if (enemyJiji.hasEnoughMana(120)) {
                 System.out.println("⚡ Enemy Jiji uses OVERCLOCK!");
                 enemyJiji.useOverclock();
                 showEnemySkillMessage("Jiji overclocks! Their next shot will fire twice!");
             }
             break;
-        case 2: // System Overload
+        case 2: 
             if (enemyJiji.hasEnoughMana(400)) {
                 System.out.println("💻 Enemy Jiji uses SYSTEM OVERLOAD!");
                 enemyJiji.useSystemOverload(playerBoard);
@@ -130,38 +130,38 @@ private void useJijiEnemySkill() {
 private void useKaelEnemySkill() {
     Kael enemyKael = (Kael) currentEnemy;
     
-    // Choose random skill
+    
     int skillChoice = enemyRandom.nextInt(4);
     
     switch(skillChoice) {
-        case 0: // Silent Drift
+        case 0: 
             if (enemyKael.hasEnoughEnergy(80)) {
                 System.out.println("🌫️ Enemy Kael uses SILENT DRIFT!");
                 enemyKael.useSilentDrift(enemyBoard);
                 showEnemySkillMessage("Kael hides one of their ships!");
             }
             break;
-        case 1: // Sonar Pulse
+        case 1: 
             if (enemyKael.hasEnoughEnergy(120)) {
                 System.out.println("📡 Enemy Kael uses SONAR PULSE!");
                 enemyKael.useSonarPulse(playerBoard);
                 showEnemySkillMessage("Kael reveals and damages one of your hidden ships!");
             }
             break;
-        case 2: // Depth Charge
+        case 2: 
             if (enemyKael.hasEnoughEnergy(200)) {
                 System.out.println("💣 Enemy Kael uses DEPTH CHARGE!");
-                // Target random area
+                
                 int x = enemyRandom.nextInt(8);
                 int y = enemyRandom.nextInt(8);
                 enemyKael.useDepthChargeBarrage(playerBoard, x, y);
                 showEnemySkillMessage("Kael drops a depth charge on your fleet!");
             }
             break;
-        case 3: // Tempest Lock
+        case 3: 
             if (enemyKael.hasEnoughEnergy(300)) {
                 System.out.println("🌪️ Enemy Kael uses TEMPEST LOCK!");
-                int x = enemyRandom.nextInt(7) + 1; // Center for 3x3
+                int x = enemyRandom.nextInt(7) + 1; 
                 int y = enemyRandom.nextInt(7) + 1;
                 enemyKael.useTempestLock(playerBoard, x, y);
                 showEnemySkillMessage("KAEL UNLEASHES TEMPEST LOCK! Massive area damage!");
@@ -173,18 +173,18 @@ private void useKaelEnemySkill() {
 private void useValeriusEnemySkill() {
     Valerius enemyValerius = (Valerius) currentEnemy;
     
-    // Choose random skill
+    
     int skillChoice = enemyRandom.nextInt(3);
     
     switch(skillChoice) {
-        case 0: // Radar Overload
+        case 0: 
             if (enemyValerius.hasEnoughMana(50)) {
                 System.out.println("📡 Enemy Valerius uses RADAR OVERLOAD!");
                 enemyValerius.useRadarOverload();
                 showEnemySkillMessage("Valerius jams your radar! Your skills are disabled!");
             }
             break;
-        case 1: // Kinetic Barrier
+        case 1: 
             if (enemyValerius.hasEnoughMana(90)) {
                 System.out.println("🛡️ Enemy Valerius uses KINETIC BARRIER!");
                 int x = enemyRandom.nextInt(8);
@@ -193,7 +193,7 @@ private void useValeriusEnemySkill() {
                 showEnemySkillMessage("Valerius deploys a kinetic barrier around his ships!");
             }
             break;
-        case 2: // Orbital Railgun
+        case 2: 
             if (enemyValerius.hasEnoughMana(280)) {
                 System.out.println("🎯 Enemy Valerius uses ORBITAL RAILGUN!");
                 int x = enemyRandom.nextInt(10);
@@ -209,26 +209,26 @@ private void useValeriusEnemySkill() {
 private void useSkyeEnemySkill() {
     Skye enemySkye = (Skye) currentEnemy;
     
-    // Choose random skill
+    
     int skillChoice = enemyRandom.nextInt(3);
     
     switch(skillChoice) {
-        case 0: // Cat Swarm
+        case 0: 
             if (enemySkye.hasEnoughMana(70)) {
                 System.out.println("🐱 Enemy Skye uses CAT SWARM!");
                 enemySkye.useCatSwarm(playerBoard);
                 showEnemySkillMessage("Skye summons a swarm of cats! Your ships are scattered!");
             }
             break;
-        case 1: // Laser Pointer
+        case 1: 
             if (enemySkye.hasEnoughMana(50)) {
                 System.out.println("🔴 Enemy Skye uses LASER POINTER!");
                 enemySkye.useLaserPointer();
-                // This would need to affect player's turn
+                
                 showEnemySkillMessage("Skye distracts you with a laser pointer!");
             }
             break;
-        case 2: // Catnip Explosion
+        case 2: 
             if (enemySkye.hasEnoughMana(380)) {
                 System.out.println("🌿 Enemy Skye uses CATNIP EXPLOSION!");
                 int x = enemyRandom.nextInt(8);
@@ -241,10 +241,10 @@ private void useSkyeEnemySkill() {
 }
 
 private void showEnemySkillMessage(String message) {
-    // Show in status label temporarily
-    //String originalText = statusLabel.getText();
+    
+    
    System.out.println("🤖 " + message);
-   // statusLabel.setForeground(Color.ORANGE);
+   
     
     if (statusLabel == null) {
         System.out.println("⚠️ statusLabel not ready yet, message shown in console only");
@@ -256,7 +256,7 @@ private void showEnemySkillMessage(String message) {
     
     statusLabel.setText("🤖 " + message);
     statusLabel.setForeground(Color.ORANGE);
-    // Revert after 2 seconds
+    
     Timer revertTimer = new Timer(2000, e -> {
         statusLabel.setText(originalText);
         statusLabel.setForeground(Color.WHITE);
@@ -264,7 +264,7 @@ private void showEnemySkillMessage(String message) {
     revertTimer.setRepeats(false);
     revertTimer.start();
     
-    // Also show in console
+    
     System.out.println("🤖 " + message);
 }
 private void startTargetSelection(String skillName, SkillTargetCallback callback, JButton skillButton) {
@@ -447,10 +447,36 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
         
         System.out.println("⚔️ Wave " + (index + 1) + "/" + waves.size() + 
                           ": Fighting " + currentEnemy.getName());
+
+         adjustEnemyDifficulty(index + 1);
         
         placeEnemyShips(currentEnemy, enemyBoard);
         createBattleUI(wave);
     }
+    private void adjustEnemyDifficulty(int waveNumber) {
+    
+    enemySkillChance = 20 + (waveNumber * 5); 
+    
+    
+    if (enemySkillChance > 80) {
+        enemySkillChance = 80;
+    }
+    
+    System.out.println("⚔️ Wave " + waveNumber + " difficulty: " + enemySkillChance + "% skill chance");
+    
+    
+    if (waveNumber > 2) {
+        
+        System.out.println("🧠 Enemy AI is now using STRATEGIC thinking!");
+        
+    }
+    
+    
+    if (waveNumber >= 4) {
+        
+        System.out.println("💀 BOSS WAVE! Enemy is enraged!");
+    }
+}
     
     private void placeEnemyShips(GameCharacter enemy, Board board) {
         
@@ -1218,7 +1244,7 @@ private JPanel createBoardsPanel() {
 }
 
 private void enemyTurn() {
-    // Check if enemy turn should be skipped (player's Laser Pointer)
+    
     if (playerCharacter instanceof Skye) {
         Skye skye = (Skye) playerCharacter;
         if (skye.shouldSkipEnemyTurn()) {
@@ -1228,10 +1254,10 @@ private void enemyTurn() {
         }
     }
     
-    // ===== NEW: Enemy uses skills! =====
+    
     useEnemySkill();
     
-    // Update player character's turn counter
+    
     if (playerCharacter instanceof Jiji) {
         ((Jiji) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Kael) {
@@ -1252,13 +1278,13 @@ private void enemyTurn() {
     ((Skye) currentEnemy).updateTurnCounter();
 }
     
-    // Enemy attacks
+    
     int x = random.nextInt(10);
     int y = random.nextInt(10);
     
     ShotResult result = playerBoard.fire(x, y);
     
-    // Apply defensive abilities
+    
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
         if (jiji.checkFirewall(x, y, result)) {
@@ -1274,12 +1300,12 @@ private void enemyTurn() {
         playerBoardPanel.updateCell(x, y, result);
     }
     
-    // Apply Skye's distraction effect (damage reduction)
+    
     if (playerCharacter instanceof Skye) {
         Skye skye = (Skye) playerCharacter;
         if (skye.isEnemyDistracted()) {
             System.out.println("😵 Enemy is distracted by catnip! Their attack is weaker!");
-            // Could reduce damage here
+            
         }
     }
     
@@ -1296,17 +1322,17 @@ private void enemyTurn() {
 private void useStrategicEnemySkill() {
     if (currentEnemy == null) return;
     
-    // Check enemy health - use defensive skills when low
+    
     double enemyHealthPercent = (double)currentEnemy.getCurrentHealth() / currentEnemy.getMaxHealth();
     
-    // Check player board - use offensive skills when player has many ships
+    
     int playerShipsRemaining = 0;
     for (Ship ship : playerBoard.getShips()) {
         if (!ship.isSunk()) playerShipsRemaining++;
     }
     
     if (currentEnemy instanceof Valerius && enemyHealthPercent < 0.3) {
-        // Valerius uses barrier when low health
+        
         Valerius valerius = (Valerius) currentEnemy;
         if (valerius.hasEnoughMana(90)) {
             int x = random.nextInt(8);
@@ -1318,7 +1344,7 @@ private void useStrategicEnemySkill() {
     }
     
     if (currentEnemy instanceof Kael && playerShipsRemaining > 3) {
-        // Kael uses Tempest Lock when player has many ships
+        
         Kael kael = (Kael) currentEnemy;
         if (kael.hasEnoughEnergy(300)) {
             int x = random.nextInt(7) + 1;
@@ -1330,7 +1356,7 @@ private void useStrategicEnemySkill() {
     }
     
     if (currentEnemy instanceof Jiji && playerShipsRemaining < 3) {
-        // Jiji uses System Overload to finish you off
+        
         Jiji jiji = (Jiji) currentEnemy;
         if (jiji.hasEnoughMana(400)) {
             jiji.useSystemOverload(playerBoard);
@@ -1340,7 +1366,7 @@ private void useStrategicEnemySkill() {
     }
     
     if (currentEnemy instanceof Skye && playerShipsRemaining == playerBoard.getShips().size()) {
-        // Skye uses Cat Swarm early game
+        
         Skye skye = (Skye) currentEnemy;
         if (skye.hasEnoughMana(70)) {
             skye.useCatSwarm(playerBoard);
@@ -1349,7 +1375,7 @@ private void useStrategicEnemySkill() {
         }
     }
     
-    // Default to random skill
+    
     useEnemySkill();
 }
 private void refreshCharacterPanels() {
