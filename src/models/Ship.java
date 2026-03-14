@@ -53,10 +53,23 @@ public class Ship {
         return size;
     }
     
-
+    public int getHits() {
+        return hits;
+    }
+    
+    public int getRemainingHealth() {
+        return size - hits;
+    }
+    
+    
     
     public void setHidden(boolean hidden) {
         this.isHidden = hidden;
+        if (hidden) {
+            System.out.println("🌫️ " + name + " is now hidden!");
+        } else {
+            System.out.println("🔓 " + name + " is no longer hidden.");
+        }
     }
     
     public boolean isHidden() {
@@ -65,6 +78,9 @@ public class Ship {
     
     public void setRevealed(boolean revealed) {
         this.isRevealed = revealed;
+        if (revealed) {
+            System.out.println("👁️ " + name + " has been revealed!");
+        }
     }
     
     public boolean isRevealed() {
@@ -90,20 +106,15 @@ public class Ship {
             if (hits < size) {
                 isSunk = false;
             }
+            System.out.println("🔧 " + name + " was repaired!");
         }
-    }
-    
-    public int getHits() {
-        return hits;
     }
     
     public int getDamageTaken() {
         return damageTaken;
     }
     
-    public int getRemainingHealth() {
-        return size - hits;
-    }
+    
     
     public static class Coordinate {
         private int x, y;
