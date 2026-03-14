@@ -241,31 +241,24 @@ private void useSkyeEnemySkill() {
 }
 
 private void showEnemySkillMessage(String message) {
+    updateStatusLabel("🤖 " + message, Color.ORANGE);
     
     
-   System.out.println("🤖 " + message);
-   
-    
-    if (statusLabel == null) {
-        System.out.println("⚠️ statusLabel not ready yet, message shown in console only");
-        return;
+    Timer resetTimer = new Timer(2000, e -> resetStatusLabel());
+    resetTimer.setRepeats(false);
+    resetTimer.start();
+}
+
+private void onPlayerSkillUse(String skillName, boolean success) {
+    if (success) {
+        updateStatusLabel("✨ " + skillName + " activated!", Color.GREEN);
+    } else {
+        updateStatusLabel("❌ " + skillName + " not ready!", Color.RED);
     }
     
-    String originalText = statusLabel.getText();
-    Color originalColor = statusLabel.getForeground();
-    
-    statusLabel.setText("🤖 " + message);
-    statusLabel.setForeground(Color.ORANGE);
-    
-    Timer revertTimer = new Timer(2000, e -> {
-        statusLabel.setText(originalText);
-        statusLabel.setForeground(Color.WHITE);
-    });
-    revertTimer.setRepeats(false);
-    revertTimer.start();
-    
-    
-    System.out.println("🤖 " + message);
+    Timer resetTimer = new Timer(1500, e -> resetStatusLabel());
+    resetTimer.setRepeats(false);
+    resetTimer.start();
 }
 private void startTargetSelection(String skillName, SkillTargetCallback callback, JButton skillButton) {
     waitingForTarget = true;
@@ -436,23 +429,25 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
     }
     
     private void loadWave(int index) {
-        if (index >= waves.size()) {
-            showVictoryScreen();
-            return;
-        }
-        
-        CampaignWave wave = waves.get(index);
-        currentEnemy = wave.enemy;
-        enemyBoard = new Board();
-        
-        System.out.println("⚔️ Wave " + (index + 1) + "/" + waves.size() + 
-                          ": Fighting " + currentEnemy.getName());
-
-         adjustEnemyDifficulty(index + 1);
-        
-        placeEnemyShips(currentEnemy, enemyBoard);
-        createBattleUI(wave);
+    if (index >= waves.size()) {
+        updateStatusLabel("🏆 CAMPAIGN COMPLETE! Victory!", Color.ORANGE);
+        showVictoryScreen();
+        return;
     }
+    
+    CampaignWave wave = waves.get(index);
+    currentEnemy = wave.enemy;
+    enemyBoard = new Board();
+    
+    
+    String waveMessage = String.format("🌊 WAVE %d/%d - VS %s", 
+        index + 1, waves.size(), currentEnemy.getName());
+    updateStatusLabel(waveMessage, Color.YELLOW);
+    
+    adjustEnemyDifficulty(index + 1);
+    placeEnemyShips(currentEnemy, enemyBoard);
+    createBattleUI(wave);
+}
     private void adjustEnemyDifficulty(int waveNumber) {
     
     enemySkillChance = 20 + (waveNumber * 5); 
@@ -543,8 +538,7 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
     
-     
-
+    
     JPanel topPanel = new JPanel(new BorderLayout());
     topPanel.setBackground(new Color(25, 25, 112));
     topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -585,10 +579,12 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
     statusPanel.setBackground(new Color(25, 25, 112));
     statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
     
-    JLabel statusLabel = new JLabel("YOUR TURN - Click on enemy waters to fire!", SwingConstants.CENTER);
+    
+    statusLabel = new JLabel("YOUR TURN - Click on enemy waters to fire!", SwingConstants.CENTER);
     statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
     statusLabel.setForeground(Color.WHITE);
     statusPanel.add(statusLabel);
+    
     
     frame.add(topPanel, BorderLayout.NORTH);
     frame.add(battlePanel, BorderLayout.CENTER);
@@ -596,6 +592,9 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
     
     frame.revalidate();
     frame.repaint();
+    
+    
+    System.out.println("✅ statusLabel created: " + (statusLabel != null));
 }
 private JPanel createPlayerCharacterPanel() {
     JPanel panel = new JPanel(new BorderLayout());
@@ -655,6 +654,7 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
     dataLeechBtn.setToolTipText("Reveal 2 random cells");
     dataLeechBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
+             
             boolean used = jiji.useDataLeech(enemyBoard);
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
@@ -1206,13 +1206,12 @@ private JPanel createBoardsPanel() {
     return panel;
 }
     
- private void handlePlayerAttack(int row, int col) {
+private void handlePlayerAttack(int row, int col) {
+    
+    updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
+    
     ShotResult result;
     
-    if (playerCharacter instanceof Valerius) {
-    ((Valerius) playerCharacter).updateTurnCounter();
-}
-
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
         result = jiji.applyOverclock(enemyBoard, row, col);
@@ -1223,33 +1222,66 @@ private JPanel createBoardsPanel() {
     enemyBoardPanel.updateCell(row, col, result);
     
     
+    switch(result) {
+        case HIT:
+            updateStatusLabel("💥 HIT! Enemy ship damaged!", Color.GREEN);
+            break;
+        case SUNK:
+            updateStatusLabel("💀 SHIP SUNK! One enemy down!", Color.GREEN);
+            break;
+        case MISS:
+            updateStatusLabel("💧 Missed... Try again!", Color.CYAN);
+            break;
+        default:
+            break;
+    }
+    
+    
     if (playerCharacter instanceof Jiji) {
         ((Jiji) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Kael) {
         ((Kael) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Skye) {
+        ((Skye) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Valerius) {
+        ((Valerius) playerCharacter).updateTurnCounter();
     }
     
     refreshUI();
     
     if (enemyBoard.allShipsSunk()) {
+        updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
         waveComplete();
         return;
     }
     
     playerTurn = false;
     
-    Timer timer = new Timer(1000, e -> enemyTurn());
+    
+    for (int i = 3; i > 0; i--) {
+        final int count = i;
+        Timer countTimer = new Timer((4-i) * 300, e -> {
+            updateStatusLabel("🤖 Enemy attacking in " + count + "...", Color.RED);
+        });
+        countTimer.setRepeats(false);
+        countTimer.start();
+    }
+    
+    Timer timer = new Timer(1200, e -> enemyTurn());
     timer.setRepeats(false);
     timer.start();
 }
 
 private void enemyTurn() {
+    updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
+    
     
     if (playerCharacter instanceof Skye) {
         Skye skye = (Skye) playerCharacter;
         if (skye.shouldSkipEnemyTurn()) {
-            System.out.println("🔴 Enemy is still chasing the laser pointer! Turn skipped!");
+            updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
             playerTurn = true;
+            resetStatusLabel();
             return;
         }
     }
@@ -1267,20 +1299,11 @@ private void enemyTurn() {
     } else if (playerCharacter instanceof Valerius) {
         ((Valerius) playerCharacter).updateTurnCounter();
     }
-
-    if (currentEnemy instanceof Jiji) {
-    ((Jiji) currentEnemy).updateTurnCounter();
-} else if (currentEnemy instanceof Kael) {
-    ((Kael) currentEnemy).updateTurnCounter();
-} else if (currentEnemy instanceof Valerius) {
-    ((Valerius) currentEnemy).updateTurnCounter();
-} else if (currentEnemy instanceof Skye) {
-    ((Skye) currentEnemy).updateTurnCounter();
-}
-    
     
     int x = random.nextInt(10);
     int y = random.nextInt(10);
+    
+    updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
     
     ShotResult result = playerBoard.fire(x, y);
     
@@ -1288,7 +1311,7 @@ private void enemyTurn() {
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
         if (jiji.checkFirewall(x, y, result)) {
-            System.out.println("🛡️ Firewall blocked the hit!");
+            updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
         } else {
             playerBoardPanel.updateCell(x, y, result);
         }
@@ -1296,27 +1319,38 @@ private void enemyTurn() {
         Valerius valerius = (Valerius) playerCharacter;
         result = valerius.applyBarrier(x, y, result);
         playerBoardPanel.updateCell(x, y, result);
+        if (result == ShotResult.MISS && valerius.isCellShielded(x, y)) {
+            updateStatusLabel("🛡️ KINETIC BARRIER protected your ship!", Color.CYAN);
+        }
     } else {
         playerBoardPanel.updateCell(x, y, result);
     }
     
     
-    if (playerCharacter instanceof Skye) {
-        Skye skye = (Skye) playerCharacter;
-        if (skye.isEnemyDistracted()) {
-            System.out.println("😵 Enemy is distracted by catnip! Their attack is weaker!");
-            
-        }
+    switch(result) {
+        case HIT:
+            updateStatusLabel("💥 Enemy hit one of your ships!", Color.RED);
+            break;
+        case SUNK:
+            updateStatusLabel("💀 YOUR SHIP WAS SUNK!", Color.RED);
+            break;
+        case MISS:
+            updateStatusLabel("😅 Enemy missed! Lucky break!", Color.GREEN);
+            break;
+        default:
+            break;
     }
     
     refreshUI();
     
     if (playerBoard.allShipsSunk()) {
+        updateStatusLabel("💔 GAME OVER - Your fleet destroyed!", Color.RED);
         gameOver();
         return;
     }
     
     playerTurn = true;
+    resetStatusLabel();
 }
 
 private void useStrategicEnemySkill() {
@@ -1385,6 +1419,7 @@ private void refreshCharacterPanels() {
 }
     
     private void waveComplete() {
+          updateStatusLabel("🎉 WAVE CLEAR! Well done!", Color.GREEN);
         currentWaveIndex++;
         
         String message = "🎉 Victory! You defeated " + currentEnemy.getName() + "!\n\n";
@@ -1495,5 +1530,48 @@ private JPanel createShipCounterPanel(boolean isPlayer) {
     
     return panel;
 }
+private void updateStatusLabel(String message, Color color) {
+    System.out.println("🔴 DEBUG: updateStatusLabel called with: " + message);
+    
+    if (statusLabel == null) {
+        System.out.println("❌ ERROR: statusLabel is NULL!");
+        return;
+    }
+    
+    System.out.println("✅ Updating statusLabel to: " + message);
+    statusLabel.setText(message);
+    statusLabel.setForeground(color);
+    
+    
+    statusLabel.repaint();
+    statusLabel.getParent().repaint();
+}
+private void resetStatusLabel() {
+    if (statusLabel == null) return;
+    
+    if (!playerTurn) {
+        statusLabel.setText("🤖 ENEMY'S TURN - They're planning...");
+        statusLabel.setForeground(Color.RED);
+    } else {
+        
+        String turnMessage = getCharacterTurnMessage();
+        statusLabel.setText(turnMessage);
+        statusLabel.setForeground(Color.WHITE);
+    }
+}
+private String getCharacterTurnMessage() {
+    if (playerCharacter instanceof Jiji) {
+        return "💻 JIJI'S TURN - Hack the enemy! Click to fire or use skills.";
+    } else if (playerCharacter instanceof Kael) {
+        return "🌑 KAEL'S TURN - Strike from shadows! Click to fire or use skills.";
+    } else if (playerCharacter instanceof Valerius) {
+        return "🛡️ VALERIUS'S TURN - Hold the line! Click to fire or use skills.";
+    } else if (playerCharacter instanceof Skye) {
+        return "🐱 SKYE'S TURN - Cats are ready! Click to fire or use skills.";
+    }
+    return "YOUR TURN - Click on enemy waters to fire!";
+}
+
+
 }
 
