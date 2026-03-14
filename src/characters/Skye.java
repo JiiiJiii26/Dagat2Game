@@ -24,7 +24,7 @@ public class Skye extends GameCharacter {
     
     
     private int nineLivesRemaining = 3;
-    private Map<String, Boolean> shipsProtected = new HashMap<>();
+    private Map<Ship, Boolean> shipsProtected = new HashMap<>();
     
     
     private boolean enemyTurnSkipped = false;
@@ -40,7 +40,8 @@ public class Skye extends GameCharacter {
     private String[] catSounds = {
         "Meow! 🐱", "Purrr... 🐈", "Hiss! 🐾", "Mrrow? 😸", 
         "MEEOOW! 🐱", "*knocks something off table*", 
-        "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾"
+        "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾",
+        "*chases laser pointer*", "*falls off chair*", "*ignores you*"
     };
     
     public Skye() {
@@ -48,7 +49,7 @@ public class Skye extends GameCharacter {
             "Skye — The Crazy Cat Lady",
             "Runs the largest cat rescue shelter. Her cats fight back!",
             2050, 
-            100,  
+            100,
             new Color(255, 165, 0)  
         );
         this.currentMana = MAX_MANA;
@@ -73,6 +74,7 @@ public class Skye extends GameCharacter {
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {
             currentMana -= cost;
+            System.out.println("💰 Skye spent " + cost + " mana. Remaining: " + currentMana);
         }
     }
     
@@ -85,30 +87,21 @@ public class Skye extends GameCharacter {
     
     
     
-    @Override
-    public void takeDamage(int damage) {
+   public boolean tryProtectShip(Ship ship) {
+    if (nineLivesRemaining > 0 && !shipsProtected.containsKey(ship) && ship.isSunk()) {
+        
+        nineLivesRemaining--;
+        shipsProtected.put(ship, true);  
         
         
-        super.takeDamage(damage);
+        
+        System.out.println("😺 NINE LIVES! " + ship.getName() + " survives with 1 HP!");
+        System.out.println(getRandomCatSound());
+        System.out.println("Lives remaining: " + nineLivesRemaining);
+        return true; 
     }
-    
-    public boolean tryProtectShip(Ship ship, int damage) {
-        String shipName = ship.getName();
-        
-        if (nineLivesRemaining > 0 && !shipsProtected.containsKey(shipName)) {
-            
-            
-            if (ship.isSunk()) {
-                nineLivesRemaining--;
-                shipsProtected.put(shipName, true);
-                System.out.println("😺 NINE LIVES! " + shipName + " survives with 1 HP!");
-                System.out.println(catSounds[random.nextInt(catSounds.length)]);
-                System.out.println("Lives remaining: " + nineLivesRemaining);
-                return true; 
-            }
-        }
-        return false; 
-    }
+    return false; 
+}
     
     public int getNineLivesRemaining() {
         return nineLivesRemaining;
@@ -116,33 +109,42 @@ public class Skye extends GameCharacter {
     
     
     
+    
     public boolean useCatSwarm(Board enemyBoard) {
         if (catSwarmCooldown > 0) {
-            System.out.println("Cat Swarm is on cooldown for " + catSwarmCooldown + " more turns");
+            System.out.println("⏳ Cat Swarm is on cooldown for " + catSwarmCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(70)) {
-            System.out.println("Not enough mana! Need 70 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 70 mana, have " + currentMana);
             return false;
         }
         
         System.out.println("🐱 SKYE uses CAT SWARM: \"Cats! Confuse them with your chaotic energy!\"");
-        System.out.println(catSounds[random.nextInt(catSounds.length)]);
+        System.out.println(getRandomCatSound());
         spendMana(70);
         
         
-        ArrayList<String> shipPositions = new ArrayList<>();
         ArrayList<Ship> ships = enemyBoard.getShips();
+        ArrayList<int[]> allPositions = new ArrayList<>();
+        
         
         for (Ship ship : ships) {
-            
-            
-            System.out.println("🐈 Cats knocking ships around like toys!");
+            if (!ship.isSunk()) {
+                
+                
+                for (int i = 0; i < ship.getSize(); i++) {
+                    allPositions.add(new int[]{random.nextInt(10), random.nextInt(10)});
+                }
+            }
         }
         
         
-        System.out.println("🔄 Enemy ships are being RANDOMIZED!");
+        Collections.shuffle(allPositions);
+        
+        System.out.println("🔄 Cats are knocking ships around like toys!");
+        System.out.println("🐈 Enemy ships have been randomly repositioned!");
         
         catSwarmCooldown = 3; 
         return true;
@@ -150,14 +152,15 @@ public class Skye extends GameCharacter {
     
     
     
+    
     public boolean useLaserPointer() {
         if (laserPointerCooldown > 0) {
-            System.out.println("Laser Pointer is on cooldown for " + laserPointerCooldown + " more turns");
+            System.out.println("⏳ Laser Pointer is on cooldown for " + laserPointerCooldown + " more turns");
             return false;
         }
         
         if (!hasEnoughMana(50)) {
-            System.out.println("Not enough mana! Need 50 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
             return false;
         }
         
@@ -175,6 +178,7 @@ public class Skye extends GameCharacter {
     public boolean shouldSkipEnemyTurn() {
         if (enemyTurnSkipped) {
             enemyTurnSkipped = false;
+            System.out.println("🔴 Enemy is still chasing that laser pointer! Turn skipped!");
             return true;
         }
         return false;
@@ -182,14 +186,15 @@ public class Skye extends GameCharacter {
     
     
     
-    public int useCatnipExplosion(Board enemyBoard, int targetX, int targetY) {
+    
+    public int useCatnipExplosion(Board enemyBoard, int centerX, int centerY) {
         if (catnipExplosionCooldown > 0) {
-            System.out.println("Catnip Explosion is on cooldown for " + catnipExplosionCooldown + " more turns");
+            System.out.println("⏳ Catnip Explosion is on cooldown for " + catnipExplosionCooldown + " more turns");
             return 0;
         }
         
         if (!hasEnoughMana(380)) {
-            System.out.println("Not enough mana! Need 380 mana, have " + currentMana);
+            System.out.println("⚠️ Not enough mana! Need 380 mana, have " + currentMana);
             return 0;
         }
         
@@ -197,17 +202,33 @@ public class Skye extends GameCharacter {
         spendMana(380);
         
         
-        int damage = random.nextInt(151) + 200; 
-        System.out.println("💥 Catnip explosion deals " + damage + " damage!");
+        int minX = Math.max(0, centerX - 1);
+        int maxX = Math.min(9, centerX);
+        int minY = Math.max(0, centerY - 1);
+        int maxY = Math.min(9, centerY);
+        
+        int cellsDestroyed = 0;
+        
+        
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                Cell cell = enemyBoard.getCell(x, y);
+                if (!cell.isFiredUpon()) {
+                    ShotResult result = enemyBoard.fire(x, y);
+                    cellsDestroyed++;
+                    System.out.println("🌿 Catnip explosion destroyed cell (" + x + "," + y + ")");
+                }
+            }
+        }
         
         
         enemyShipsDistracted = true;
         distractedTurns = 1; 
-        System.out.println("😵‍💫 Enemy ships are DISTRACTED! They deal 50% less damage next turn!");
-        System.out.println("Enemy ships: *purring sounds*");
+        System.out.println("😵‍💫 Enemy ships are DISTRACTED by catnip!");
+        System.out.println("Enemy ships: *purring sounds* *rolling around*");
         
         catnipExplosionCooldown = 4; 
-        return damage;
+        return cellsDestroyed;
     }
     
     public int applyDamageReduction(int incomingDamage) {
@@ -217,6 +238,10 @@ public class Skye extends GameCharacter {
             return reduced;
         }
         return incomingDamage;
+    }
+    
+    public boolean isEnemyDistracted() {
+        return enemyShipsDistracted;
     }
     
     
@@ -240,8 +265,8 @@ public class Skye extends GameCharacter {
         }
         
         
-        if (random.nextInt(10) == 0) {
-            System.out.println(catSounds[random.nextInt(catSounds.length)]);
+        if (random.nextInt(5) == 0) { 
+            System.out.println("🐱 " + getRandomCatSound());
         }
     }
     
@@ -251,7 +276,7 @@ public class Skye extends GameCharacter {
         switch(skillNum) {
             case 1: 
                 if (catSwarmCooldown > 0) {
-                    return "Cooldown: " + catSwarmCooldown + " turns";
+                    return "Cooldown: " + catSwarmCooldown + " turn" + (catSwarmCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(70)) {
                     return "Need 70 mana";
                 } else {
@@ -259,7 +284,7 @@ public class Skye extends GameCharacter {
                 }
             case 2: 
                 if (laserPointerCooldown > 0) {
-                    return "Cooldown: " + laserPointerCooldown + " turns";
+                    return "Cooldown: " + laserPointerCooldown + " turn" + (laserPointerCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(50)) {
                     return "Need 50 mana";
                 } else {
@@ -267,7 +292,7 @@ public class Skye extends GameCharacter {
                 }
             case 3: 
                 if (catnipExplosionCooldown > 0) {
-                    return "Cooldown: " + catnipExplosionCooldown + " turns";
+                    return "Cooldown: " + catnipExplosionCooldown + " turn" + (catnipExplosionCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(380)) {
                     return "Need 380 mana";
                 } else {
@@ -307,6 +332,10 @@ public class Skye extends GameCharacter {
     
     public String getRandomCatSound() {
         return catSounds[random.nextInt(catSounds.length)];
+    }
+    
+    public boolean isEnemyTurnSkipped() {
+        return enemyTurnSkipped;
     }
     
     @Override

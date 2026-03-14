@@ -17,21 +17,21 @@ public class Kael extends GameCharacter {
     private static final int MAX_ENERGY = 500;
     private int speed = 85;
     
-    // Skill cooldowns
+    
     private int silentDriftCooldown = 0;
     private int sonarPulseCooldown = 0;
     private int depthChargeCooldown = 0;
     private int tempestLockCooldown = 0;
     
-    // Hidden ships tracking
+    
     private ArrayList<Ship> hiddenShips = new ArrayList<>();
     private Map<Ship, Integer> shipHideTurns = new HashMap<>();
     
-    // Revealed enemy ships
+    
     private ArrayList<Ship> revealedEnemyShips = new ArrayList<>();
     private Map<Ship, Integer> shipRevealTurns = new HashMap<>();
     
-    // Tracking for depth charge bonus
+    
     private boolean lastTargetWasHidden = false;
     private int lastCellsDestroyed = 0;
     
@@ -39,16 +39,16 @@ public class Kael extends GameCharacter {
         super(
             "Kael - Shadow Navigator",
             "A master of stealth who strikes from the shadows. His fleet is invisible until it's too late.",
-            2200, // HP (character health, not ship health)
+            2200, 
             100,
-            new Color(75, 0, 130)  // Deep purple - stealth color
+            new Color(75, 0, 130)  
         );
         this.currentEnergy = MAX_ENERGY;
         this.abilityName = "Shadow Navigation";
         this.abilityDescription = "Uses energy to hide ships, reveal enemies, and destroy ship segments.";
     }
     
-    // ===================== ENERGY SYSTEM =====================
+    
     
     public int getCurrentEnergy() {
         return currentEnergy;
@@ -80,8 +80,8 @@ public class Kael extends GameCharacter {
         }
     }
     
-    // ===================== SKILL 1: SILENT DRIFT =====================
-    // Hide one of your own ships for 2 turns
+    
+    
     
     public boolean useSilentDrift(Board playerBoard) {
         if (silentDriftCooldown > 0) {
@@ -97,13 +97,13 @@ public class Kael extends GameCharacter {
         System.out.println("🌫️ KAEL uses SILENT DRIFT: \"Hide one boat for 2 turns.\"");
         spendEnergy(80);
         
-        // Find a ship that isn't already hidden to hide
+        
         boolean shipHidden = false;
         for (Ship ship : playerBoard.getShips()) {
             if (!ship.isSunk() && !hiddenShips.contains(ship)) {
-                // Hide this ship
+                
                 hiddenShips.add(ship);
-                shipHideTurns.put(ship, 2); // Hidden for 2 turns
+                shipHideTurns.put(ship, 2); 
                 ship.setHidden(true);
                 System.out.println("🚢 " + ship.getName() + " is now hidden for 2 turns!");
                 shipHidden = true;
@@ -116,12 +116,12 @@ public class Kael extends GameCharacter {
             return false;
         }
         
-        silentDriftCooldown = 2; // 2 turns cooldown
+        silentDriftCooldown = 2; 
         return true;
     }
     
-    // ===================== SKILL 2: SONAR PULSE =====================
-    // Reveals a hidden enemy ship and destroys ONE of its segments
+    
+    
     
     public boolean useSonarPulse(Board enemyBoard) {
         if (sonarPulseCooldown > 0) {
@@ -137,16 +137,16 @@ public class Kael extends GameCharacter {
         System.out.println("📡 KAEL uses SONAR PULSE: \"Reveal and destroy one segment of a hidden ship.\"");
         spendEnergy(120);
         
-        // Find a hidden enemy ship to reveal
+        
         boolean shipRevealed = false;
         for (Ship ship : enemyBoard.getShips()) {
             if (!ship.isSunk() && ship.isHidden() && !revealedEnemyShips.contains(ship)) {
-                // Reveal the ship
+                
                 revealedEnemyShips.add(ship);
-                shipRevealTurns.put(ship, 1); // Revealed for 1 turn
+                shipRevealTurns.put(ship, 1); 
                 ship.setRevealed(true);
                 
-                // Destroy ONE random segment of this ship
+                
                 int segmentsDestroyed = destroyShipSegments(enemyBoard, ship, 1);
                 
                 System.out.println("🎯 Enemy " + ship.getName() + " revealed and lost " + 
@@ -160,12 +160,12 @@ public class Kael extends GameCharacter {
             System.out.println("❌ No hidden enemy ships found!");
         }
         
-        sonarPulseCooldown = 3; // 3 turns cooldown
+        sonarPulseCooldown = 3; 
         return shipRevealed;
     }
     
-    // ===================== SKILL 3: DEPTH CHARGE BARRAGE =====================
-    // Destroys a 2x2 area - if it hits a hidden ship, destroys an ADDITIONAL segment
+    
+    
     
     public int useDepthChargeBarrage(Board enemyBoard, int centerX, int centerY) {
         if (depthChargeCooldown > 0) {
@@ -181,7 +181,7 @@ public class Kael extends GameCharacter {
         System.out.println("💣 KAEL uses DEPTH CHARGE BARRAGE! \"Targeting a 2x2 area!\"");
         spendEnergy(200);
         
-        // Define the area (2x2 area)
+        
         int minX = Math.max(0, centerX - 1);
         int maxX = Math.min(9, centerX);
         int minY = Math.max(0, centerY - 1);
@@ -190,7 +190,7 @@ public class Kael extends GameCharacter {
         int cellsDestroyed = 0;
         boolean hitHiddenShip = false;
         
-        // Hit all cells in the 2x2 area
+        
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 Cell cell = enemyBoard.getCell(x, y);
@@ -198,7 +198,7 @@ public class Kael extends GameCharacter {
                     ShotResult result = enemyBoard.fire(x, y);
                     cellsDestroyed++;
                     
-                    // Check if this cell belonged to a hidden ship
+                    
                     if (cell.hasShip()) {
                         for (Ship ship : enemyBoard.getShips()) {
                             if (ship.isHidden()) {
@@ -213,7 +213,7 @@ public class Kael extends GameCharacter {
         }
         lastTargetWasHidden = hitHiddenShip;
         
-        // Bonus: If we hit a hidden ship, destroy one additional random cell
+        
         if (hitHiddenShip) {
             System.out.println("🎯 BONUS: Hit a hidden ship! Destroying one more segment!");
             for (int attempt = 0; attempt < 20; attempt++) {
@@ -232,12 +232,12 @@ public class Kael extends GameCharacter {
         System.out.println("💣 Depth Charge destroyed " + cellsDestroyed + " ship segments!");
         lastCellsDestroyed = cellsDestroyed;
         
-        depthChargeCooldown = 4; // 4 turns cooldown
+        depthChargeCooldown = 4; 
         return cellsDestroyed;
     }
     
-    // ===================== ULTIMATE: TEMPEST LOCK =====================
-    // Destroys ALL cells in a 3x3 area - devastating area attack
+    
+    
     
     public int useTempestLock(Board enemyBoard, int centerX, int centerY) {
         if (tempestLockCooldown > 0) {
@@ -253,7 +253,7 @@ public class Kael extends GameCharacter {
         System.out.println("🌪️ KAEL uses TEMPEST LOCK - ULTIMATE! \"Total annihilation!\"");
         spendEnergy(300);
         
-        // Define the area (3x3 area around target)
+        
         int minX = Math.max(0, centerX - 1);
         int maxX = Math.min(9, centerX + 1);
         int minY = Math.max(0, centerY - 1);
@@ -263,7 +263,7 @@ public class Kael extends GameCharacter {
         int shipsHit = 0;
         StringBuilder hitReport = new StringBuilder("🌪️ Tempest Lock destroys:\n");
         
-        // Destroy ALL cells in the area (cannot miss)
+        
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 Cell cell = enemyBoard.getCell(x, y);
@@ -289,11 +289,11 @@ public class Kael extends GameCharacter {
         System.out.println(hitReport.toString());
         lastCellsDestroyed = cellsDestroyed;
         
-        tempestLockCooldown = 5; // 5 turns cooldown
+        tempestLockCooldown = 5; 
         return cellsDestroyed;
     }
     
-    // Helper method to destroy a specific number of ship segments
+    
     private int destroyShipSegments(Board board, Ship ship, int segmentsToDestroy) {
         int destroyed = 0;
         int attempts = 0;
@@ -303,7 +303,7 @@ public class Kael extends GameCharacter {
             int y = random.nextInt(10);
             Cell cell = board.getCell(x, y);
             
-            // In a real implementation, you'd check if this cell belongs to the target ship
+            
             if (cell.hasShip() && !cell.isFiredUpon()) {
                 board.fire(x, y);
                 destroyed++;
@@ -315,10 +315,10 @@ public class Kael extends GameCharacter {
         return destroyed;
     }
     
-    // ===================== TURN MANAGEMENT =====================
+    
     
     public void updateTurnCounter() {
-        // Reduce cooldowns
+        
         if (silentDriftCooldown > 0) {
             silentDriftCooldown--;
         }
@@ -332,13 +332,13 @@ public class Kael extends GameCharacter {
             tempestLockCooldown--;
         }
         
-        // Regenerate energy (15 per turn - Kael's speed)
+        
         regenerateEnergy(15);
         
-        // Update hidden ships duration
+        
         updateHiddenShips();
         
-        // Update revealed enemy ships duration
+        
         updateRevealedShips();
     }
     
@@ -382,11 +382,11 @@ public class Kael extends GameCharacter {
         }
     }
     
-    // ===================== UI HELPER METHODS =====================
+    
     
     public String getSkillStatus(int skillNum) {
         switch(skillNum) {
-            case 1: // Silent Drift
+            case 1: 
                 if (silentDriftCooldown > 0) {
                     return "Cooldown: " + silentDriftCooldown + " turn" + (silentDriftCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughEnergy(80)) {
@@ -394,7 +394,7 @@ public class Kael extends GameCharacter {
                 } else {
                     return "Ready!";
                 }
-            case 2: // Sonar Pulse
+            case 2: 
                 if (sonarPulseCooldown > 0) {
                     return "Cooldown: " + sonarPulseCooldown + " turn" + (sonarPulseCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughEnergy(120)) {
@@ -402,7 +402,7 @@ public class Kael extends GameCharacter {
                 } else {
                     return "Ready!";
                 }
-            case 3: // Depth Charge
+            case 3: 
                 if (depthChargeCooldown > 0) {
                     return "Cooldown: " + depthChargeCooldown + " turn" + (depthChargeCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughEnergy(200)) {
@@ -410,7 +410,7 @@ public class Kael extends GameCharacter {
                 } else {
                     return "Ready!";
                 }
-            case 4: // Tempest Lock (Ultimate)
+            case 4: 
                 if (tempestLockCooldown > 0) {
                     return "Cooldown: " + tempestLockCooldown + " turn" + (tempestLockCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughEnergy(300)) {
@@ -452,7 +452,7 @@ public class Kael extends GameCharacter {
     
     @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
-        // Handled by individual skills
+        
         System.out.println("Kael's abilities are used through skill buttons!");
     }
     public boolean wasLastTargetHidden() {

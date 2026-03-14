@@ -335,19 +335,19 @@ private JPanel createPlayerCharacterPanel() {
     panel.setBackground(new Color(0, 50, 0));
     panel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 3));
     
-    // Character name
+    
     JLabel nameLabel = new JLabel(playerCharacter.getName(), SwingConstants.CENTER);
     nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     nameLabel.setForeground(Color.WHITE);
     panel.add(nameLabel, BorderLayout.NORTH);
     
-    // Character portrait
+    
     JLabel portraitLabel = new JLabel(getCharacterEmoji(playerCharacter), SwingConstants.CENTER);
     portraitLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
     portraitLabel.setForeground(Color.WHITE);
     panel.add(portraitLabel, BorderLayout.CENTER);
     
-    // ===== SKILLS PANEL =====
+    
     JPanel skillsPanel = new JPanel(new GridLayout(0, 1, 5, 5));
     skillsPanel.setBackground(new Color(0, 50, 0));
     skillsPanel.setBorder(BorderFactory.createTitledBorder(
@@ -359,11 +359,11 @@ private JPanel createPlayerCharacterPanel() {
         Color.GREEN
     ));
     
-    // Add character-specific skills
+    
     if (playerCharacter instanceof Jiji) {
         addJijiSkills(skillsPanel, true);
     } else if (playerCharacter instanceof Kael) {
-        addKaelSkills(skillsPanel, true);  // ← THIS calls the method above
+        addKaelSkills(skillsPanel, true);  
     } else if (playerCharacter instanceof Valerius) {
         addValeriusSkills(skillsPanel, true);
     } else if (playerCharacter instanceof Skye) {
@@ -373,7 +373,7 @@ private JPanel createPlayerCharacterPanel() {
     panel.add(skillsPanel, BorderLayout.WEST);
     
     
-    // ===== SHIP COUNTER =====
+    
     JPanel shipCounterPanel = createShipCounterPanel(true);
     panel.add(shipCounterPanel, BorderLayout.SOUTH);
     
@@ -495,9 +495,9 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
 private void addKaelSkills(JPanel panel, boolean isPlayer) {
     Kael kael = (Kael) playerCharacter;
     
-    // ===== SILENT DRIFT =====
+    
     JButton silentBtn = new JButton("🌫️ Silent Drift (80)");
-    silentBtn.setBackground(new Color(75, 0, 130)); // Deep purple
+    silentBtn.setBackground(new Color(75, 0, 130)); 
     silentBtn.setForeground(Color.WHITE);
     silentBtn.setToolTipText("Hide one of your ships for 2 turns");
     silentBtn.setFont(new Font("Arial", Font.BOLD, 11));
@@ -530,9 +530,9 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     });
     panel.add(silentBtn);
     
-    // ===== SONAR PULSE =====
+    
     JButton sonarBtn = new JButton("📡 Sonar Pulse (120)");
-    sonarBtn.setBackground(new Color(100, 150, 255)); // Light blue
+    sonarBtn.setBackground(new Color(100, 150, 255)); 
     sonarBtn.setForeground(Color.BLACK);
     sonarBtn.setToolTipText("Reveal a hidden enemy ship and destroy ONE of its segments");
     sonarBtn.setFont(new Font("Arial", Font.BOLD, 11));
@@ -566,9 +566,9 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     });
     panel.add(sonarBtn);
     
-    // ===== DEPTH CHARGE =====
+    
     JButton depthBtn = new JButton("💣 Depth Charge (200)");
-    depthBtn.setBackground(new Color(200, 100, 0)); // Dark orange
+    depthBtn.setBackground(new Color(200, 100, 0)); 
     depthBtn.setForeground(Color.WHITE);
     depthBtn.setToolTipText("Destroy ALL segments in a 2x2 area. Bonus: +1 segment if hidden ship hit");
     depthBtn.setFont(new Font("Arial", Font.BOLD, 11));
@@ -582,7 +582,7 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     depthBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            // Prompt for target
+            
             String input = JOptionPane.showInputDialog(frame, 
                 "💣 Depth Charge Target\n\n" +
                 "Enter center coordinates (row,col):\n" +
@@ -625,7 +625,7 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     });
     panel.add(depthBtn);
     
-    // ===== TEMPEST LOCK (ULTIMATE) =====
+    
     JButton tempestBtn = new JButton("🌪️ TEMPEST LOCK (300)");
     tempestBtn.setBackground(Color.YELLOW);
     tempestBtn.setForeground(Color.BLACK);
@@ -641,7 +641,7 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     tempestBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            // Prompt for target
+            
             String input = JOptionPane.showInputDialog(frame, 
                 "🌪️ TEMPEST LOCK - ULTIMATE ABILITY\n\n" +
                 "Enter center coordinates (row,col):\n" +
@@ -684,14 +684,14 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     });
     panel.add(tempestBtn);
     
-    // ===== ENERGY DISPLAY =====
+    
     JLabel energyLabel = new JLabel(kael.getEnergyBar(), SwingConstants.CENTER);
     energyLabel.setFont(new Font("Arial", Font.BOLD, 10));
     energyLabel.setForeground(new Color(100, 200, 255));
     energyLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
     panel.add(energyLabel);
     
-    // ===== STATUS INDICATORS =====
+    
     if (kael.getHiddenShipsCount() > 0) {
         JLabel hiddenLabel = new JLabel("🌫️ " + kael.getHiddenShipsCount() + " ship(s) hidden", 
                                         SwingConstants.CENTER);
@@ -797,65 +797,132 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
 
 private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     Skye skye = (Skye) playerCharacter;
-    Color color = isPlayer ? Color.CYAN : Color.RED;
     
     
-    JButton catSwarmBtn = new JButton("🐱 Cat Swarm");
-    catSwarmBtn.setBackground(color);
+    JButton catSwarmBtn = new JButton("🐱 Cat Swarm (70)");
+    catSwarmBtn.setBackground(new Color(255, 165, 0)); 
+    catSwarmBtn.setForeground(Color.BLACK);
+    catSwarmBtn.setToolTipText("Summon cats to randomly reposition enemy ships");
+    catSwarmBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    catSwarmBtn.setFocusPainted(false);
+    
+    String status1 = skye.getSkillStatus(1);
+    if (!status1.equals("Ready!")) {
+        catSwarmBtn.setEnabled(false);
+        catSwarmBtn.setText("🐱 Cat Swarm (" + status1 + ")");
+    }
+    
     catSwarmBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
             boolean used = skye.useCatSwarm(enemyBoard);
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "Cat Swarm! Enemy ships scrambled!\n" + skye.getRandomCatSound(), 
+                    "🐱 CAT SWARM ACTIVATED!\n\n" +
+                    "A horde of cats floods the enemy screen!\n" +
+                    "Enemy ships are being knocked around like toys!\n\n" +
+                    skye.getRandomCatSound(), 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            } else {
+                JOptionPane.showMessageDialog(frame, 
+                    "❌ Cannot use Cat Swarm!\n\n" + skye.getSkillStatus(1), 
+                    "Skill Not Ready", 
+                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
     panel.add(catSwarmBtn);
     
     
-    JButton laserBtn = new JButton("🔴 Laser Pointer");
-    laserBtn.setBackground(color);
+    JButton laserBtn = new JButton("🔴 Laser Pointer (50)");
+    laserBtn.setBackground(new Color(255, 100, 100)); 
+    laserBtn.setForeground(Color.BLACK);
+    laserBtn.setToolTipText("Dangle a laser pointer - enemy skips their next turn");
+    laserBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    laserBtn.setFocusPainted(false);
+    
+    String status2 = skye.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        laserBtn.setEnabled(false);
+        laserBtn.setText("🔴 Laser Pointer (" + status2 + ")");
+    }
+    
     laserBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
             boolean used = skye.useLaserPointer();
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "Laser Pointer! Enemy skips next turn!", 
+                    "🔴 LASER POINTER!\n\n" +
+                    "A tiny red dot appears on the enemy screen...\n" +
+                    "The enemy is chasing it! They'll skip their next turn!\n\n" +
+                    "*the cats are also chasing it*", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
+                refreshUI();
+            } else {
+                JOptionPane.showMessageDialog(frame, 
+                    "❌ Cannot use Laser Pointer!\n\n" + skye.getSkillStatus(2), 
+                    "Skill Not Ready", 
+                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
     panel.add(laserBtn);
     
     
-    JButton catnipBtn = new JButton("🌿 Catnip Explosion");
-    catnipBtn.setBackground(color);
+    JButton catnipBtn = new JButton("🌿 Catnip Explosion (380)");
+    catnipBtn.setBackground(new Color(50, 205, 50)); 
+    catnipBtn.setForeground(Color.BLACK);
+    catnipBtn.setToolTipText("Blast a 2x2 area with catnip - deals damage and distracts enemies");
+    catnipBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    catnipBtn.setFocusPainted(false);
+    
+    String status3 = skye.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        catnipBtn.setEnabled(false);
+        catnipBtn.setText("🌿 Catnip Explosion (" + status3 + ")");
+    }
+    
     catnipBtn.addActionListener(e -> {
-        if (isPlayer) {
+        if (isPlayer && playerTurn) {
+            
             String input = JOptionPane.showInputDialog(frame, 
-                "Enter target coordinates (row,col):", 
+                "🌿 CATNIP EXPLOSION\n\n" +
+                "Enter center coordinates (row,col):\n" +
+                "Example: 5,5 for a 2x2 area\n\n" +
+                "Coordinates must be between 0 and 9.", 
                 "Catnip Target", 
                 JOptionPane.QUESTION_MESSAGE);
+                
             if (input != null) {
                 try {
                     String[] parts = input.split(",");
                     int x = Integer.parseInt(parts[0].trim());
                     int y = Integer.parseInt(parts[1].trim());
-                    int damage = skye.useCatnipExplosion(enemyBoard, x, y);
-                    if (damage > 0) {
-                        enemyBoardPanel.updateCell(x, y, ShotResult.HIT);
+                    
+                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
+                        int cellsDestroyed = skye.useCatnipExplosion(enemyBoard, x, y);
+                        if (cellsDestroyed > 0) {
+                            JOptionPane.showMessageDialog(frame, 
+                                "🌿 CATNIP EXPLOSION!\n\n" +
+                                "Destroyed " + cellsDestroyed + " ship segments!\n" +
+                                "A green cloud of catnip fills the area...\n" +
+                                "Enemy ships are now DISTRACTED!\n\n" +
+                                "*purring sounds intensify*", 
+                                "Skill Used", 
+                                JOptionPane.INFORMATION_MESSAGE);
+                            refreshUI();
+                        }
+                    } else {
                         JOptionPane.showMessageDialog(frame, 
-                            "Catnip Explosion deals " + damage + " damage!\nEnemies are distracted!", 
-                            "Skill Used", 
-                            JOptionPane.INFORMATION_MESSAGE);
+                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame, 
-                        "Invalid coordinates!", 
+                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
                         "Error", 
                         JOptionPane.ERROR_MESSAGE);
                 }
@@ -863,6 +930,32 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
         }
     });
     panel.add(catnipBtn);
+    
+    
+    JLabel nineLivesLabel = new JLabel(skye.getNineLivesDisplay(), SwingConstants.CENTER);
+    nineLivesLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    nineLivesLabel.setForeground(Color.PINK);
+    nineLivesLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+    panel.add(nineLivesLabel);
+    
+    
+    JLabel manaLabel = new JLabel(skye.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
+    
+    
+    JLabel catSoundLabel = new JLabel("😺 " + skye.getRandomCatSound(), SwingConstants.CENTER);
+    catSoundLabel.setFont(new Font("Arial", Font.ITALIC, 10));
+    catSoundLabel.setForeground(Color.ORANGE);
+    panel.add(catSoundLabel);
+    
+    
+    Timer catTimer = new Timer(5000, e -> {
+        catSoundLabel.setText("😺 " + skye.getRandomCatSound());
+    });
+    catTimer.setRepeats(true);
+    catTimer.start();
 }
 
 private JPanel createEnemyCharacterPanel(CampaignWave wave) {
@@ -997,10 +1090,21 @@ private JPanel createBoardsPanel() {
 
 private void enemyTurn() {
     
+    if (playerCharacter instanceof Skye) {
+        Skye skye = (Skye) playerCharacter;
+        if (skye.shouldSkipEnemyTurn()) {
+            System.out.println("🔴 Enemy is still chasing the laser pointer! Turn skipped!");
+            playerTurn = true;
+            return;
+        }
+    }
+
     if (playerCharacter instanceof Jiji) {
         ((Jiji) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Kael) {
         ((Kael) playerCharacter).updateTurnCounter();
+    }else if (playerCharacter instanceof Skye) {
+        ((Skye) playerCharacter).updateTurnCounter();
     }
     
     int x = random.nextInt(10);
@@ -1008,6 +1112,13 @@ private void enemyTurn() {
     
     ShotResult result = playerBoard.fire(x, y);
     
+     if (playerCharacter instanceof Skye) {
+        Skye skye = (Skye) playerCharacter;
+        if (skye.isEnemyDistracted()) {
+            System.out.println("😵 Enemy is distracted by catnip! Their attack is weaker!");
+            
+        }
+    }
     
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
@@ -1124,13 +1235,13 @@ private JPanel createShipCounterPanel(boolean isPlayer) {
     panel.setBackground(bgColor);
     panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
     
-    // Title
+    
     JLabel titleLabel = new JLabel(isPlayer ? "🚢 YOUR FLEET" : "🚢 ENEMY FLEET", SwingConstants.CENTER);
     titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
     titleLabel.setForeground(Color.WHITE);
     panel.add(titleLabel);
     
-    // Ship icons
+    
     JPanel shipIconsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
     shipIconsPanel.setBackground(bgColor);
     
