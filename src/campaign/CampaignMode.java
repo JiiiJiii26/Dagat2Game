@@ -42,6 +42,30 @@ public class CampaignMode {
     private boolean playerTurn = true;
     private Random random = new Random();
     
+private boolean waitingForTarget = false;
+private String currentSkillName = "";
+private SkillTargetCallback targetCallback;
+private JButton lastClickedSkillButton;
+
+
+private interface SkillTargetCallback {
+    void onTargetSelected(int x, int y);
+}
+private void startTargetSelection(String skillName, SkillTargetCallback callback, JButton skillButton) {
+    waitingForTarget = true;
+    currentSkillName = skillName;
+    targetCallback = callback;
+    lastClickedSkillButton = skillButton;
+    
+    
+    JOptionPane.showMessageDialog(frame,
+        "🎯 " + skillName + "\n\n" +
+        "Click on the ENEMY board to select target.\n" +
+        "Click CANCEL to abort.",
+        "Select Target",
+        JOptionPane.INFORMATION_MESSAGE);
+}
+    
     public CampaignMode(JFrame frame, GameCharacter playerCharacter) {
         this.frame = frame;
         this.playerCharacter = playerCharacter;
@@ -497,11 +521,10 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton silentBtn = new JButton("🌫️ Silent Drift (80)");
-    silentBtn.setBackground(new Color(75, 0, 130)); 
+    silentBtn.setBackground(new Color(75, 0, 130));
     silentBtn.setForeground(Color.WHITE);
     silentBtn.setToolTipText("Hide one of your ships for 2 turns");
     silentBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    silentBtn.setFocusPainted(false);
     
     String status1 = kael.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
@@ -514,17 +537,10 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
             boolean used = kael.useSilentDrift(playerBoard);
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "🌫️ Silent Drift Activated!\n\n" +
-                    "One of your ships is now hidden for 2 turns.\n" +
-                    "Enemy cannot target it unless revealed.", 
+                    "🌫️ Silent Drift Activated!\nOne of your ships is now hidden!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
                 refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Silent Drift!\n\n" + kael.getSkillStatus(1), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
@@ -532,11 +548,10 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton sonarBtn = new JButton("📡 Sonar Pulse (120)");
-    sonarBtn.setBackground(new Color(100, 150, 255)); 
+    sonarBtn.setBackground(new Color(100, 150, 255));
     sonarBtn.setForeground(Color.BLACK);
-    sonarBtn.setToolTipText("Reveal a hidden enemy ship and destroy ONE of its segments");
+    sonarBtn.setToolTipText("Click on a cell to reveal and destroy a hidden ship segment");
     sonarBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    sonarBtn.setFocusPainted(false);
     
     String status2 = kael.getSkillStatus(2);
     if (!status2.equals("Ready!")) {
@@ -546,33 +561,26 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     sonarBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            boolean used = kael.useSonarPulse(enemyBoard);
-            if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "📡 Sonar Pulse Activated!\n\n" +
-                    "A hidden enemy ship has been revealed!\n" +
-                    "One of its segments has been destroyed.", 
-                    "Skill Used", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Sonar Pulse!\n\n" + 
-                    "No hidden enemy ships found or " + kael.getSkillStatus(2), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
-            }
+            startTargetSelection("SONAR PULSE - Click on any cell", (x, y) -> {
+                boolean used = kael.useSonarPulse(enemyBoard);
+                if (used) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "📡 Sonar Pulse Activated!\nA hidden enemy segment was destroyed!", 
+                        "Skill Used", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    refreshUI();
+                }
+            }, sonarBtn);
         }
     });
     panel.add(sonarBtn);
     
     
     JButton depthBtn = new JButton("💣 Depth Charge (200)");
-    depthBtn.setBackground(new Color(200, 100, 0)); 
+    depthBtn.setBackground(new Color(200, 100, 0));
     depthBtn.setForeground(Color.WHITE);
-    depthBtn.setToolTipText("Destroy ALL segments in a 2x2 area. Bonus: +1 segment if hidden ship hit");
+    depthBtn.setToolTipText("Click to target center of 2x2 area");
     depthBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    depthBtn.setFocusPainted(false);
     
     String status3 = kael.getSkillStatus(3);
     if (!status3.equals("Ready!")) {
@@ -582,45 +590,17 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     depthBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            
-            String input = JOptionPane.showInputDialog(frame, 
-                "💣 Depth Charge Target\n\n" +
-                "Enter center coordinates (row,col):\n" +
-                "Example: 5,5 for a 2x2 area from (5,5) to (6,6)\n\n" +
-                "Coordinates must be between 0 and 9.", 
-                "Depth Charge", 
-                JOptionPane.QUESTION_MESSAGE);
-                
-            if (input != null) {
-                try {
-                    String[] parts = input.split(",");
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    
-                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                        int cellsDestroyed = kael.useDepthChargeBarrage(enemyBoard, x, y);
-                        if (cellsDestroyed > 0) {
-                            String message = "💣 Depth Charge Complete!\n\n" +
-                                             "Destroyed " + cellsDestroyed + " ship segments.";
-                            if (kael.wasLastTargetHidden()) {
-                                message += "\n\n🎯 BONUS: Hit a hidden ship!";
-                            }
-                            JOptionPane.showMessageDialog(frame, message, "Skill Used", JOptionPane.INFORMATION_MESSAGE);
-                            refreshUI();
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(frame, 
-                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
+            startTargetSelection("DEPTH CHARGE - Click center of 2x2 area", (x, y) -> {
+                int cellsDestroyed = kael.useDepthChargeBarrage(enemyBoard, x, y);
+                if (cellsDestroyed > 0) {
+                    String message = "💣 Depth Charge Complete!\nDestroyed " + cellsDestroyed + " ship segments.";
+                    if (kael.wasLastTargetHidden()) {
+                        message += "\n\n🎯 BONUS: Hit a hidden ship!";
                     }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(frame, 
-                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(frame, message, "Skill Used", JOptionPane.INFORMATION_MESSAGE);
+                    refreshUI();
                 }
-            }
+            }, depthBtn);
         }
     });
     panel.add(depthBtn);
@@ -629,9 +609,8 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     JButton tempestBtn = new JButton("🌪️ TEMPEST LOCK (300)");
     tempestBtn.setBackground(Color.YELLOW);
     tempestBtn.setForeground(Color.BLACK);
-    tempestBtn.setToolTipText("ULTIMATE: Destroy ALL segments in a 3x3 area");
+    tempestBtn.setToolTipText("ULTIMATE: Click to center the 3x3 devastation");
     tempestBtn.setFont(new Font("Arial", Font.BOLD, 12));
-    tempestBtn.setFocusPainted(false);
     
     String status4 = kael.getSkillStatus(4);
     if (!status4.equals("ULTIMATE READY!")) {
@@ -641,45 +620,16 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     
     tempestBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            
-            String input = JOptionPane.showInputDialog(frame, 
-                "🌪️ TEMPEST LOCK - ULTIMATE ABILITY\n\n" +
-                "Enter center coordinates (row,col):\n" +
-                "Example: 5,5 for a 3x3 area from (4,4) to (6,6)\n\n" +
-                "This will destroy EVERY cell in the area!", 
-                "TEMPEST LOCK", 
-                JOptionPane.WARNING_MESSAGE);
-                
-            if (input != null) {
-                try {
-                    String[] parts = input.split(",");
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    
-                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                        int cellsDestroyed = kael.useTempestLock(enemyBoard, x, y);
-                        if (cellsDestroyed > 0) {
-                            JOptionPane.showMessageDialog(frame, 
-                                "🌪️ TEMPEST LOCK ACTIVATED!\n\n" +
-                                "Destroyed " + cellsDestroyed + " ship segments!\n" +
-                                "The area is completely devastated!", 
-                                "ULTIMATE!", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                            refreshUI();
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(frame, 
-                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
+            startTargetSelection("🌪️ TEMPEST LOCK - Click center of 3x3 area", (x, y) -> {
+                int cellsDestroyed = kael.useTempestLock(enemyBoard, x, y);
+                if (cellsDestroyed > 0) {
                     JOptionPane.showMessageDialog(frame, 
-                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
+                        "🌪️ TEMPEST LOCK ACTIVATED!\nDestroyed " + cellsDestroyed + " ship segments!", 
+                        "ULTIMATE!", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    refreshUI();
                 }
-            }
+            }, tempestBtn);
         }
     });
     panel.add(tempestBtn);
@@ -688,25 +638,7 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     JLabel energyLabel = new JLabel(kael.getEnergyBar(), SwingConstants.CENTER);
     energyLabel.setFont(new Font("Arial", Font.BOLD, 10));
     energyLabel.setForeground(new Color(100, 200, 255));
-    energyLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
     panel.add(energyLabel);
-    
-    
-    if (kael.getHiddenShipsCount() > 0) {
-        JLabel hiddenLabel = new JLabel("🌫️ " + kael.getHiddenShipsCount() + " ship(s) hidden", 
-                                        SwingConstants.CENTER);
-        hiddenLabel.setForeground(new Color(150, 150, 255));
-        hiddenLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(hiddenLabel);
-    }
-    
-    if (kael.getRevealedEnemiesCount() > 0) {
-        JLabel revealedLabel = new JLabel("👁️ " + kael.getRevealedEnemiesCount() + " enemy(s) revealed", 
-                                         SwingConstants.CENTER);
-        revealedLabel.setForeground(Color.YELLOW);
-        revealedLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(revealedLabel);
-    }
 }
 
 private void addValeriusSkills(JPanel panel, boolean isPlayer) {
@@ -714,11 +646,10 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton radarBtn = new JButton("📡 Radar Overload (50)");
-    radarBtn.setBackground(new Color(169, 169, 169)); 
+    radarBtn.setBackground(new Color(169, 169, 169));
     radarBtn.setForeground(Color.WHITE);
     radarBtn.setToolTipText("Disable enemy skills for 2 turns");
     radarBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    radarBtn.setFocusPainted(false);
     
     String status1 = valerius.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
@@ -731,17 +662,10 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
             boolean used = valerius.useRadarOverload();
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "📡 RADAR OVERLOAD ACTIVATED!\n\n" +
-                    "Enemy radar systems are jammed!\n" +
-                    "Enemy skills are DISABLED for 2 turns!", 
+                    "📡 RADAR OVERLOAD!\nEnemy skills disabled for 2 turns!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
                 refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Radar Overload!\n\n" + valerius.getSkillStatus(1), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
@@ -749,11 +673,10 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton barrierBtn = new JButton("🛡️ Kinetic Barrier (90)");
-    barrierBtn.setBackground(new Color(100, 149, 237)); 
+    barrierBtn.setBackground(new Color(100, 149, 237));
     barrierBtn.setForeground(Color.WHITE);
-    barrierBtn.setToolTipText("Shield a 3x3 area - blocks all damage for 1 turn");
+    barrierBtn.setToolTipText("Click on YOUR board to place 3x3 shield");
     barrierBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    barrierBtn.setFocusPainted(false);
     
     String status2 = valerius.getSkillStatus(2);
     if (!status2.equals("Ready!")) {
@@ -764,43 +687,32 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     barrierBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
             
+            JOptionPane.showMessageDialog(frame,
+                "🛡️ KINETIC BARRIER\n\nClick on YOUR board to place the shield.",
+                "Select Target",
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            
+            
             String input = JOptionPane.showInputDialog(frame, 
-                "🛡️ KINETIC BARRIER\n\n" +
-                "Enter center coordinates (row,col):\n" +
-                "Example: 5,5 for a 3x3 shield area\n\n" +
-                "All cells in this area will be protected!", 
+                "Enter center coordinates (row,col):", 
                 "Barrier Placement", 
                 JOptionPane.QUESTION_MESSAGE);
-                
             if (input != null) {
                 try {
                     String[] parts = input.split(",");
                     int x = Integer.parseInt(parts[0].trim());
                     int y = Integer.parseInt(parts[1].trim());
-                    
-                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                        boolean used = valerius.useKineticBarrier(playerBoard, x, y);
-                        if (used) {
-                            JOptionPane.showMessageDialog(frame, 
-                                "🛡️ KINETIC BARRIER DEPLOYED!\n\n" +
-                                "A 3x3 energy shield surrounds (" + x + "," + y + ").\n" +
-                                "All shots in this area will be blocked for 1 turn!\n\n" +
-                                "\"Nothing gets past the Iron Shoreline.\"", 
-                                "Skill Used", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                            refreshUI();
-                        }
-                    } else {
+                    boolean used = valerius.useKineticBarrier(playerBoard, x, y);
+                    if (used) {
                         JOptionPane.showMessageDialog(frame, 
-                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
+                            "🛡️ Barrier deployed at (" + x + "," + y + ")!", 
+                            "Skill Used", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                        refreshUI();
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(frame, 
-                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(frame, "Invalid coordinates!", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
@@ -811,9 +723,8 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     JButton railgunBtn = new JButton("🎯 Orbital Railgun (280)");
     railgunBtn.setBackground(Color.RED);
     railgunBtn.setForeground(Color.WHITE);
-    railgunBtn.setToolTipText("Fire at a single cell. If it hits, reveals adjacent cells");
+    railgunBtn.setToolTipText("Click on a cell to fire the railgun");
     railgunBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    railgunBtn.setFocusPainted(false);
     
     String status3 = valerius.getSkillStatus(3);
     if (!status3.equals("Ready!")) {
@@ -823,50 +734,17 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     
     railgunBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            
-            String input = JOptionPane.showInputDialog(frame, 
-                "🎯 ORBITAL RAILGUN\n\n" +
-                "Enter target coordinates (row,col):\n" +
-                "Example: 5,5\n\n" +
-                "If it hits a ship, adjacent cells will be scanned!", 
-                "Railgun Target", 
-                JOptionPane.QUESTION_MESSAGE);
-                
-            if (input != null) {
-                try {
-                    String[] parts = input.split(",");
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    
-                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                        ShotResult result = valerius.useOrbitalRailgun(enemyBoard, x, y);
-                        if (result != ShotResult.INVALID) {
-                            String message = "🎯 ORBITAL RAILGUN FIRED!\n\n" +
-                                             "Target: (" + x + "," + y + ")\n" +
-                                             "Result: " + result + "\n\n";
-                            
-                            if (result == ShotResult.HIT || result == ShotResult.SUNK) {
-                                message += "Impact reveals adjacent cells!\n" +
-                                          "Check the console for details.";
-                            }
-                            
-                            JOptionPane.showMessageDialog(frame, message, "Skill Used", JOptionPane.INFORMATION_MESSAGE);
-                            enemyBoardPanel.updateCell(x, y, result);
-                            refreshUI();
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(frame, 
-                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
+            startTargetSelection("ORBITAL RAILGUN - Click target cell", (x, y) -> {
+                ShotResult result = valerius.useOrbitalRailgun(enemyBoard, x, y);
+                if (result != ShotResult.INVALID) {
+                    enemyBoardPanel.updateCell(x, y, result);
                     JOptionPane.showMessageDialog(frame, 
-                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
+                        "🎯 Railgun fired at (" + x + "," + y + ")!\nResult: " + result, 
+                        "Skill Used", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    refreshUI();
                 }
-            }
+            }, railgunBtn);
         }
     });
     panel.add(railgunBtn);
@@ -875,25 +753,8 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     if (valerius.areEnemySkillsDisabled()) {
         JLabel disabledLabel = new JLabel("🚫 Enemy skills disabled", SwingConstants.CENTER);
         disabledLabel.setForeground(Color.RED);
-        disabledLabel.setFont(new Font("Arial", Font.BOLD, 10));
         panel.add(disabledLabel);
     }
-    
-    if (valerius.getShieldedCellsCount() > 0) {
-        JLabel shieldLabel = new JLabel("🛡️ " + valerius.getShieldedCellsCount() + " cells shielded", 
-                                        SwingConstants.CENTER);
-        shieldLabel.setForeground(Color.CYAN);
-        shieldLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(shieldLabel);
-    }
-    
-    if (valerius.isScrapperResolveActive()) {
-        JLabel resolveLabel = new JLabel("⚡ Scrapper's Resolve ACTIVE", SwingConstants.CENTER);
-        resolveLabel.setForeground(Color.ORANGE);
-        resolveLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(resolveLabel);
-    }
-    
     
     JLabel manaLabel = new JLabel(valerius.getManaBar(), SwingConstants.CENTER);
     manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
@@ -906,11 +767,9 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton catSwarmBtn = new JButton("🐱 Cat Swarm (70)");
-    catSwarmBtn.setBackground(new Color(255, 165, 0)); 
+    catSwarmBtn.setBackground(new Color(255, 165, 0));
     catSwarmBtn.setForeground(Color.BLACK);
     catSwarmBtn.setToolTipText("Summon cats to randomly reposition enemy ships");
-    catSwarmBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    catSwarmBtn.setFocusPainted(false);
     
     String status1 = skye.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
@@ -923,18 +782,10 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
             boolean used = skye.useCatSwarm(enemyBoard);
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "🐱 CAT SWARM ACTIVATED!\n\n" +
-                    "A horde of cats floods the enemy screen!\n" +
-                    "Enemy ships are being knocked around like toys!\n\n" +
-                    skye.getRandomCatSound(), 
+                    "🐱 CAT SWARM!\nEnemy ships are being knocked around!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
                 refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Cat Swarm!\n\n" + skye.getSkillStatus(1), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
@@ -942,11 +793,9 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton laserBtn = new JButton("🔴 Laser Pointer (50)");
-    laserBtn.setBackground(new Color(255, 100, 100)); 
+    laserBtn.setBackground(new Color(255, 100, 100));
     laserBtn.setForeground(Color.BLACK);
-    laserBtn.setToolTipText("Dangle a laser pointer - enemy skips their next turn");
-    laserBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    laserBtn.setFocusPainted(false);
+    laserBtn.setToolTipText("Enemy skips their next turn");
     
     String status2 = skye.getSkillStatus(2);
     if (!status2.equals("Ready!")) {
@@ -959,18 +808,10 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
             boolean used = skye.useLaserPointer();
             if (used) {
                 JOptionPane.showMessageDialog(frame, 
-                    "🔴 LASER POINTER!\n\n" +
-                    "A tiny red dot appears on the enemy screen...\n" +
-                    "The enemy is chasing it! They'll skip their next turn!\n\n" +
-                    "*the cats are also chasing it*", 
+                    "🔴 LASER POINTER!\nEnemy will skip their next turn!", 
                     "Skill Used", 
                     JOptionPane.INFORMATION_MESSAGE);
                 refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Laser Pointer!\n\n" + skye.getSkillStatus(2), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
             }
         }
     });
@@ -978,11 +819,9 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     
     
     JButton catnipBtn = new JButton("🌿 Catnip Explosion (380)");
-    catnipBtn.setBackground(new Color(50, 205, 50)); 
+    catnipBtn.setBackground(new Color(50, 205, 50));
     catnipBtn.setForeground(Color.BLACK);
-    catnipBtn.setToolTipText("Blast a 2x2 area with catnip - deals damage and distracts enemies");
-    catnipBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    catnipBtn.setFocusPainted(false);
+    catnipBtn.setToolTipText("Click to target center of 2x2 catnip area");
     
     String status3 = skye.getSkillStatus(3);
     if (!status3.equals("Ready!")) {
@@ -992,47 +831,16 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     
     catnipBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            
-            String input = JOptionPane.showInputDialog(frame, 
-                "🌿 CATNIP EXPLOSION\n\n" +
-                "Enter center coordinates (row,col):\n" +
-                "Example: 5,5 for a 2x2 area\n\n" +
-                "Coordinates must be between 0 and 9.", 
-                "Catnip Target", 
-                JOptionPane.QUESTION_MESSAGE);
-                
-            if (input != null) {
-                try {
-                    String[] parts = input.split(",");
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    
-                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                        int cellsDestroyed = skye.useCatnipExplosion(enemyBoard, x, y);
-                        if (cellsDestroyed > 0) {
-                            JOptionPane.showMessageDialog(frame, 
-                                "🌿 CATNIP EXPLOSION!\n\n" +
-                                "Destroyed " + cellsDestroyed + " ship segments!\n" +
-                                "A green cloud of catnip fills the area...\n" +
-                                "Enemy ships are now DISTRACTED!\n\n" +
-                                "*purring sounds intensify*", 
-                                "Skill Used", 
-                                JOptionPane.INFORMATION_MESSAGE);
-                            refreshUI();
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(frame, 
-                            "❌ Invalid Coordinates!\n\nCoordinates must be between 0 and 9.", 
-                            "Error", 
-                            JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (Exception ex) {
+            startTargetSelection("CATNIP EXPLOSION - Click center of 2x2 area", (x, y) -> {
+                int cellsDestroyed = skye.useCatnipExplosion(enemyBoard, x, y);
+                if (cellsDestroyed > 0) {
                     JOptionPane.showMessageDialog(frame, 
-                        "❌ Invalid Format!\n\nUse: row,col (e.g., 5,5)", 
-                        "Error", 
-                        JOptionPane.ERROR_MESSAGE);
+                        "🌿 CATNIP EXPLOSION!\nDestroyed " + cellsDestroyed + " segments!\nEnemy is distracted!", 
+                        "Skill Used", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                    refreshUI();
                 }
-            }
+            }, catnipBtn);
         }
     });
     panel.add(catnipBtn);
@@ -1041,27 +849,12 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     JLabel nineLivesLabel = new JLabel(skye.getNineLivesDisplay(), SwingConstants.CENTER);
     nineLivesLabel.setFont(new Font("Arial", Font.BOLD, 12));
     nineLivesLabel.setForeground(Color.PINK);
-    nineLivesLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
     panel.add(nineLivesLabel);
-    
     
     JLabel manaLabel = new JLabel(skye.getManaBar(), SwingConstants.CENTER);
     manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
     manaLabel.setForeground(Color.CYAN);
     panel.add(manaLabel);
-    
-    
-    JLabel catSoundLabel = new JLabel("😺 " + skye.getRandomCatSound(), SwingConstants.CENTER);
-    catSoundLabel.setFont(new Font("Arial", Font.ITALIC, 10));
-    catSoundLabel.setForeground(Color.ORANGE);
-    panel.add(catSoundLabel);
-    
-    
-    Timer catTimer = new Timer(5000, e -> {
-        catSoundLabel.setText("😺 " + skye.getRandomCatSound());
-    });
-    catTimer.setRepeats(true);
-    catTimer.start();
 }
 
 private JPanel createEnemyCharacterPanel(CampaignWave wave) {
@@ -1148,11 +941,21 @@ private JPanel createBoardsPanel() {
     playerBoardPanel = new BoardPanel(true, playerBoard);
     enemyBoardPanel = new BoardPanel(false, enemyBoard);
     
-    enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-        if (playerTurn) {
-            handlePlayerAttack(row, col);
+  enemyBoardPanel.setEnemyClickHandler((row, col) -> {
+    if (waitingForTarget) {
+        
+        if (targetCallback != null) {
+            targetCallback.onTargetSelected(row, col);
         }
-    });
+        waitingForTarget = false;
+        currentSkillName = "";
+        targetCallback = null;
+        lastClickedSkillButton = null;
+    } else if (playerTurn) {
+        
+        handlePlayerAttack(row, col);
+    }
+});
     
     panel.add(playerBoardPanel);
     panel.add(enemyBoardPanel);
