@@ -221,54 +221,75 @@ public String getWhirlpoolAreaString(int x, int y) {
     
     
     
-    public int useStormCall(Board enemyBoard) {
-        if (stormCallCooldown > 0) {
-            System.out.println("⏳ Storm Call is on cooldown for " + stormCallCooldown + " more turns");
-            return 0;
-        }
+    
+
+
+public int useStormCall(Board enemyBoard) {
+    if (stormCallCooldown > 0) {
+        System.out.println("⏳ Storm Call is on cooldown for " + stormCallCooldown + " more turns");
+        return 0;
+    }
+    
+    if (!hasEnoughMana(300)) {
+        System.out.println("⚠️ Not enough mana! Need 300 mana, have " + currentMana);
+        return 0;
+    }
+    
+    System.out.println("⛈️ MORGANA uses STORM CALL: \"Feel the wrath of the sea!\"");
+    spendMana(300);
+    
+    
+    floodedCells.clear();
+    
+    
+    int flooded = 0;
+    int attempts = 0;
+    int totalDamage = 0;
+    int shipsHit = 0;
+    StringBuilder hitReport = new StringBuilder("⛈️ Storm Call hits:\n");
+    
+    while (flooded < 4 && attempts < 100) {
+        int x = random.nextInt(10);
+        int y = random.nextInt(10);
+        String cellKey = x + "," + y;
         
-        if (!hasEnoughMana(300)) {
-            System.out.println("⚠️ Not enough mana! Need 300 mana, have " + currentMana);
-            return 0;
-        }
-        
-        System.out.println("⛈️ MORGANA uses STORM CALL: \"Feel the wrath of the sea!\"");
-        spendMana(300);
-        
-        
-        floodedCells.clear();
-        
-        
-        int flooded = 0;
-        int attempts = 0;
-        
-        while (flooded < 4 && attempts < 100) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            String cellKey = x + "," + y;
+        if (!floodedCells.contains(cellKey)) {
+            floodedCells.add(cellKey);
+            flooded++;
             
-            if (!floodedCells.contains(cellKey)) {
-                floodedCells.add(cellKey);
-                flooded++;
-                System.out.println("⛈️ Flooded cell (" + x + "," + y + ")");
+            Cell cell = enemyBoard.getCell(x, y);
+            
+            
+            if (!cell.isFiredUpon()) {
+                ShotResult result = enemyBoard.fire(x, y);
                 
-                
-                Cell cell = enemyBoard.getCell(x, y);
                 if (cell.hasShip()) {
                     int damage = random.nextInt(151) + 200; 
-                    System.out.println("⚡ Lightning strikes ship! " + damage + " damage!");
-                    enemyBoard.fire(x, y);
+                    totalDamage += damage;
+                    shipsHit++;
+                    hitReport.append("   • Ship at (").append(x).append(",").append(y)
+                             .append(") struck by lightning! ").append(damage).append(" damage! (").append(result).append(")\n");
+                } else {
+                    hitReport.append("   • Cell (").append(x).append(",").append(y)
+                             .append(") flooded by the tempest (Miss)\n");
                 }
+            } else {
+                hitReport.append("   • Cell (").append(x).append(",").append(y)
+                         .append(") already hit\n");
             }
-            attempts++;
         }
-        
-        floodedTurns = 1; 
-        stormCallCooldown = 4; 
-        
-        System.out.println("⛈️ " + flooded + " cells flooded!");
-        return flooded;
+        attempts++;
     }
+    
+    System.out.println(hitReport.toString());
+    System.out.println("⛈️ Storm Call flooded " + flooded + " cells!");
+    System.out.println("💥 " + shipsHit + " ships hit for " + totalDamage + " total damage!");
+    
+    floodedTurns = 1; 
+    stormCallCooldown = 4; 
+    
+    return flooded;
+}
     
     public boolean isCellFlooded(int x, int y) {
         return floodedCells.contains(x + "," + y) && floodedTurns > 0;
