@@ -53,6 +53,23 @@ private SkillTargetCallback targetCallback;
 private JButton lastClickedSkillButton;
 
 
+  
+    
+
+    private boolean waitingForSeleneVision = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentSeleneVisionCallback;
+    
+    private boolean waitingForSeleneBinding = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentSeleneBindingCallback;
+    
+    
+    private boolean waitingForSeleneCrescent = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
+    
+   
+
+
+
 private interface SkillTargetCallback {
     void onTargetSelected(int x, int y);
 }
@@ -303,7 +320,8 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
         Valerius valerius = new Valerius();
         Skye skye = new Skye();
          Morgana morgana = new Morgana(); 
-        
+          Aeris aeris = new Aeris();
+         Selene selene = new Selene(); 
         
         if (!playerCharacter.getName().equals(jiji.getName())) {
             possibleEnemies.add(jiji);
@@ -319,9 +337,14 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
         }
          if (!playerCharacter.getName().equals(morgana.getName())) {  
         possibleEnemies.add(morgana);
+    }  
+    if (!playerCharacter.getName().equals(aeris.getName())) {
+        possibleEnemies.add(aeris);
     }
-        
-        
+    if (!playerCharacter.getName().equals(selene.getName())) {
+        possibleEnemies.add(selene);
+    }
+
         Collections.shuffle(possibleEnemies);
         
         System.out.println("🎲 Possible enemies: " + possibleEnemies.size());
@@ -643,6 +666,10 @@ private JPanel createPlayerCharacterPanel() {
         addSkyeSkills(skillsPanel, true);
     }else if (playerCharacter instanceof Morgana) {
         addMorganaSkills(skillsPanel, true);  
+    }else if (playerCharacter instanceof Aeris) {
+        addAerisSkills(skillsPanel, true); 
+    }else if (playerCharacter instanceof Selene) {
+        addSeleneSkills(skillsPanel, true); 
     }
     
     panel.add(skillsPanel, BorderLayout.WEST);
@@ -653,6 +680,284 @@ private JPanel createPlayerCharacterPanel() {
     panel.add(shipCounterPanel, BorderLayout.SOUTH);
     
     return panel;
+}
+private void addSeleneSkills(JPanel panel, boolean isPlayer) {
+    Selene selene = (Selene) playerCharacter;  // ← This is the INSTANCE
+    
+    // ===== LUNAR VISION =====
+    JButton lunarBtn = new JButton("🔮 Lunar Vision (60)");
+    lunarBtn.setBackground(new Color(200, 150, 255));
+    lunarBtn.setForeground(Color.BLACK);
+    lunarBtn.setToolTipText("Reveals all ships in a 3x3 area");
+    
+    lunarBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            updateStatusLabel("🔮 Click on enemy board to reveal 3x3 area!", Color.YELLOW);
+            waitingForSeleneVision = true;
+            currentSeleneVisionCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForSeleneVision = false;
+                    return;
+                }
+                
+                // ✅ USE THE INSTANCE - lowercase 's'
+                boolean used = selene.useLunarVision(enemyBoard, x, y);
+                if (used) {
+                    updateStatusLabel("🔮 Lunar Vision revealed area around (" + x + "," + y + ")!", Color.CYAN);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Lunar Vision!", Color.RED);
+                }
+                waitingForSeleneVision = false;
+            };
+        }
+    });
+    panel.add(lunarBtn);
+    
+    // ===== ECLIPSE BINDING =====
+    JButton eclipseBtn = new JButton("🌑 Eclipse Binding (150)");
+    eclipseBtn.setBackground(new Color(100, 50, 150));
+    eclipseBtn.setForeground(Color.WHITE);
+    eclipseBtn.setToolTipText("Bind a 2x2 area - prevents ship movement/hiding for 2 turns");
+    eclipseBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    eclipseBtn.setFocusPainted(false);
+    
+    String status2 = selene.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        eclipseBtn.setEnabled(false);
+        eclipseBtn.setText("🌑 Eclipse Binding (" + status2 + ")");
+    }
+    
+    eclipseBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            // Start targeting mode
+            updateStatusLabel("🌑 Click on enemy board to bind 2x2 area!", Color.YELLOW);
+            waitingForSeleneBinding = true;
+            currentSeleneBindingCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForSeleneBinding = false;
+                    return;
+                }
+                
+                boolean used = selene.useEclipseBinding(enemyBoard, x, y);
+                if (used) {
+                    updateStatusLabel("🌑 Eclipse Binding deployed at (" + x + "," + y + ")!", Color.MAGENTA);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Eclipse Binding!", Color.RED);
+                }
+                waitingForSeleneBinding = false;
+            };
+        }
+    });
+    panel.add(eclipseBtn);
+    
+    // ===== CRESCENT BLADE =====
+    JButton crescentBtn = new JButton("🌙 Crescent Blade (400)");
+    crescentBtn.setBackground(new Color(150, 100, 200));
+    crescentBtn.setForeground(Color.WHITE);
+    crescentBtn.setToolTipText("Hits a cross pattern (center + up, down, left, right)");
+    crescentBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    crescentBtn.setFocusPainted(false);
+    
+    String status3 = selene.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        crescentBtn.setEnabled(false);
+        crescentBtn.setText("🌙 Crescent Blade (" + status3 + ")");
+    }
+    
+    crescentBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            // Start targeting mode
+            updateStatusLabel("🌙 Click on enemy board to strike a cross pattern!", Color.YELLOW);
+            waitingForSeleneCrescent = true;
+            currentSeleneCrescentCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForSeleneCrescent = false;
+                    return;
+                }
+                
+                int damage = selene.useCrescentBlade(enemyBoard, x, y);
+                if (damage > 0) {
+                    updateStatusLabel("🌙 Crescent Blade dealt " + damage + " damage!", Color.ORANGE);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Crescent Blade!", Color.RED);
+                }
+                waitingForSeleneCrescent = false;
+            };
+        }
+    });
+    panel.add(crescentBtn);
+    
+    // ===== STATUS INDICATORS =====
+    if (selene.areEnemyShipsTrapped()) {
+        JLabel trappedLabel = new JLabel("🌑 Enemy Ships BOUND", SwingConstants.CENTER);
+        trappedLabel.setForeground(Color.MAGENTA);
+        trappedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(trappedLabel);
+    }
+    
+    if (selene.isNightTime()) {
+        JLabel nightLabel = new JLabel("🌙 MOON'S BLESSING ACTIVE", SwingConstants.CENTER);
+        nightLabel.setForeground(Color.YELLOW);
+        nightLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(nightLabel);
+    } else {
+        JLabel nightCountdown = new JLabel("🌙 Night in " + selene.getTurnsUntilNight() + " turns", SwingConstants.CENTER);
+        nightCountdown.setForeground(Color.GRAY);
+        nightCountdown.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(nightCountdown);
+    }
+    
+    if (selene.getTrappedCellsCount() > 0) {
+        JLabel boundLabel = new JLabel("🌑 " + selene.getTrappedCellsCount() + " cells bound", SwingConstants.CENTER);
+        boundLabel.setForeground(new Color(150, 100, 200));
+        boundLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(boundLabel);
+    }
+    
+    // ===== MANA DISPLAY =====
+    JLabel manaLabel = new JLabel(selene.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
+}
+private void addAerisSkills(JPanel panel, boolean isPlayer) {
+    Aeris aeris = (Aeris) playerCharacter;
+    
+    
+    JButton adaptiveBtn = new JButton("🛡️ Adaptive Instinct (120)");
+    adaptiveBtn.setBackground(new Color(255, 215, 0));
+    adaptiveBtn.setForeground(Color.BLACK);
+    adaptiveBtn.setToolTipText("Reduce incoming damage by 30% for 3 turns. Getting hit twice grants +150 bonus damage.");
+    adaptiveBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    adaptiveBtn.setFocusPainted(false);
+    
+    String status1 = aeris.getSkillStatus(1);
+    if (!status1.equals("Ready!")) {
+        adaptiveBtn.setEnabled(false);
+        adaptiveBtn.setText("🛡️ Adaptive Instinct (" + status1 + ")");
+    }
+    
+    adaptiveBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            boolean used = aeris.useAdaptiveInstinct();
+            if (used) {
+                updateStatusLabel("🛡️ Adaptive Instinct! Damage reduced by 30% for 3 turns!", Color.GREEN);
+                refreshUI();
+            }
+        }
+    });
+    panel.add(adaptiveBtn);
+    
+    
+    JButton overdriveBtn = new JButton("⚡ Multitask Overdrive (180)");
+    overdriveBtn.setBackground(new Color(100, 200, 255));
+    overdriveBtn.setForeground(Color.BLACK);
+    overdriveBtn.setToolTipText("Perform two actions in one turn (attack + defend or reveal + attack)");
+    overdriveBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    overdriveBtn.setFocusPainted(false);
+    
+    String status2 = aeris.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        overdriveBtn.setEnabled(false);
+        overdriveBtn.setText("⚡ Multitask Overdrive (" + status2 + ")");
+    }
+    
+    overdriveBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            boolean used = aeris.useMultitaskOverdrive();
+            if (used) {
+                updateStatusLabel("⚡ Multitask Overdrive! Extra action available this turn!", Color.YELLOW);
+                refreshUI();
+            }
+        }
+    });
+    panel.add(overdriveBtn);
+    
+    
+    JButton relentlessBtn = new JButton("⚔️ Relentless Ascent (250)");
+    relentlessBtn.setBackground(new Color(200, 100, 0));
+    relentlessBtn.setForeground(Color.WHITE);
+    relentlessBtn.setToolTipText("Damage increases based on missing HP. Below 40% HP: Immune to stun for 2 turns.");
+    relentlessBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    relentlessBtn.setFocusPainted(false);
+    
+    String status3 = aeris.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        relentlessBtn.setEnabled(false);
+        relentlessBtn.setText("⚔️ Relentless Ascent (" + status3 + ")");
+    }
+    
+    relentlessBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            
+            String input = JOptionPane.showInputDialog(frame, 
+                "⚔️ RELENTLESS ASCENT\n\nEnter target coordinates (row,col):\nExample: 5,5\n\nDamage increases based on missing HP!", 
+                "Relentless Ascent", 
+                JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    String[] parts = input.split(",");
+                    int x = Integer.parseInt(parts[0].trim());
+                    int y = Integer.parseInt(parts[1].trim());
+                    
+                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
+                        int damage = aeris.useRelentlessAscent(enemyBoard, x, y);
+                        if (damage > 0) {
+                            updateStatusLabel("⚔️ Relentless Ascent dealt " + damage + " damage!", Color.ORANGE);
+                            enemyBoardPanel.updateCell(x, y, ShotResult.HIT);
+                            refreshUI();
+                        }
+                    } else {
+                        updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    }
+                } catch (Exception ex) {
+                    updateStatusLabel("❌ Invalid format! Use: row,col", Color.RED);
+                }
+            }
+        }
+    });
+    panel.add(relentlessBtn);
+    
+    
+    if (aeris.isDamageReductionActive()) {
+        JLabel reductionLabel = new JLabel("🛡️ Damage Reduction ACTIVE", SwingConstants.CENTER);
+        reductionLabel.setForeground(Color.GREEN);
+        reductionLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(reductionLabel);
+    }
+    
+    if (aeris.isStunImmuneActive()) {
+        JLabel stunLabel = new JLabel("⚡ Stun Immune ACTIVE", SwingConstants.CENTER);
+        stunLabel.setForeground(Color.YELLOW);
+        stunLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(stunLabel);
+    }
+    
+    if (aeris.isExtraActionAvailable()) {
+        JLabel extraLabel = new JLabel("⚡ Extra Action Available!", SwingConstants.CENTER);
+        extraLabel.setForeground(Color.CYAN);
+        extraLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(extraLabel);
+    }
+    
+    if (aeris.getConsecutiveHits() > 0) {
+        JLabel consecutiveLabel = new JLabel("⚠️ Hit " + aeris.getConsecutiveHits() + "/2 for bonus", SwingConstants.CENTER);
+        consecutiveLabel.setForeground(Color.RED);
+        consecutiveLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(consecutiveLabel);
+    }
+    
+    
+    JLabel manaLabel = new JLabel(aeris.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
 }
 private void addJijiSkills(JPanel panel, boolean isPlayer) {
     Jiji jiji = (Jiji) playerCharacter;
@@ -1317,7 +1622,8 @@ private String getCharacterEmoji(GameCharacter character) {
     if (character instanceof Valerius) return "🛡️";
     if (character instanceof Skye) return "🐱";
      if (character instanceof Morgana) return "🧜‍♀️";
-       
+      if (character instanceof Aeris) return "💪";
+       if (character instanceof Selene) return "🔮"; 
     return "🎮";
 }
 
@@ -1329,32 +1635,52 @@ private JPanel createBoardsPanel() {
     enemyBoardPanel = new BoardPanel(false, enemyBoard);
     
  enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-    System.out.println("🖱️ Click at (" + row + "," + col + ")");
-    
-    
-    if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
-        System.out.println("✅ Redirecting to WHIRLPOOL skill");
-        currentWhirlpoolCallback.accept(row, col);
-        waitingForWhirlpoolTarget = false;
-        currentWhirlpoolCallback = null;
+    // Check for Selene's Lunar Vision
+    if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
+        System.out.println("🌙 Selene's LUNAR VISION targeting: (" + row + "," + col + ")");
+        currentSeleneVisionCallback.accept(row, col);
+        waitingForSeleneVision = false;
+        currentSeleneVisionCallback = null;
         return;
     }
     
+    // Check for Selene's Eclipse Binding
+    if (waitingForSeleneBinding && currentSeleneBindingCallback != null) {
+        System.out.println("🌑 Selene's ECLIPSE BINDING targeting: (" + row + "," + col + ")");
+        currentSeleneBindingCallback.accept(row, col);
+        waitingForSeleneBinding = false;
+        currentSeleneBindingCallback = null;
+        return;
+    }
     
+    // Check for Selene's Crescent Blade
+    if (waitingForSeleneCrescent && currentSeleneCrescentCallback != null) {
+        System.out.println("🌙 Selene's CRESCENT BLADE targeting: (" + row + "," + col + ")");
+        currentSeleneCrescentCallback.accept(row, col);
+        waitingForSeleneCrescent = false;
+        currentSeleneCrescentCallback = null;
+        return;
+    }
+    
+    // Check for other skill targeting
     if (waitingForTarget && targetCallback != null) {
-        System.out.println("✅ Redirecting to skill: " + currentSkillName);
         targetCallback.onTargetSelected(row, col);
         waitingForTarget = false;
         targetCallback = null;
         return;
     }
     
+    // Check for Morgana's Whirlpool Trap
+    if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
+        currentWhirlpoolCallback.accept(row, col);
+        waitingForWhirlpoolTarget = false;
+        currentWhirlpoolCallback = null;
+        return;
+    }
     
+    // Normal attack
     if (playerTurn) {
-        System.out.println("✅ Normal attack at (" + row + "," + col + ")");
         handlePlayerAttack(row, col);
-    } else {
-        System.out.println("⚠️ Not player's turn, ignoring click");
     }
 });
     
