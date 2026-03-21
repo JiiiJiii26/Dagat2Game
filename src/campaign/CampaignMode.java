@@ -1731,6 +1731,8 @@ private void handlePlayerAttack(int row, int col) {
         ((Valerius) playerCharacter).updateTurnCounter();
     }else if (playerCharacter instanceof Morgana) {  
         ((Morgana) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Selene) {  
+        ((Selene) playerCharacter).updateTurnCounter();
     }
     
     refreshUI();
@@ -1786,6 +1788,8 @@ private void enemyTurn() {
         ((Valerius) playerCharacter).updateTurnCounter();
     }else if (playerCharacter instanceof Morgana) {  
         ((Morgana) playerCharacter).updateTurnCounter();
+    }else if (playerCharacter instanceof Selene) {  
+        ((Selene) playerCharacter).updateTurnCounter();
     }
     
     int x = random.nextInt(10);
