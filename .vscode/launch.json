@@ -10,18 +10,10 @@
         },
         {
             "type": "java",
-            "name": "Main",
-            "request": "launch",
-            "mainClass": "main.Main",
-            "projectName": "Dagat2Game_ece8f611"
-        },
-        {
-            "type": "java",
             "name": "Launch Main",
             "request": "launch",
             "mainClass": "main.Main",
-            "projectName": "BattleshipGame",
-            "cwd": "${workspaceFolder}"
+            "projectName": "BattleshipGame"
         }
     ]
 }
