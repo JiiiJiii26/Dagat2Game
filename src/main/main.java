@@ -21,7 +21,7 @@ public class Main {
     private static String selectedDifficulty = "Medium";
     private static GameCharacter selectedCharacter;  
     private static SkillPanel skillPanel;
-
+ 
     public static void main(String[] args) {
         frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
