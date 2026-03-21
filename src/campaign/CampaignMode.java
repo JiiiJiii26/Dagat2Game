@@ -14,6 +14,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.FlowLayout;
+import java.awt.Component;
 
 
 import characters.*;
@@ -35,6 +36,8 @@ public class CampaignMode {
     private Board playerBoard;
     private Board enemyBoard;
      private JLabel statusLabel;
+      private boolean waitingForWhirlpoolTarget = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentWhirlpoolCallback;
      
     
     
@@ -299,6 +302,7 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
         Kael kael = new Kael();
         Valerius valerius = new Valerius();
         Skye skye = new Skye();
+         Morgana morgana = new Morgana(); 
         
         
         if (!playerCharacter.getName().equals(jiji.getName())) {
@@ -313,6 +317,9 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
         if (!playerCharacter.getName().equals(skye.getName())) {
             possibleEnemies.add(skye);
         }
+         if (!playerCharacter.getName().equals(morgana.getName())) {  
+        possibleEnemies.add(morgana);
+    }
         
         
         Collections.shuffle(possibleEnemies);
@@ -634,6 +641,8 @@ private JPanel createPlayerCharacterPanel() {
         addValeriusSkills(skillsPanel, true);
     } else if (playerCharacter instanceof Skye) {
         addSkyeSkills(skillsPanel, true);
+    }else if (playerCharacter instanceof Morgana) {
+        addMorganaSkills(skillsPanel, true);  
     }
     
     panel.add(skillsPanel, BorderLayout.WEST);
@@ -883,6 +892,140 @@ private void addKaelSkills(JPanel panel, boolean isPlayer) {
     energyLabel.setForeground(new Color(100, 200, 255));
     panel.add(energyLabel);
 }
+private void addMorganaSkills(JPanel panel, boolean isPlayer) {
+    Morgana morgana = (Morgana) playerCharacter;
+    
+    
+    JButton melodyBtn = new JButton("🎵 Enchanting Melody (40)");
+    melodyBtn.setBackground(new Color(64, 224, 208));
+    melodyBtn.setForeground(Color.BLACK);
+    melodyBtn.setToolTipText("Confuse enemy for 2 turns - they see fake hit/miss results");
+    melodyBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    melodyBtn.setFocusPainted(false);
+    
+    String status1 = morgana.getSkillStatus(1);
+    if (!status1.equals("Ready!")) {
+        melodyBtn.setEnabled(false);
+        melodyBtn.setText("🎵 Enchanting Melody (" + status1 + ")");
+    }
+    
+    melodyBtn.addActionListener(evt -> {
+        if (isPlayer && playerTurn) {
+            boolean used = morgana.useEnchantingMelody();
+            if (used) {
+                updateStatusLabel("🎵 Enchanting Melody! Enemy is confused!", Color.CYAN);
+                refreshUI();
+            }
+        }
+    });
+    panel.add(melodyBtn);
+    
+    
+    JButton whirlpoolBtn = new JButton("🌊 Whirlpool Trap (80)");
+    whirlpoolBtn.setBackground(new Color(0, 150, 200));
+    whirlpoolBtn.setForeground(Color.WHITE);
+    whirlpoolBtn.setToolTipText("Click a cell - hits 3 cells in a vertical column!");
+    whirlpoolBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    whirlpoolBtn.setFocusPainted(false);
+    
+    String status2 = morgana.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        whirlpoolBtn.setEnabled(false);
+        whirlpoolBtn.setText("🌊 Whirlpool Trap (" + status2 + ")");
+    }
+    
+    whirlpoolBtn.addActionListener(event -> {
+        if (isPlayer && playerTurn) {
+            if (!morgana.hasEnoughMana(80)) {
+                updateStatusLabel("❌ Not enough mana! Need 80 mana.", Color.RED);
+                return;
+            }
+            if (morgana.getSkillStatus(2).contains("Cooldown")) {
+                updateStatusLabel("❌ Whirlpool Trap is on cooldown!", Color.RED);
+                return;
+            }
+            
+            System.out.println("🔴 WHIRLPOOL MODE ACTIVATED! Waiting for click...");
+        updateStatusLabel("🌊 Click a cell - will hit 3 cells in a vertical column!", Color.YELLOW);
+        waitingForWhirlpoolTarget = true;
+        currentWhirlpoolCallback = (x, y) -> {
+            System.out.println("🎯 WHIRLPOOL CALLBACK RECEIVED: (" + x + "," + y + ")");
+                
+                boolean trapUsed = morgana.useWhirlpoolTrap(enemyBoard, x, y);
+                if (trapUsed) {
+                    updateStatusLabel("🌊 Whirlpool trap hit column " + y + "!", Color.CYAN);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Failed to place whirlpool!", Color.RED);
+                }
+                waitingForWhirlpoolTarget = false;
+            };
+        }
+    });
+    panel.add(whirlpoolBtn);
+    
+    
+    JButton stormBtn = new JButton("⛈️ Storm Call (300)");
+    stormBtn.setBackground(new Color(70, 130, 200));
+    stormBtn.setForeground(Color.WHITE);
+    stormBtn.setToolTipText("Summon a tempest - floods 4 random cells, damaging ships");
+    stormBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    stormBtn.setFocusPainted(false);
+    
+    String status3 = morgana.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        stormBtn.setEnabled(false);
+        stormBtn.setText("⛈️ Storm Call (" + status3 + ")");
+    }
+    
+    stormBtn.addActionListener(ev -> {
+        if (isPlayer && playerTurn) {
+            int flooded = morgana.useStormCall(enemyBoard);
+            if (flooded > 0) {
+                updateStatusLabel("⛈️ Storm Call! " + flooded + " cells flooded!", Color.YELLOW);
+                refreshUI();
+            }
+        }
+    });
+    panel.add(stormBtn);
+    
+    
+    if (morgana.isEnemyConfusedActive()) {
+        JLabel confusedLabel = new JLabel("🎵 Enemy CONFUSED!", SwingConstants.CENTER);
+        confusedLabel.setForeground(Color.MAGENTA);
+        confusedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(confusedLabel);
+    }
+    
+    if (morgana.getWhirlpoolCount() > 0) {
+        JLabel whirlpoolLabel = new JLabel("🌊 " + morgana.getWhirlpoolCount() + " whirlpool(s) active", 
+                                           SwingConstants.CENTER);
+        whirlpoolLabel.setForeground(Color.CYAN);
+        whirlpoolLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(whirlpoolLabel);
+    }
+    
+    if (morgana.getFloodedCount() > 0) {
+        JLabel floodedLabel = new JLabel("⛈️ " + morgana.getFloodedCount() + " flooded cells", 
+                                         SwingConstants.CENTER);
+        floodedLabel.setForeground(new Color(100, 200, 255));
+        floodedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(floodedLabel);
+    }
+    
+    if (!morgana.isOceanEmbraceUsed()) {
+        JLabel oceanLabel = new JLabel("🌊 Ocean's Embrace ready", SwingConstants.CENTER);
+        oceanLabel.setForeground(new Color(64, 224, 208));
+        oceanLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(oceanLabel);
+    }
+    
+    
+    JLabel manaLabel = new JLabel(morgana.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
+} 
 
 private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     Valerius valerius = (Valerius) playerCharacter;
@@ -1173,6 +1316,7 @@ private String getCharacterEmoji(GameCharacter character) {
     if (character instanceof Kael) return "🌑";
     if (character instanceof Valerius) return "🛡️";
     if (character instanceof Skye) return "🐱";
+     if (character instanceof Morgana) return "🧜‍♀️";
        
     return "🎮";
 }
@@ -1184,19 +1328,33 @@ private JPanel createBoardsPanel() {
     playerBoardPanel = new BoardPanel(true, playerBoard);
     enemyBoardPanel = new BoardPanel(false, enemyBoard);
     
-  enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-    if (waitingForTarget) {
-        
-        if (targetCallback != null) {
-            targetCallback.onTargetSelected(row, col);
-        }
+ enemyBoardPanel.setEnemyClickHandler((row, col) -> {
+    System.out.println("🖱️ Click at (" + row + "," + col + ")");
+    
+    
+    if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
+        System.out.println("✅ Redirecting to WHIRLPOOL skill");
+        currentWhirlpoolCallback.accept(row, col);
+        waitingForWhirlpoolTarget = false;
+        currentWhirlpoolCallback = null;
+        return;
+    }
+    
+    
+    if (waitingForTarget && targetCallback != null) {
+        System.out.println("✅ Redirecting to skill: " + currentSkillName);
+        targetCallback.onTargetSelected(row, col);
         waitingForTarget = false;
-        currentSkillName = "";
         targetCallback = null;
-        lastClickedSkillButton = null;
-    } else if (playerTurn) {
-        
+        return;
+    }
+    
+    
+    if (playerTurn) {
+        System.out.println("✅ Normal attack at (" + row + "," + col + ")");
         handlePlayerAttack(row, col);
+    } else {
+        System.out.println("⚠️ Not player's turn, ignoring click");
     }
 });
     
@@ -1245,6 +1403,8 @@ private void handlePlayerAttack(int row, int col) {
         ((Skye) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Valerius) {
         ((Valerius) playerCharacter).updateTurnCounter();
+    }else if (playerCharacter instanceof Morgana) {  
+        ((Morgana) playerCharacter).updateTurnCounter();
     }
     
     refreshUI();
@@ -1298,6 +1458,8 @@ private void enemyTurn() {
         ((Skye) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Valerius) {
         ((Valerius) playerCharacter).updateTurnCounter();
+    }else if (playerCharacter instanceof Morgana) {  
+        ((Morgana) playerCharacter).updateTurnCounter();
     }
     
     int x = random.nextInt(10);
@@ -1484,8 +1646,9 @@ private void refreshCharacterPanels() {
         }
     }
     private void refreshUI() {
-    
-    createBattleUI(waves.get(currentWaveIndex));
+     if (currentWaveIndex < waves.size()) {
+        createBattleUI(waves.get(currentWaveIndex));
+    }
 }
 private JPanel createShipCounterPanel(boolean isPlayer) {
     Board board = isPlayer ? playerBoard : enemyBoard;

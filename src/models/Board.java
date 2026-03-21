@@ -19,12 +19,21 @@ public class Board {
         }
     }
     
-    public ShotResult fire(int x, int y) {
-        if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
-            return ShotResult.INVALID;
-        }
-        return grid[x][y].fire();
+   public ShotResult fire(int x, int y) {
+    if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
+        return ShotResult.INVALID;
     }
+    
+    // Check if already fired
+    if (grid[x][y].isFiredUpon()) {
+        System.out.println("Already fired at (" + x + "," + y + ")");
+        return ShotResult.ALREADY_FIRED;
+    }
+    
+    ShotResult result = grid[x][y].fire();
+    System.out.println("Fired at (" + x + "," + y + "): " + result);
+    return result;
+}
     
     public boolean placeShip(Ship ship, int startX, int startY, boolean horizontal) {
         

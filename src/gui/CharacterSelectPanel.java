@@ -29,6 +29,7 @@ public class CharacterSelectPanel extends JPanel {
          characters.add(new Kael()); 
        characters.add(new Valerius());
         characters.add(new Skye());
+        characters.add(new Morgana());
        
         
         initializeUI();
