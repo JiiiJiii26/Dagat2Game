@@ -324,6 +324,7 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
          Morgana morgana = new Morgana(); 
           Aeris aeris = new Aeris();
          Selene selene = new Selene(); 
+         Flue flue = new Flue();    
         
         if (!playerCharacter.getName().equals(jiji.getName())) {
             possibleEnemies.add(jiji);
@@ -345,6 +346,8 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
     }
     if (!playerCharacter.getName().equals(selene.getName())) {
         possibleEnemies.add(selene);
+    }if(!playerCharacter.getName().equals(flue.getName())) {
+        possibleEnemies.add(flue);
     }
 
         Collections.shuffle(possibleEnemies);
@@ -675,6 +678,8 @@ private JPanel createPlayerCharacterPanel() {
         addAerisSkills(skillsPanel, true); 
     }else if (playerCharacter instanceof Selene) {
         addSeleneSkills(skillsPanel, true); 
+    }else if(playerCharacter instanceof Flue) {
+        addFlueSkills(skillsPanel, true); 
     }
     
     panel.add(skillsPanel, BorderLayout.WEST);
@@ -685,6 +690,156 @@ private JPanel createPlayerCharacterPanel() {
     panel.add(shipCounterPanel, BorderLayout.SOUTH);
     
     return panel;
+}
+private void addFlueSkills(JPanel panel, boolean isPlayer) {
+    Flue flue = (Flue) playerCharacter;
+    
+    
+   
+JButton corruptionBtn = new JButton("🦠 Corruption.EXE (100)");
+corruptionBtn.setBackground(new Color(0, 255, 127));
+corruptionBtn.setForeground(Color.BLACK);
+corruptionBtn.setToolTipText("Infects a cell. Virus spreads to adjacent cells every 4 turns!");
+corruptionBtn.setFont(new Font("Arial", Font.BOLD, 11));
+corruptionBtn.setFocusPainted(false);
+
+String status1 = flue.getSkillStatus(1);
+if (!status1.equals("Ready!")) {
+    corruptionBtn.setEnabled(false);
+    corruptionBtn.setText("🦠 Corruption.EXE (" + status1 + ")");
+}
+
+corruptionBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        updateStatusLabel("🦠 Click on enemy board to infect a cell!", Color.YELLOW);
+        waitingForTarget = true;
+        currentSkillName = "CORRUPTION.EXE";
+        targetCallback = (x, y) -> {
+            if (x < 0 || x > 9 || y < 0 || y > 9) {
+                updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                waitingForTarget = false;
+                return;
+            }
+            
+            boolean used = flue.useCorruption(enemyBoard, x, y);
+            if (used) {
+                updateStatusLabel("🦠 Virus planted at (" + x + "," + y + ")! It will spread!", Color.GREEN);
+                refreshUI();
+            } else {
+                updateStatusLabel("❌ Cannot use Corruption.EXE!", Color.RED);
+            }
+            waitingForTarget = false;
+        };
+    }
+});
+panel.add(corruptionBtn);
+    
+    
+    JButton fortificationBtn = new JButton("🛡️ Fortification.GRID (80)");
+    fortificationBtn.setBackground(new Color(0, 200, 100));
+    fortificationBtn.setForeground(Color.BLACK);
+    fortificationBtn.setToolTipText("Shields a 2x2 area (50% chance to block damage for 1 turn)");
+    fortificationBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    fortificationBtn.setFocusPainted(false);
+    
+    String status2 = flue.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        fortificationBtn.setEnabled(false);
+        fortificationBtn.setText("🛡️ Fortification.GRID (" + status2 + ")");
+    }
+    
+    fortificationBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            updateStatusLabel("🛡️ Click on YOUR board to place fortification grid!", Color.YELLOW);
+            waitingForAerisShield = true; 
+            currentAerisShieldCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForAerisShield = false;
+                    return;
+                }
+                
+                boolean used = flue.useFortification(playerBoard, x, y);
+                if (used) {
+                    updateStatusLabel("🛡️ Fortification grid deployed at (" + x + "," + y + ")!", Color.CYAN);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot place fortification grid!", Color.RED);
+                }
+                waitingForAerisShield = false;
+            };
+        }
+    });
+    panel.add(fortificationBtn);
+    
+    
+    JButton kernelBtn = new JButton("💀 Kernel.Decimation.REQ (300)");
+    kernelBtn.setBackground(new Color(200, 0, 0));
+    kernelBtn.setForeground(Color.WHITE);
+    kernelBtn.setToolTipText("Massive damage + permanent debuff (-10% damage/healing/accuracy)");
+    kernelBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    kernelBtn.setFocusPainted(false);
+    
+    String status3 = flue.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        kernelBtn.setEnabled(false);
+        kernelBtn.setText("💀 Kernel.Decimation.REQ (" + status3 + ")");
+    }
+    
+    kernelBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            updateStatusLabel("💀 Click on enemy board to decimate a cell!", Color.YELLOW);
+            waitingForTarget = true;
+            currentSkillName = "KERNEL.DECIMATION.REQ";
+            targetCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForTarget = false;
+                    return;
+                }
+                
+                boolean used = flue.useKernelDecimation(enemyBoard, x, y);
+                if (used) {
+                    updateStatusLabel("💀 Kernel.Decimation executed at (" + x + "," + y + ")!", Color.ORANGE);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Kernel.Decimation!", Color.RED);
+                }
+                waitingForTarget = false;
+            };
+        }
+    });
+    panel.add(kernelBtn);
+    
+    
+   
+    
+    if (flue.getFortifiedCellsCount() > 0) {
+        JLabel fortifiedLabel = new JLabel("🛡️ " + flue.getFortifiedCellsCount() + " fortified cells", SwingConstants.CENTER);
+        fortifiedLabel.setForeground(Color.CYAN);
+        fortifiedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(fortifiedLabel);
+    }
+    
+    if (flue.getDebuffedShipsCount() > 0) {
+        JLabel debuffedLabel = new JLabel("💀 " + flue.getDebuffedShipsCount() + " debuffed ships", SwingConstants.CENTER);
+        debuffedLabel.setForeground(Color.MAGENTA);
+        debuffedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(debuffedLabel);
+    }
+    
+    if (flue.isLoneResolveActive()) {
+        JLabel loneLabel = new JLabel("🔧 Lone.Resolve ACTIVE (15% DR)", SwingConstants.CENTER);
+        loneLabel.setForeground(Color.YELLOW);
+        loneLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(loneLabel);
+    }
+    
+    
+    JLabel manaLabel = new JLabel(flue.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel);
 }
 private void addSeleneSkills(JPanel panel, boolean isPlayer) {
     Selene selene = (Selene) playerCharacter;  
@@ -1670,6 +1825,7 @@ private String getCharacterEmoji(GameCharacter character) {
      if (character instanceof Morgana) return "🧜‍♀️";
       if (character instanceof Aeris) return "💪";
        if (character instanceof Selene) return "🔮"; 
+        if (character instanceof Flue) return "💻";
     return "🎮";
 }
 
@@ -1799,6 +1955,8 @@ private void handlePlayerAttack(int row, int col) {
         ((Selene) playerCharacter).updateTurnCounter();
     }else if (playerCharacter instanceof Aeris) {  
         ((Aeris) playerCharacter).updateTurnCounter();
+    }else if(playerCharacter instanceof Flue) {  
+        ((Flue) playerCharacter).updateTurnCounter();
     }
     
     refreshUI();
@@ -1839,6 +1997,11 @@ private void handlePlayerAttack(int row, int col) {
 
 private void enemyTurn() {
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
+
+    if (playerCharacter instanceof Flue) {
+        ((Flue) playerCharacter).processVirusSpread(enemyBoard);
+        refreshUI();  
+    }
     
     
     if (playerCharacter instanceof Skye) {
@@ -1867,7 +2030,10 @@ private void enemyTurn() {
         ((Morgana) playerCharacter).updateTurnCounter();
     }else if (playerCharacter instanceof Selene) {  
         ((Selene) playerCharacter).updateTurnCounter();
+    }else if (playerCharacter instanceof Flue) {  
+        ((Flue) playerCharacter).updateTurnCounter();
     }
+
     
     int x = random.nextInt(10);
     int y = random.nextInt(10);

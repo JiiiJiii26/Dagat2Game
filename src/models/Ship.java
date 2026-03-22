@@ -10,6 +10,7 @@ public class Ship {
     private ArrayList<Coordinate> positions;
     private boolean isShielded = false;
 private int shieldedTurns = 0;
+private boolean isInfected = false; 
 
 
     
@@ -26,6 +27,17 @@ private int shieldedTurns = 0;
         this.isSunk = false;
         this.positions = new ArrayList<>();
     }
+   public void setInfected(boolean infected) {
+        this.isInfected = infected;
+        if (infected) {
+            System.out.println("🦠 " + name + " has been INFECTED by the virus!");
+        }
+    }
+    
+    public boolean isInfected() {
+        return isInfected;
+    }
+
     public void setShielded(boolean shielded, int turns) {
     this.isShielded = shielded;
     this.shieldedTurns = turns;

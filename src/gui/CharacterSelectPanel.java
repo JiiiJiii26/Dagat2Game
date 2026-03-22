@@ -32,7 +32,8 @@ public class CharacterSelectPanel extends JPanel {
         characters.add(new Morgana());
         characters.add(new Aeris());
        characters.add(new Selene());  
-        
+       characters.add(new Flue()); 
+
         initializeUI();
     }
     
