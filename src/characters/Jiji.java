@@ -75,56 +75,63 @@ public class Jiji extends GameCharacter {
     
     
     
-    public boolean useDataLeech(Board enemyBoard) {
-        if (dataLeechCooldown > 0) {
-            System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
-            return false;
-        }
-        
-        if (!hasEnoughMana(50)) {
-            System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
-            return false;
-        }
-        
-        System.out.println("🔓 Jiji uses DATA LEECH: \"Your secrets are mine... wait, that took effort.\"");
-        spendMana(50);
-        
-        
-        int revealed = 0;
-        int attempts = 0;
-        StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals and marks:\n");
-        
-        while (revealed < 2 && attempts < 100) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            String cellKey = x + "," + y;
-            Cell cell = enemyBoard.getCell(x, y);
-            
-            if (!cell.isFiredUpon()) {
-                ShotResult result = enemyBoard.fire(x, y);
-                revealedCells.add(cellKey);
-                
-                
-                if (overclockActive) {
-                    overclockTargets.add(cellKey);
-                    System.out.println("⚡ Overclock synergy: " + cellKey + " marked for chain reaction!");
-                }
-                
-                String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
-                resultMessage.append("   • (").append(x).append(",").append(y)
-                            .append("): ").append(content).append(" → MARKED! (").append(result).append(")\n");
-                revealed++;
-            }
-            attempts++;
-        }
-        
-        System.out.println(resultMessage.toString());
-        System.out.println("✅ Data Leech complete! " + revealed + " cells revealed and marked.");
-        
-        dataLeechCooldown = 1;
-        return true;
+   public boolean useDataLeech(Board enemyBoard) {
+    if (dataLeechCooldown > 0) {
+        System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
+        return false;
     }
     
+    if (!hasEnoughMana(50)) {
+        System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
+        return false;
+    }
+    
+    
+    int cellsToReveal = overclockActive ? 4 : 2;
+    
+    String synergyMsg = overclockActive ? " (OVERCLOCK SYNERGY: 4 cells!)" : "";
+    System.out.println("🔓 Jiji uses DATA LEECH" + synergyMsg + ": \"Your secrets are mine... wait, that took effort.\"");
+    spendMana(50);
+    
+    
+    int revealed = 0;
+    int attempts = 0;
+    StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals and marks:\n");
+    
+    while (revealed < cellsToReveal && attempts < 100) {
+        int x = random.nextInt(10);
+        int y = random.nextInt(10);
+        String cellKey = x + "," + y;
+        Cell cell = enemyBoard.getCell(x, y);
+        
+        
+        if (!cell.isFiredUpon()) {
+            ShotResult result = enemyBoard.fire(x, y);
+            revealedCells.add(cellKey);
+            
+            
+            if (overclockActive) {
+                overclockTargets.add(cellKey);
+                System.out.println("⚡ Overclock synergy: " + cellKey + " marked for chain reaction!");
+            }
+            
+            String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
+            resultMessage.append("   • (").append(x).append(",").append(y)
+                        .append("): ").append(content).append(" → MARKED! (").append(result).append(")\n");
+            revealed++;
+        }
+        attempts++;
+    }
+    
+    System.out.println(resultMessage.toString());
+    System.out.println("✅ Data Leech complete! " + revealed + " cells revealed and marked.");
+    if (overclockActive) {
+        System.out.println("⚡ Overclock synergy: " + overclockTargets.size() + " cells marked for chain reaction!");
+    }
+    
+    dataLeechCooldown = 1;
+    return true;
+}
     
     
     
@@ -198,7 +205,7 @@ public class Jiji extends GameCharacter {
         return false;
     }
     
-    // Find all enemy ships that aren't fully revealed/destroyed yet
+    
     ArrayList<Ship> availableShips = new ArrayList<>();
     for (Ship ship : enemyBoard.getShips()) {
         if (!ship.isSunk() && !ship.isFullyRevealed()) {
@@ -211,18 +218,18 @@ public class Jiji extends GameCharacter {
         return false;
     }
     
-    // Pick a random ship
+    
     Ship targetShip = availableShips.get(random.nextInt(availableShips.size()));
     
-    // Check if Overclock is active
+    
     if (overclockActive) {
-        // ===== SYNERGY MODE: DESTROY THE SHIP =====
+        
         System.out.println("💻 Jiji uses SYSTEM OVERLOAD with OVERCLOCK SYNERGY!");
         spendMana(400);
         
         System.out.println("⚡⚡ SYNERGY ACTIVATED! " + targetShip.getName() + " will be DESTROYED!");
         
-        // Destroy ALL cells of the ship
+        
         int destroyedCells = 0;
         StringBuilder destroyReport = new StringBuilder("💀 " + targetShip.getName() + " DESTROYED:\n");
         
@@ -232,7 +239,7 @@ public class Jiji extends GameCharacter {
             Cell cell = enemyBoard.getCell(x, y);
             
             if (!cell.isFiredUpon()) {
-                // Mark the cell as hit (destroyed)
+                
                 ShotResult result = enemyBoard.fire(x, y);
                 destroyedCells++;
                 destroyReport.append("   • (" + x + "," + y + ") destroyed! Result: " + result + "\n");
@@ -241,21 +248,21 @@ public class Jiji extends GameCharacter {
             }
         }
         
-        // Mark the ship as fully revealed (since it's now visible as destroyed)
+        
         targetShip.setFullyRevealed(true);
         
         System.out.println(destroyReport.toString());
         System.out.println("💀 " + targetShip.getName() + " has been COMPLETELY DESTROYED!");
         System.out.println("   " + destroyedCells + " ship segments obliterated!");
         
-        // After destroying, trigger any remaining chain reactions
+        
         triggerChainReaction(enemyBoard);
         
         systemOverloadCooldown = 5;
         return true;
         
     } else {
-        // ===== NORMAL MODE: REVEAL THE SHIP =====
+        
         System.out.println("💻 Jiji uses SYSTEM OVERLOAD: \"Revealing enemy ship... yawn\"");
         spendMana(400);
         

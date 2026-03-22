@@ -39,6 +39,7 @@ public class CampaignMode {
      private JLabel statusLabel;
       private boolean waitingForWhirlpoolTarget = false;
     private java.util.function.BiConsumer<Integer, Integer> currentWhirlpoolCallback;
+    private boolean skillUsedThatEndsTurn = false;
      
     private boolean waitingForAerisShield = false;
 private java.util.function.BiConsumer<Integer, Integer> currentAerisShieldCallback;
@@ -1164,43 +1165,52 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
     Jiji jiji = (Jiji) playerCharacter;
     
     
-    JButton dataLeechBtn = new JButton("🔓 Data Leech (50)");
-    dataLeechBtn.setBackground(new Color(100, 200, 255));
-    dataLeechBtn.setToolTipText("Reveal 2 random cells");
-    dataLeechBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-             
-            boolean used = jiji.useDataLeech(enemyBoard);
-            if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "📡 Data Leech used! Check console for revealed cells!", 
-                    "Skill Used", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                refreshUI();
+  
+JButton dataLeechBtn = new JButton("🔓 Data Leech (50)");
+dataLeechBtn.setBackground(new Color(100, 200, 255));
+dataLeechBtn.setForeground(Color.BLACK);
+dataLeechBtn.setFont(new Font("Arial", Font.BOLD, 11));
+dataLeechBtn.setFocusPainted(false);
+
+String status1 = jiji.getSkillStatus(1);
+if (!status1.equals("Ready!")) {
+    dataLeechBtn.setEnabled(false);
+    dataLeechBtn.setText("🔓 Data Leech (" + status1 + ")");
+} else if (jiji.isOverclockActive()) {
+    dataLeechBtn.setText("🔓 DATA LEECH - SYNERGY (4 cells)");
+    dataLeechBtn.setBackground(new Color(100, 255, 200));
+    dataLeechBtn.setToolTipText("OVERCLOCK ACTIVE! Reveals 4 random cells!");
+} else {
+    dataLeechBtn.setText("🔓 Data Leech (50)");
+    dataLeechBtn.setToolTipText("Reveals 2 random cells");
+}
+
+dataLeechBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        boolean used = jiji.useDataLeech(enemyBoard);
+        if (used) {
+            if (jiji.isOverclockActive()) {
+                updateStatusLabel("🔓 Data Leech (SYNERGY)! 4 cells revealed and marked!", Color.GREEN);
             } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Data Leech!\n" + jiji.getSkillStatus(1), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
+                updateStatusLabel("🔓 Data Leech! 2 cells revealed and marked!", Color.CYAN);
             }
+            refreshUI();
+             skillUsedThatEndsTurn = true;
+            endPlayerTurn();
+        } else {
+            updateStatusLabel("❌ Cannot use Data Leech!\n" + jiji.getSkillStatus(1), Color.RED);
         }
-    });
-    
-    
-    
-    String status1 = jiji.getSkillStatus(1);
-    if (!status1.equals("Ready!")) {
-        dataLeechBtn.setEnabled(false);
-        dataLeechBtn.setText("🔓 Data Leech (" + status1 + ")");
     }
-    panel.add(dataLeechBtn);
+});
+panel.add(dataLeechBtn);
     
     
    
+
 JButton overclockBtn = new JButton("⚡ Overclock (120)");
 overclockBtn.setBackground(new Color(200, 150, 50));
 overclockBtn.setForeground(Color.BLACK);
-overclockBtn.setToolTipText("Activate synergy mode! Data Leech marks cells. System Overload DESTROYS a ship!");
+overclockBtn.setToolTipText("Activate synergy mode for 2 turns! Data Leech reveals 4 cells! System Overload DESTROYS a ship!");
 overclockBtn.setFont(new Font("Arial", Font.BOLD, 11));
 overclockBtn.setFocusPainted(false);
 
@@ -1214,7 +1224,7 @@ overclockBtn.addActionListener(e -> {
     if (isPlayer && playerTurn) {
         boolean used = jiji.useOverclock();
         if (used) {
-            updateStatusLabel("⚡ Overclock activated! Use System Overload to DESTROY a ship!", Color.YELLOW);
+            updateStatusLabel("⚡ Overclock activated! Data Leech reveals 4 cells! System Overload DESTROYS a ship!", Color.YELLOW);
             refreshUI();
         } else {
             updateStatusLabel("❌ Cannot use Overclock!\n" + jiji.getSkillStatus(2), Color.RED);
@@ -1223,20 +1233,35 @@ overclockBtn.addActionListener(e -> {
 });
 panel.add(overclockBtn);
 
+
 if (jiji.isOverclockActive()) {
-    JLabel overclockLabel = new JLabel("⚡ SYNERGY MODE ACTIVE", SwingConstants.CENTER);
-    overclockLabel.setForeground(Color.YELLOW);
-    overclockLabel.setFont(new Font("Arial", Font.BOLD, 10));
-    panel.add(overclockLabel);
+    JPanel statusPanel = new JPanel(new GridLayout(2, 1));
+    statusPanel.setBackground(new Color(0, 0, 0, 0));
+    
+    JLabel synergyLabel = new JLabel("⚡ SYNERGY ACTIVE", SwingConstants.CENTER);
+    synergyLabel.setForeground(Color.YELLOW);
+    synergyLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    statusPanel.add(synergyLabel);
+    
+    JLabel bonusLabel = new JLabel("  • Data Leech: 4 cells", SwingConstants.CENTER);
+    bonusLabel.setForeground(Color.CYAN);
+    bonusLabel.setFont(new Font("Arial", Font.PLAIN, 10));
+    statusPanel.add(bonusLabel);
+    
+    JLabel bonusLabel2 = new JLabel("  • System Overload: DESTROY ship", SwingConstants.CENTER);
+    bonusLabel2.setForeground(Color.ORANGE);
+    bonusLabel2.setFont(new Font("Arial", Font.PLAIN, 10));
+    statusPanel.add(bonusLabel2);
+    
+    panel.add(statusPanel);
     
     if (jiji.getOverclockTargetCount() > 0) {
         JLabel targetLabel = new JLabel("🎯 " + jiji.getOverclockTargetCount() + " cells marked", SwingConstants.CENTER);
-        targetLabel.setForeground(Color.CYAN);
+        targetLabel.setForeground(Color.RED);
         targetLabel.setFont(new Font("Arial", Font.BOLD, 10));
         panel.add(targetLabel);
     }
 }
-    
   
 
 JButton systemBtn = new JButton("💻 System Overload (400)");
@@ -1248,7 +1273,7 @@ systemBtn.setFocusPainted(false);
 
 String status3 = jiji.getSkillStatus(3);
 
-// Check if Overclock is active FIRST
+
 if (jiji.isOverclockActive()) {
     systemBtn.setText("💻 SYSTEM OVERLOAD - DESTROY SHIP!");
     systemBtn.setBackground(new Color(255, 50, 50));
@@ -1265,7 +1290,7 @@ if (jiji.isOverclockActive()) {
 
 systemBtn.addActionListener(e -> {
     if (isPlayer && playerTurn) {
-        // Double-check Overclock status before using
+        
         System.out.println("🔍 Overclock active: " + jiji.isOverclockActive());
         
         boolean used = jiji.useSystemOverload(enemyBoard);
@@ -1994,7 +2019,7 @@ private void handlePlayerAttack(int row, int col) {
     }
     
     playerTurn = false;
-    
+    endPlayerTurn();
     
     for (int i = 3; i > 0; i--) {
         final int count = i;
@@ -2328,7 +2353,19 @@ private String getCharacterTurnMessage() {
     }
     return "YOUR TURN - Click on enemy waters to fire!";
 }
-
+private void endPlayerTurn() {
+    System.out.println("🔄 Ending player turn...");
+    
+    playerTurn = false;
+    updateStatusLabel("🤖 ENEMY'S TURN - They're planning...", Color.RED);
+    
+    // Small delay before enemy turn for better UX
+    Timer timer = new Timer(800, e -> {
+        enemyTurn();
+    });
+    timer.setRepeats(false);
+    timer.start();
+}
 
 }
 
