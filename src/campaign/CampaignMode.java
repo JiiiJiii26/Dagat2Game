@@ -898,6 +898,7 @@ adaptiveBtn.addActionListener(e -> {
     if (used) {
         updateStatusLabel("🔵 " + targetShip.getName() + " is now SHIELDED (blue) for 2 turns!", Color.CYAN);
         playerBoardPanel.refreshColors();
+        refreshUI();
     } else {
         updateStatusLabel("❌ Failed to shield " + targetShip.getName() + "!", Color.RED);
     }
@@ -2065,6 +2066,9 @@ private void refreshCharacterPanels() {
     }
     if (enemyBoardPanel != null) {
         enemyBoardPanel.refreshColors();
+    }
+      if (currentWaveIndex < waves.size()) {
+        createBattleUI(waves.get(currentWaveIndex));
     }
 }
 private JPanel createShipCounterPanel(boolean isPlayer) {

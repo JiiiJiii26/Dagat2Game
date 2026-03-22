@@ -131,6 +131,7 @@ public class Aeris extends GameCharacter {
     return true;
 }
     
+    
     public boolean isShipImmune(Ship ship) {
         return ship.isShielded();
     }
