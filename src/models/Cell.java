@@ -8,6 +8,7 @@ public class Cell {
     private boolean hasShip;
     private boolean isFiredUpon;
     private Ship ship;  
+      private boolean isRevealed; 
      private boolean isPlayerBoard = false;
     
    public static final Color SHIELD_BLUE = new Color(0, 100, 200);
@@ -27,6 +28,13 @@ public class Cell {
         this.isFiredUpon = false;
         this.ship = null;
          this.isPlayerBoard = false; 
+    }
+        public void setRevealed(boolean revealed) {
+        this.isRevealed = revealed;
+    }
+    
+    public boolean isRevealed() {
+        return isRevealed;
     }
       public void setPlayerBoard(boolean isPlayer) {
         this.isPlayerBoard = isPlayer;
@@ -76,42 +84,46 @@ public class Cell {
     public boolean isFiredUpon() {
         return isFiredUpon;
     }
-    
   public Color getColor() {
-    
-    if (isFiredUpon) {
-        if (hasShip) {
-            
-            if (ship != null && ship.isInfected()) {
-                return INFECTED_HIT;
+        
+        if (isRevealed && !isFiredUpon) {
+            if (hasShip) {
+                return new Color(255, 200, 100);  
+            } else {
+                return new Color(200, 200, 150);  
             }
-            return HIT_RED;
+        }
+        
+        
+        if (isFiredUpon) {
+            if (hasShip) {
+                if (ship != null && ship.isInfected()) {
+                    return INFECTED_HIT;
+                }
+                return HIT_RED;
+            } else {
+                return MISS_GRAY;
+            }
+        }
+        
+        
+        if (isPlayerBoard) {
+            
+            if (hasShip && ship != null && ship.isInfected()) {
+                return INFECTED_PURPLE;
+            }
+            if (ship != null && ship.isShielded()) {
+                return SHIELD_BLUE;
+            }
+            if (hasShip) {
+                return SHIP_GREEN;
+            }
+            return OCEAN_BLUE;
         } else {
-            return MISS_GRAY;
+            
+            return OCEAN_BLUE;
         }
     }
-    
-    
-    
-    
-    
-    if (isPlayerBoard) {
-        
-        if (hasShip && ship != null && ship.isInfected()) {
-            return INFECTED_PURPLE;
-        }
-        if (ship != null && ship.isShielded()) {
-            return SHIELD_BLUE;
-        }
-        if (hasShip) {
-            return SHIP_GREEN;
-        }
-        return OCEAN_BLUE;
-    } else {
-        
-        return OCEAN_BLUE;
-    }
-}
 public Ship getShip() {
     return ship;
 }

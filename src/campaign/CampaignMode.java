@@ -1196,62 +1196,88 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
     panel.add(dataLeechBtn);
     
     
-    JButton overclockBtn = new JButton("⚡ Overclock (120)");
-    overclockBtn.setBackground(new Color(200, 150, 50));
-    overclockBtn.setToolTipText("Next shot fires twice");
-    overclockBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            boolean used = jiji.useOverclock();
-            if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "⚡ Overclock activated! Next shot fires twice!", 
-                    "Skill Used", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use Overclock!\n" + jiji.getSkillStatus(2), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
-            }
+   
+JButton overclockBtn = new JButton("⚡ Overclock (120)");
+overclockBtn.setBackground(new Color(200, 150, 50));
+overclockBtn.setForeground(Color.BLACK);
+overclockBtn.setToolTipText("Activate synergy mode! Data Leech marks cells. System Overload DESTROYS a ship!");
+overclockBtn.setFont(new Font("Arial", Font.BOLD, 11));
+overclockBtn.setFocusPainted(false);
+
+String status2 = jiji.getSkillStatus(2);
+if (!status2.equals("Ready! (2 turns synergy mode)")) {
+    overclockBtn.setEnabled(false);
+    overclockBtn.setText("⚡ Overclock (" + status2 + ")");
+}
+
+overclockBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        boolean used = jiji.useOverclock();
+        if (used) {
+            updateStatusLabel("⚡ Overclock activated! Use System Overload to DESTROY a ship!", Color.YELLOW);
+            refreshUI();
+        } else {
+            updateStatusLabel("❌ Cannot use Overclock!\n" + jiji.getSkillStatus(2), Color.RED);
         }
-    });
-    
-    String status2 = jiji.getSkillStatus(2);
-    if (!status2.equals("Ready!")) {
-        overclockBtn.setEnabled(false);
-        overclockBtn.setText("⚡ Overclock (" + status2 + ")");
     }
-    panel.add(overclockBtn);
+});
+panel.add(overclockBtn);
+
+if (jiji.isOverclockActive()) {
+    JLabel overclockLabel = new JLabel("⚡ SYNERGY MODE ACTIVE", SwingConstants.CENTER);
+    overclockLabel.setForeground(Color.YELLOW);
+    overclockLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    panel.add(overclockLabel);
     
+    if (jiji.getOverclockTargetCount() > 0) {
+        JLabel targetLabel = new JLabel("🎯 " + jiji.getOverclockTargetCount() + " cells marked", SwingConstants.CENTER);
+        targetLabel.setForeground(Color.CYAN);
+        targetLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(targetLabel);
+    }
+}
     
-   JButton systemBtn = new JButton("💻 System Overload (400)");
+  
+
+JButton systemBtn = new JButton("💻 System Overload (400)");
 systemBtn.setBackground(new Color(200, 50, 50));
 systemBtn.setForeground(Color.WHITE);
-systemBtn.setToolTipText("Reveals an entire enemy ship!");
+systemBtn.setToolTipText("If Overclock active: DESTROYS a random enemy ship! If not: Reveals it.");
 systemBtn.setFont(new Font("Arial", Font.BOLD, 11));
 systemBtn.setFocusPainted(false);
 
 String status3 = jiji.getSkillStatus(3);
-if (!status3.equals("Ready!")) {
+
+// Check if Overclock is active FIRST
+if (jiji.isOverclockActive()) {
+    systemBtn.setText("💻 SYSTEM OVERLOAD - DESTROY SHIP!");
+    systemBtn.setBackground(new Color(255, 50, 50));
+    systemBtn.setToolTipText("OVERCLOCK ACTIVE! This will DESTROY a random enemy ship!");
+    systemBtn.setEnabled(true);
+} else if (!status3.equals("Ready!")) {
     systemBtn.setEnabled(false);
     systemBtn.setText("💻 System Overload (" + status3 + ")");
+} else {
+    systemBtn.setText("💻 System Overload (400)");
+    systemBtn.setBackground(new Color(200, 50, 50));
+    systemBtn.setEnabled(true);
 }
 
 systemBtn.addActionListener(e -> {
     if (isPlayer && playerTurn) {
+        // Double-check Overclock status before using
+        System.out.println("🔍 Overclock active: " + jiji.isOverclockActive());
+        
         boolean used = jiji.useSystemOverload(enemyBoard);
         if (used) {
-            JOptionPane.showMessageDialog(frame, 
-                "💻 SYSTEM OVERLOAD!\n\nA random enemy ship has been fully revealed!\nAll its cells are now visible!", 
-                "ULTIMATE!", 
-                JOptionPane.INFORMATION_MESSAGE);
+            if (jiji.isOverclockActive()) {
+                updateStatusLabel("💀 SYNERGY! A random enemy ship has been DESTROYED!", Color.RED);
+            } else {
+                updateStatusLabel("💻 System Overload! Enemy ship revealed!", Color.CYAN);
+            }
             refreshUI();
         } else {
-            JOptionPane.showMessageDialog(frame, 
-                "❌ Cannot use System Overload!\n" + jiji.getSkillStatus(3), 
-                "Skill Not Ready", 
-                JOptionPane.WARNING_MESSAGE);
+            updateStatusLabel("❌ Cannot use System Overload!\n" + jiji.getSkillStatus(3), Color.RED);
         }
     }
 });
@@ -1916,17 +1942,12 @@ private JPanel createBoardsPanel() {
 }
     
 private void handlePlayerAttack(int row, int col) {
-    
     updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
     
     ShotResult result;
     
-    if (playerCharacter instanceof Jiji) {
-        Jiji jiji = (Jiji) playerCharacter;
-        result = jiji.applyOverclock(enemyBoard, row, col);
-    } else {
-        result = enemyBoard.fire(row, col);
-    }
+    
+    result = enemyBoard.fire(row, col);
     
     enemyBoardPanel.updateCell(row, col, result);
     
@@ -1954,13 +1975,13 @@ private void handlePlayerAttack(int row, int col) {
         ((Skye) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Valerius) {
         ((Valerius) playerCharacter).updateTurnCounter();
-    }else if (playerCharacter instanceof Morgana) {  
+    } else if (playerCharacter instanceof Morgana) {  
         ((Morgana) playerCharacter).updateTurnCounter();
-    } else if (playerCharacter instanceof Selene) {  
-        ((Selene) playerCharacter).updateTurnCounter();
-    }else if (playerCharacter instanceof Aeris) {  
+    } else if (playerCharacter instanceof Aeris) {
         ((Aeris) playerCharacter).updateTurnCounter();
-    }else if(playerCharacter instanceof Flue) {  
+    } else if (playerCharacter instanceof Selene) {
+        ((Selene) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Flue) {
         ((Flue) playerCharacter).updateTurnCounter();
     }
     
@@ -1970,17 +1991,6 @@ private void handlePlayerAttack(int row, int col) {
         updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
         waveComplete();
         return;
-    }
-     if (playerCharacter instanceof Selene) {
-        Selene selene = (Selene) playerCharacter;
-        if (selene.hasExtraTurn()) {
-            selene.consumeExtraTurn();
-            updateStatusLabel("🌑 Eclipse Binding grants you an EXTRA TURN!", Color.MAGENTA);
-            playerTurn = true;  
-            resetStatusLabel();
-            refreshUI();
-            return;  
-        }
     }
     
     playerTurn = false;
