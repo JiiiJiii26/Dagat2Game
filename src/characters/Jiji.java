@@ -66,6 +66,7 @@ public class Jiji extends GameCharacter {
         }
     }
     
+    
     public void regenerateMana(int amount) {
         currentMana += amount;
         if (currentMana > MAX_MANA) {
@@ -73,48 +74,56 @@ public class Jiji extends GameCharacter {
         }
     }
     
+    public int getRevealedCount() {
+    return revealedCells.size();
+}
     
-    
-    public boolean useDataLeech(Board enemyBoard) {
-        if (dataLeechCooldown > 0) {
-            System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
-            return false;
-        }
-        
-        if (!hasEnoughMana(50)) {
-            System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
-            return false;
-        }
-        
-        System.out.println("🔓 Jiji uses DATA LEECH: \"Your secrets are mine... wait, that took effort.\"");
-        spendMana(50);
-        
-        
-        int revealed = 0;
-        int attempts = 0;
-        StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals:\n");
-        
-        while (revealed < 2 && attempts < 100) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            String cellKey = x + "," + y;
-            Cell cell = enemyBoard.getCell(x, y);
-            
-            if (!cell.isFiredUpon() && !revealedCells.contains(cellKey)) {
-                revealedCells.add(cellKey);
-                String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
-                resultMessage.append("• (").append(x).append(",").append(y).append("): ").append(content).append("\n");
-                revealed++;
-            }
-            attempts++;
-        }
-        
-        System.out.println(resultMessage.toString());
-        
-        dataLeechCooldown = 1; 
-        System.out.println("✅ Data Leech complete! " + revealed + " cells revealed.");
-        return true;
+   public boolean useDataLeech(Board enemyBoard) {
+    if (dataLeechCooldown > 0) {
+        System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
+        return false;
     }
+    
+    
+    if (!hasEnoughMana(50)) {
+        System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
+        return false;
+    }
+    
+    System.out.println("🔓 Jiji uses DATA LEECH: \"Your secrets are mine... wait, that took effort.\"");
+    spendMana(50);
+    
+    
+    int revealed = 0;
+    int attempts = 0;
+    StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals and marks:\n");
+    
+    while (revealed < 2 && attempts < 100) {
+        int x = random.nextInt(10);
+        int y = random.nextInt(10);
+        String cellKey = x + "," + y;
+        Cell cell = enemyBoard.getCell(x, y);
+        
+        
+        if (!cell.isFiredUpon()) {
+            
+            ShotResult result = enemyBoard.fire(x, y);
+            revealedCells.add(cellKey);
+            
+            String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
+            resultMessage.append("   • (").append(x).append(",").append(y)
+                        .append("): ").append(content).append(" → MARKED! (").append(result).append(")\n");
+            revealed++;
+        }
+        attempts++;
+    }
+    
+    System.out.println(resultMessage.toString());
+    System.out.println("✅ Data Leech complete! " + revealed + " cells revealed and marked.");
+    
+    dataLeechCooldown = 1; 
+    return true;
+}
     
     public boolean isCellRevealed(int x, int y) {
         return revealedCells.contains(x + "," + y);
@@ -185,54 +194,65 @@ public class Jiji extends GameCharacter {
     
     
     
-    public boolean useSystemOverload(Board enemyBoard) {
-        if (systemOverloadCooldown > 0) {
-            System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
-            return false;
-        }
-        
-        if (!hasEnoughMana(400)) {
-            System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
-            return false;
-        }
-        
-        System.out.println("💻 Jiji uses SYSTEM OVERLOAD: \"System failure in 3... 2... 1... yawn\"");
-        spendMana(400);
-        
-        
-        String[] enemySkills = {"Radar Scan", "Barrage", "Peek", "Emergency Repair", 
-                                "Silent Drift", "Sonar Pulse", "Depth Charge", "Tempest Lock",
-                                "Radar Overload", "Kinetic Barrier", "Orbital Railgun",
-                                "Cat Swarm", "Laser Pointer", "Catnip Explosion"};
-        String disabledSkill = enemySkills[random.nextInt(enemySkills.length)];
-        disabledEnemySkills.add(disabledSkill);
-        skillDisableTurns = 3;
-        
-        System.out.println("🛑 Enemy skill '" + disabledSkill + "' is disabled for 3 turns!");
-        
-        
-        int damage = random.nextInt(151) + 250; 
-        System.out.println("💥 System Overload deals " + damage + " damage!");
-        
-        
-        for (int i = 0; i < 10; i++) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            Cell cell = enemyBoard.getCell(x, y);
-            if (cell.hasShip() && !cell.isFiredUpon()) {
-                ShotResult result = enemyBoard.fire(x, y);
-                System.out.println("🎯 Hit at (" + x + "," + y + ")");
-                break;
-            }
-        }
-        
-        systemOverloadCooldown = 5; 
-        return true;
+  public boolean useSystemOverload(Board enemyBoard) {
+    if (systemOverloadCooldown > 0) {
+        System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
+        return false;
     }
     
-    public boolean isSkillDisabled(String skillName) {
-        return disabledEnemySkills.contains(skillName) && skillDisableTurns > 0;
+    if (!hasEnoughMana(400)) {
+        System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
+        return false;
     }
+    
+    System.out.println("💻 Jiji uses SYSTEM OVERLOAD: \"Revealing enemy ship... yawn\"");
+    spendMana(400);
+    
+    
+    ArrayList<Ship> availableShips = new ArrayList<>();
+    for (Ship ship : enemyBoard.getShips()) {
+        if (!ship.isSunk() && !ship.isFullyRevealed()) {
+            availableShips.add(ship);
+        }
+    }
+    
+    if (availableShips.isEmpty()) {
+        System.out.println("⚠️ No available ships to reveal!");
+        return false;
+    }
+    
+    
+    Ship targetShip = availableShips.get(random.nextInt(availableShips.size()));
+    
+    
+    int revealedCells = 0;
+    StringBuilder revealReport = new StringBuilder("💻 System Overload reveals " + targetShip.getName() + ":\n");
+    
+    
+    for (Ship.Coordinate pos : targetShip.getPositions()) {
+        int x = pos.getX();
+        int y = pos.getY();
+        Cell cell = enemyBoard.getCell(x, y);
+        
+        if (!cell.isFiredUpon()) {
+            ShotResult result = enemyBoard.fire(x, y);
+            revealedCells++;
+            revealReport.append("   • (" + x + "," + y + ") revealed! Result: " + result + "\n");
+        } else {
+            revealReport.append("   • (" + x + "," + y + ") already revealed\n");
+        }
+    }
+    
+    
+    targetShip.setFullyRevealed(true);
+    
+    System.out.println(revealReport.toString());
+    System.out.println("💻 " + targetShip.getName() + " has been FULLY REVEALED!");
+    System.out.println("   All " + revealedCells + " cells are now visible!");
+    
+    systemOverloadCooldown = 5;
+    return true;
+}
     
     
     

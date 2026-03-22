@@ -11,6 +11,7 @@ public class Ship {
     private boolean isShielded = false;
 private int shieldedTurns = 0;
 private boolean isInfected = false; 
+private boolean isFullyRevealed = false;
 
 
     
@@ -33,6 +34,13 @@ private boolean isInfected = false;
             System.out.println("🦠 " + name + " has been INFECTED by the virus!");
         }
     }
+    public boolean isFullyRevealed() {
+    return isFullyRevealed;
+}
+public void setFullyRevealed(boolean revealed) {
+    this.isFullyRevealed = revealed;
+}
+
     
     public boolean isInfected() {
         return isInfected;

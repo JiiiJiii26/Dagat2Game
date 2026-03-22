@@ -1187,6 +1187,7 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
     });
     
     
+    
     String status1 = jiji.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
         dataLeechBtn.setEnabled(false);
@@ -1224,33 +1225,37 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
     panel.add(overclockBtn);
     
     
-    JButton systemBtn = new JButton("💻 System Overload (400)");
-    systemBtn.setBackground(new Color(200, 50, 50));
-    systemBtn.setToolTipText("Disable enemy skill + damage");
-    systemBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            boolean used = jiji.useSystemOverload(enemyBoard);
-            if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "💻 System Overload! Enemy skill disabled!", 
-                    "ULTIMATE!", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                refreshUI();
-            } else {
-                JOptionPane.showMessageDialog(frame, 
-                    "❌ Cannot use System Overload!\n" + jiji.getSkillStatus(3), 
-                    "Skill Not Ready", 
-                    JOptionPane.WARNING_MESSAGE);
-            }
+   JButton systemBtn = new JButton("💻 System Overload (400)");
+systemBtn.setBackground(new Color(200, 50, 50));
+systemBtn.setForeground(Color.WHITE);
+systemBtn.setToolTipText("Reveals an entire enemy ship!");
+systemBtn.setFont(new Font("Arial", Font.BOLD, 11));
+systemBtn.setFocusPainted(false);
+
+String status3 = jiji.getSkillStatus(3);
+if (!status3.equals("Ready!")) {
+    systemBtn.setEnabled(false);
+    systemBtn.setText("💻 System Overload (" + status3 + ")");
+}
+
+systemBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        boolean used = jiji.useSystemOverload(enemyBoard);
+        if (used) {
+            JOptionPane.showMessageDialog(frame, 
+                "💻 SYSTEM OVERLOAD!\n\nA random enemy ship has been fully revealed!\nAll its cells are now visible!", 
+                "ULTIMATE!", 
+                JOptionPane.INFORMATION_MESSAGE);
+            refreshUI();
+        } else {
+            JOptionPane.showMessageDialog(frame, 
+                "❌ Cannot use System Overload!\n" + jiji.getSkillStatus(3), 
+                "Skill Not Ready", 
+                JOptionPane.WARNING_MESSAGE);
         }
-    });
-    
-    String status3 = jiji.getSkillStatus(3);
-    if (!status3.equals("Ready!")) {
-        systemBtn.setEnabled(false);
-        systemBtn.setText("💻 System Overload (" + status3 + ")");
     }
-    panel.add(systemBtn);
+});
+panel.add(systemBtn);
     
     
     JLabel manaLabel = new JLabel(jiji.getManaBar(), SwingConstants.CENTER);
