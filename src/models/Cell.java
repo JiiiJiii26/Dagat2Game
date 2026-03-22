@@ -8,6 +8,7 @@ public class Cell {
     private boolean hasShip;
     private boolean isFiredUpon;
     private Ship ship;  
+     private boolean isPlayerBoard;
     
    public static final Color SHIELD_BLUE = new Color(0, 100, 200);
     public static final Color OCEAN_BLUE = new Color(173, 216, 230);
@@ -23,8 +24,11 @@ public class Cell {
         this.hasShip = false;
         this.isFiredUpon = false;
         this.ship = null;
+         this.isPlayerBoard = false; 
     }
-    
+      public void setPlayerBoard(boolean isPlayer) {
+        this.isPlayerBoard = isPlayer;
+    }
     public ShotResult fire() {
         if (isFiredUpon) {
             return ShotResult.ALREADY_FIRED;
@@ -57,22 +61,29 @@ public class Cell {
         return isFiredUpon;
     }
     
-   public Color getColor() {
-     if (ship != null && ship.isShielded() && !isFiredUpon) {
-        System.out.println("🔵 Cell (" + x + "," + y + ") is SHIELDED, returning blue!");
-        return SHIELD_BLUE;
-    }
-    
-    if (ship != null && ship.isShielded() && !isFiredUpon) {
-        return SHIELD_BLUE;  
-    } else if (!isFiredUpon) {
+     public Color getColor() {
+        
+        if (ship != null && ship.isShielded() && !isFiredUpon && isPlayerBoard) {
+            return SHIELD_BLUE;
+        }
+        
+        
+        if (isFiredUpon) {
+            if (hasShip) {
+                return HIT_RED;
+            } else {
+                return MISS_GRAY;
+            }
+        }
+        
+        
+        if (hasShip && isPlayerBoard) {
+            return SHIP_GREEN;
+        }
+        
+        
         return OCEAN_BLUE;
-    } else if (hasShip) {
-        return HIT_RED;
-    } else {
-        return MISS_GRAY;
     }
-}
 }
 
 

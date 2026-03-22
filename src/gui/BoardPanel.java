@@ -27,6 +27,12 @@ public class BoardPanel extends JPanel {
     public BoardPanel(boolean isPlayerBoard, Board existingBoard) {
     this.isPlayerBoard = isPlayerBoard;
     this.board = existingBoard;
+
+     for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            board.getCell(i, j).setPlayerBoard(isPlayerBoard);
+        }
+    }
     
     setLayout(new GridLayout(SIZE, SIZE));
     setPreferredSize(new Dimension(400, 400));
@@ -34,53 +40,51 @@ public class BoardPanel extends JPanel {
     gridButtons = new JButton[SIZE][SIZE];
     
     
-    if (isPlayerBoard && existingBoard.getShips().isEmpty()) {
-        Ship carrier = new Ship("Carrier", 5);
-        board.placeShip(carrier, 2, 3, true);
-    }
+  
     
     initializeButtons();
 }
     
-    private void initializeButtons() {
-        for (int row = 0; row < SIZE; row++) {
-            for (int col = 0; col < SIZE; col++) {
-                JButton button = new JButton();
-                button.putClientProperty("row", row);
-                button.putClientProperty("col", col);
-                
-             
-                Cell cell = board.getCell(row, col);
-                button.setBackground(cell.getColor());
-                button.setOpaque(true);
-                button.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-                
-             
-                if (isPlayerBoard && cell.hasShip()) {
-                    button.setBackground(Cell.SHIP_GREEN);
-                }
-                
-               button.addActionListener(e -> {
-    JButton clicked = (JButton) e.getSource();
-    int r = (int) clicked.getClientProperty("row");
-    int c = (int) clicked.getClientProperty("col");
-    handleClick(r, c);
-});
-                
-                gridButtons[row][col] = button;
-                add(button);
-            }
+  private void initializeButtons() {
+    for (int row = 0; row < SIZE; row++) {
+        for (int col = 0; col < SIZE; col++) {
+            JButton button = new JButton();
+            button.putClientProperty("row", row);
+            button.putClientProperty("col", col);
+            
+            Cell cell = board.getCell(row, col);
+            
+            
+            button.setBackground(cell.getColor());
+            button.setOpaque(true);
+            button.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            
+            
+            
+            
+            
+            
+            button.addActionListener(e -> {
+                JButton clicked = (JButton) e.getSource();
+                int r = (int) clicked.getClientProperty("row");
+                int c = (int) clicked.getClientProperty("col");
+                handleClick(r, c);
+            });
+            
+            gridButtons[row][col] = button;
+            add(button);
         }
     }
+}
     
    private void handleClick(int row, int col) {
         if (isPlayerBoard) {
-            // For player's own board (for skills like Aeris shield)
+            
             if (playerClickHandler != null) {
                 playerClickHandler.onPlayerCellClicked(row, col);
             }
         } else {
-            // For enemy board
+            
             if (enemyClickHandler != null) {
                 enemyClickHandler.onEnemyCellClicked(row, col);
             } else {
@@ -121,14 +125,14 @@ public void updateCell(int row, int col, ShotResult result) {
             break;
     }
  }
- public void refreshColors() {
+public void refreshColors() {
     for (int row = 0; row < SIZE; row++) {
         for (int col = 0; col < SIZE; col++) {
             Cell cell = board.getCell(row, col);
             gridButtons[row][col].setBackground(cell.getColor());
-            gridButtons[row][col].repaint();
         }
     }
+    repaint();
 }
 }
 

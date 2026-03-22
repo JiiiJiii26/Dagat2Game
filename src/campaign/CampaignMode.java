@@ -840,7 +840,7 @@ if (!status1.equals("Ready!")) {
 
 adaptiveBtn.addActionListener(e -> {
     if (isPlayer && playerTurn) {
-        // Check mana and cooldown
+        
         if (!aeris.hasEnoughMana(120)) {
             updateStatusLabel("❌ Not enough mana! Need 120 mana.", Color.RED);
             return;
@@ -850,54 +850,59 @@ adaptiveBtn.addActionListener(e -> {
             return;
         }
         
-        // Start targeting mode
+        
         updateStatusLabel("🛡️ Click on YOUR board to select a ship to shield!", Color.YELLOW);
         waitingForAerisShield = true;
-        currentAerisShieldCallback = (x, y) -> {
-            System.out.println("🛡️ Aeris callback received: (" + x + "," + y + ")");
-            
-            // Find which ship is at this cell
-            Ship targetShip = null;
-            for (Ship ship : playerBoard.getShips()) {
-                if (!ship.isSunk() && !ship.isShielded()) {
-                    // For now, just shield the first available ship
-                    // You'll need to properly check position
-                    targetShip = ship;
-                    break;
-                }
-            }
-            
-            if (targetShip == null) {
-                updateStatusLabel("❌ No valid ship to shield!", Color.RED);
-                waitingForAerisShield = false;
-                return;
-            }
-            
-            if (targetShip.isShielded()) {
-                updateStatusLabel("❌ This ship is already shielded!", Color.RED);
-                waitingForAerisShield = false;
-                return;
-            }
-            
-            // Find index
-            int shipIndex = -1;
-            ArrayList<Ship> ships = playerBoard.getShips();
-            for (int i = 0; i < ships.size(); i++) {
-                if (ships.get(i) == targetShip) {
-                    shipIndex = i;
-                    break;
-                }
-            }
-            
-            boolean used = aeris.useAdaptiveInstinct(playerBoard, shipIndex);
-            if (used) {
-                updateStatusLabel("🛡️ " + targetShip.getName() + " is now SHIELDED (blue) for 2 turns!", Color.CYAN);
-                refreshUI();
-            } else {
-                updateStatusLabel("❌ Failed to shield ship!", Color.RED);
-            }
-            waitingForAerisShield = false;
-        };
+     currentAerisShieldCallback = (x, y) -> {
+    System.out.println("🛡️ Aeris callback received: (" + x + "," + y + ")");
+    
+    
+    Ship targetShip = null;
+    for (Ship ship : playerBoard.getShips()) {
+        if (ship.containsCell(x, y)) {
+            targetShip = ship;
+            System.out.println("🔵 Found ship: " + ship.getName() + " at (" + x + "," + y + ")");
+            break;
+        }
+    }
+    
+    if (targetShip == null) {
+        updateStatusLabel("❌ No ship at that location!", Color.RED);
+        waitingForAerisShield = false;
+        return;
+    }
+    
+    if (targetShip.isSunk()) {
+        updateStatusLabel("❌ This ship is already sunk!", Color.RED);
+        waitingForAerisShield = false;
+        return;
+    }
+    
+    if (targetShip.isShielded()) {
+        updateStatusLabel("❌ " + targetShip.getName() + " is already shielded!", Color.RED);
+        waitingForAerisShield = false;
+        return;
+    }
+    
+    
+    int shipIndex = -1;
+    ArrayList<Ship> ships = playerBoard.getShips();
+    for (int i = 0; i < ships.size(); i++) {
+        if (ships.get(i) == targetShip) {
+            shipIndex = i;
+            break;
+        }
+    }
+    
+    boolean used = aeris.useAdaptiveInstinct(playerBoard, shipIndex);
+    if (used) {
+        updateStatusLabel("🔵 " + targetShip.getName() + " is now SHIELDED (blue) for 2 turns!", Color.CYAN);
+        playerBoardPanel.refreshColors();
+    } else {
+        updateStatusLabel("❌ Failed to shield " + targetShip.getName() + "!", Color.RED);
+    }
+    waitingForAerisShield = false;
+};
     }
 });
 panel.add(adaptiveBtn);
@@ -1682,11 +1687,11 @@ private JPanel createBoardsPanel() {
     playerBoardPanel = new BoardPanel(true, playerBoard);
     enemyBoardPanel = new BoardPanel(false, enemyBoard);
     
-    // ===== PLAYER BOARD CLICK HANDLER (for Aeris shield targeting) =====
+    
     playerBoardPanel.setPlayerClickHandler((row, col) -> {
         System.out.println("🛡️ Player board clicked at: (" + row + "," + col + ")");
         
-        // Check for Aeris shield targeting
+        
         if (waitingForAerisShield && currentAerisShieldCallback != null) {
             System.out.println("🛡️ Aeris shield targeting: (" + row + "," + col + ")");
             currentAerisShieldCallback.accept(row, col);
@@ -1697,11 +1702,11 @@ private JPanel createBoardsPanel() {
         }
     });
     
-    // ===== ENEMY BOARD CLICK HANDLER =====
+    
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
         System.out.println("🎯 Enemy board clicked at: (" + row + "," + col + ")");
         
-        // Check for Selene's Lunar Vision
+        
         if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
             System.out.println("🌙 Selene's LUNAR VISION targeting: (" + row + "," + col + ")");
             currentSeleneVisionCallback.accept(row, col);
@@ -1710,7 +1715,7 @@ private JPanel createBoardsPanel() {
             return;
         }
         
-        // Check for Selene's Eclipse Binding
+        
         if (waitingForSeleneBinding && currentSeleneBindingCallback != null) {
             System.out.println("🌑 Selene's ECLIPSE BINDING targeting: (" + row + "," + col + ")");
             currentSeleneBindingCallback.accept(row, col);
@@ -1719,7 +1724,7 @@ private JPanel createBoardsPanel() {
             return;
         }
         
-        // Check for Selene's Crescent Blade
+        
         if (waitingForSeleneCrescent && currentSeleneCrescentCallback != null) {
             System.out.println("🌙 Selene's CRESCENT BLADE targeting: (" + row + "," + col + ")");
             currentSeleneCrescentCallback.accept(row, col);
@@ -1728,7 +1733,7 @@ private JPanel createBoardsPanel() {
             return;
         }
         
-        // Check for other skill targeting
+        
         if (waitingForTarget && targetCallback != null) {
             targetCallback.onTargetSelected(row, col);
             waitingForTarget = false;
@@ -1736,7 +1741,7 @@ private JPanel createBoardsPanel() {
             return;
         }
         
-        // Check for Morgana's Whirlpool Trap
+        
         if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
             currentWhirlpoolCallback.accept(row, col);
             waitingForWhirlpoolTarget = false;
@@ -1744,7 +1749,7 @@ private JPanel createBoardsPanel() {
             return;
         }
         
-        // Normal attack
+        
         if (playerTurn) {
             handlePlayerAttack(row, col);
         }
@@ -2054,11 +2059,12 @@ private void refreshCharacterPanels() {
             this.waveColor = color;
         }
     }
-    private void refreshUI() {
-        playerBoardPanel.repaint();
-    enemyBoardPanel.repaint();
-     if (currentWaveIndex < waves.size()) {
-        createBattleUI(waves.get(currentWaveIndex));
+   private void refreshUI() {
+    if (playerBoardPanel != null) {
+        playerBoardPanel.refreshColors();
+    }
+    if (enemyBoardPanel != null) {
+        enemyBoardPanel.refreshColors();
     }
 }
 private JPanel createShipCounterPanel(boolean isPlayer) {

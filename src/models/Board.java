@@ -24,7 +24,7 @@ public class Board {
         return ShotResult.INVALID;
     }
     
-    // Check if already fired
+    
     if (grid[x][y].isFiredUpon()) {
         System.out.println("Already fired at (" + x + "," + y + ")");
         return ShotResult.ALREADY_FIRED;
@@ -51,18 +51,19 @@ public class Board {
         
         
         if (horizontal) {
-            for (int i = 0; i < ship.getSize(); i++) {
-                grid[startX][startY + i].placeShip(ship);
-            }
-        } else {
-            for (int i = 0; i < ship.getSize(); i++) {
-                grid[startX + i][startY].placeShip(ship);
-            }
+        for (int i = 0; i < ship.getSize(); i++) {
+            grid[startX][startY + i].placeShip(ship);
+            
         }
-        
-        ships.add(ship);
-        return true;
+    } else {
+        for (int i = 0; i < ship.getSize(); i++) {
+            grid[startX + i][startY].placeShip(ship);
+        }
     }
+    
+    ships.add(ship);
+    return true;
+}
     
     public boolean allShipsSunk() {
         for (Ship ship : ships) {

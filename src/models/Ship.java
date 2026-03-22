@@ -58,6 +58,14 @@ public boolean containsCoordinate(int x, int y) {
     }
     return false;
 }
+public boolean containsCell(int x, int y) {
+    for (Coordinate pos : positions) {
+        if (pos.getX() == x && pos.getY() == y) {
+            return true;
+        }
+    }
+    return false;
+}
 
 public void decrementShieldTurns() {
     if (shieldedTurns > 0) {
