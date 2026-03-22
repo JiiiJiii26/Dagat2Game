@@ -132,60 +132,79 @@ public class SkillPanel extends JPanel {
             });
     }
     
-    private void addKaelSkills(JPanel panel, GridBagConstraints gbc) {
-        Kael kael = (Kael) character;
-        
-        
-        addSkillRow(panel, gbc, 2,
-            "🌫️ SILENT DRIFT",
-            "80 energy - Hide a ship for 2 turns",
-            new Color(75, 0, 130),
-            e -> {
-                if (kael.useSilentDrift(getPlayerBoard())) {
-                    showMessage("Silent Drift! Ship hidden!");
-                }
-            });
-        
-        
-        addSkillRow(panel, gbc, 3,
-            "📡 SONAR PULSE",
-            "120 energy - Reveal hidden enemy",
-            new Color(100, 150, 255),
-            e -> {
-                if (kael.useSonarPulse(getEnemyBoard())) {
-                    showMessage("Sonar Pulse! Enemy revealed!");
-                }
-            });
-        
-        
-        addSkillRow(panel, gbc, 4,
-            "💣 DEPTH CHARGE",
-            "200 energy - Bonus vs hidden",
-            new Color(200, 100, 0),
-            e -> {
-                
-                promptForTarget("Depth Charge", (x, y) -> {
-                    int damage = kael.useDepthChargeBarrage(getEnemyBoard(), x, y);
-                    if (damage > 0) {
-                        showMessage("Depth Charge dealt " + damage + " damage!");
-                    }
-                });
-            });
-        
-        
-        addSkillRow(panel, gbc, 5,
-            "🌪️ TEMPEST LOCK",
-            "300 energy - Ultimate! Area attack",
-            new Color(255, 215, 0),
-            e -> {
-                promptForTarget("Tempest Lock", (x, y) -> {
-                    int damage = kael.useTempestLock(getEnemyBoard(), x, y);
-                    if (damage > 0) {
-                        showMessage("Tempest Lock dealt " + damage + " damage!");
-                    }
-                });
-            });
-    }
+   private void addKaelSkills(JPanel panel, GridBagConstraints gbc) {
+    Kael kael = (Kael) character;
+    
+    // Shadow Veil
+    gbc.gridy++;
+    JLabel veilLabel = new JLabel("🌑 SHADOW VEIL");
+    veilLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    veilLabel.setForeground(new Color(75, 0, 130));
+    panel.add(veilLabel, gbc);
+    
+    gbc.gridy++;
+    JButton veilBtn = new JButton("USE (80 energy)");
+    veilBtn.setBackground(new Color(75, 0, 130));
+    veilBtn.setForeground(Color.WHITE);
+    veilBtn.addActionListener(e -> {
+        boolean used = kael.useShadowVeil();
+        if (used) {
+            showMessage("🌑 Shadow Veil! One ship is hidden!");
+        } else {
+            showMessage("❌ Cannot use Shadow Veil!");
+        }
+    });
+    panel.add(veilBtn, gbc);
+    
+    // Shadow Strike
+    gbc.gridy++;
+    JLabel strikeLabel = new JLabel("⚔️ SHADOW STRIKE");
+    strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    strikeLabel.setForeground(new Color(100, 150, 255));
+    panel.add(strikeLabel, gbc);
+    
+    gbc.gridy++;
+    JButton strikeBtn = new JButton("USE (120 energy)");
+    strikeBtn.setBackground(new Color(100, 150, 255));
+    strikeBtn.setForeground(Color.BLACK);
+    strikeBtn.addActionListener(e -> {
+        boolean used = kael.useShadowStrike();
+        if (used) {
+            showMessage("⚔️ Shadow Strike ready! Next attack destroys 2 cells!");
+        } else {
+            showMessage("❌ Cannot use Shadow Strike!");
+        }
+    });
+    panel.add(strikeBtn, gbc);
+    
+    // Shadow Realm
+    gbc.gridy++;
+    JLabel realmLabel = new JLabel("🌑🌑🌑 SHADOW REALM");
+    realmLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    realmLabel.setForeground(new Color(50, 0, 100));
+    panel.add(realmLabel, gbc);
+    
+    gbc.gridy++;
+    JButton realmBtn = new JButton("USE (250 energy)");
+    realmBtn.setBackground(new Color(50, 0, 100));
+    realmBtn.setForeground(Color.WHITE);
+    realmBtn.addActionListener(e -> {
+        boolean used = kael.useShadowRealm();
+        if (used) {
+            showMessage("🌑🌑🌑 Shadow Realm active! All attacks destroy 2 cells for 2 turns!");
+        } else {
+            showMessage("❌ Cannot use Shadow Realm!");
+        }
+    });
+    panel.add(realmBtn, gbc);
+    
+    // Energy display
+    gbc.gridy++;
+    JLabel energyLabel = new JLabel(kael.getEnergyBar(), SwingConstants.CENTER);
+    energyLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    energyLabel.setForeground(new Color(100, 200, 255));
+    panel.add(energyLabel, gbc);
+}
     
     private void addValeriusSkills(JPanel panel, GridBagConstraints gbc) {
         Valerius valerius = (Valerius) character;

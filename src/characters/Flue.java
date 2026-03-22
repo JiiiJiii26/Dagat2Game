@@ -33,7 +33,7 @@ public class Flue extends GameCharacter {
     
     private Map<Ship, Debuff> debuffedShips = new HashMap<>();
     
-    
+    private Map<Ship, Integer> silencedShips = new HashMap<>();
     private boolean loneResolveActive = false;
     
     
@@ -50,6 +50,9 @@ public class Flue extends GameCharacter {
             this.accuracyReduction = accuracyRed;
         }
     }
+    public int getSilencedShipsCount() {
+    return silencedShips.size();
+}
     
     public Flue() {
         super(
@@ -139,7 +142,8 @@ public class Flue extends GameCharacter {
     corruptionCooldown = 2;
     return true;
 }
-    
+
+
     
     
 public void updateVirusSpread(Board enemyBoard) {

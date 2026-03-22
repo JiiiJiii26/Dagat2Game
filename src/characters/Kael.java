@@ -15,61 +15,55 @@ public class Kael extends GameCharacter {
     private Random random = new Random();
     private int currentEnergy;
     private static final int MAX_ENERGY = 500;
-    private int speed = 85;
     
     
-    private int silentDriftCooldown = 0;
-    private int sonarPulseCooldown = 0;
-    private int depthChargeCooldown = 0;
-    private int tempestLockCooldown = 0;
+    private int shadowVeilCooldown = 0;
+    private int shadowStrikeCooldown = 0;
+    private int shadowRealmCooldown = 0;
     
     
     private ArrayList<Ship> hiddenShips = new ArrayList<>();
     private Map<Ship, Integer> shipHideTurns = new HashMap<>();
     
     
-    private ArrayList<Ship> revealedEnemyShips = new ArrayList<>();
-    private Map<Ship, Integer> shipRevealTurns = new HashMap<>();
+    private boolean nextAttackBonus = false;
+    private int bonusCells = 0;
     
     
-    private boolean lastTargetWasHidden = false;
-    private int lastCellsDestroyed = 0;
+    private boolean shadowRealmActive = false;
+    private int shadowRealmTurns = 0;
+    private ArrayList<String> revealedEnemyCells = new ArrayList<>();
+    
+    
+    private Board playerBoardRef;
     
     public Kael() {
         super(
-            "Kael - Shadow Navigator",
-            "A master of stealth who strikes from the shadows. His fleet is invisible until it's too late.",
-            2200, 
+            "Kael — Shadow Navigator",
+            "A master of stealth who strikes from the shadows.",
+            2200,
             100,
             new Color(75, 0, 130)  
         );
         this.currentEnergy = MAX_ENERGY;
         this.abilityName = "Shadow Navigation";
-        this.abilityDescription = "Uses energy to hide ships, reveal enemies, and destroy ship segments.";
+        this.abilityDescription = "Uses energy to hide ships, strike from darkness, and enter the shadow realm.";
+    }
+    
+    public void setPlayerBoard(Board board) {
+        this.playerBoardRef = board;
     }
     
     
     
-    public int getCurrentEnergy() {
-        return currentEnergy;
-    }
-    
-    public int getMaxEnergy() {
-        return MAX_ENERGY;
-    }
-    
-    public int getSpeed() {
-        return speed;
-    }
-    
-    public boolean hasEnoughEnergy(int cost) {
-        return currentEnergy >= cost;
-    }
+    public int getCurrentEnergy() { return currentEnergy; }
+    public int getMaxEnergy() { return MAX_ENERGY; }
+    public boolean hasEnoughEnergy(int cost) { return currentEnergy >= cost; }
     
     public void spendEnergy(int cost) {
         if (hasEnoughEnergy(cost)) {
             currentEnergy -= cost;
-            System.out.println("⚡ Kael spent " + cost + " energy. Remaining: " + currentEnergy);
+            System.out.println("🌑 Kael spent " + cost + " energy. Remaining: " + currentEnergy);
         }
     }
     
@@ -78,14 +72,15 @@ public class Kael extends GameCharacter {
         if (currentEnergy > MAX_ENERGY) {
             currentEnergy = MAX_ENERGY;
         }
+        System.out.println("🌑 Kael energy: " + currentEnergy + "/" + MAX_ENERGY);
     }
     
     
     
     
-    public boolean useSilentDrift(Board playerBoard) {
-        if (silentDriftCooldown > 0) {
-            System.out.println("⏳ Silent Drift is on cooldown for " + silentDriftCooldown + " more turns");
+    public boolean useShadowVeil() {
+        if (shadowVeilCooldown > 0) {
+            System.out.println("⏳ Shadow Veil is on cooldown for " + shadowVeilCooldown + " more turns");
             return false;
         }
         
@@ -94,38 +89,50 @@ public class Kael extends GameCharacter {
             return false;
         }
         
-        System.out.println("🌫️ KAEL uses SILENT DRIFT: \"Hide one boat for 2 turns.\"");
-        spendEnergy(80);
-        
-        
-        boolean shipHidden = false;
-        for (Ship ship : playerBoard.getShips()) {
-            if (!ship.isSunk() && !hiddenShips.contains(ship)) {
-                
-                hiddenShips.add(ship);
-                shipHideTurns.put(ship, 2); 
-                ship.setHidden(true);
-                System.out.println("🚢 " + ship.getName() + " is now hidden for 2 turns!");
-                shipHidden = true;
-                break;
-            }
-        }
-        
-        if (!shipHidden) {
-            System.out.println("❌ No available ships to hide!");
+        if (playerBoardRef == null) {
+            System.out.println("⚠️ No player board reference!");
             return false;
         }
         
-        silentDriftCooldown = 2; 
+        
+        ArrayList<Ship> availableShips = new ArrayList<>();
+        for (Ship ship : playerBoardRef.getShips()) {
+            if (!ship.isSunk() && !hiddenShips.contains(ship)) {
+                availableShips.add(ship);
+            }
+        }
+        
+        if (availableShips.isEmpty()) {
+            System.out.println("⚠️ No available ships to hide!");
+            return false;
+        }
+        
+        Ship targetShip = availableShips.get(random.nextInt(availableShips.size()));
+        
+        System.out.println("🌑 KAEL uses SHADOW VEIL: \"" + targetShip.getName() + " fades into darkness...\"");
+        spendEnergy(80);
+        
+        hiddenShips.add(targetShip);
+        shipHideTurns.put(targetShip, 2);
+        targetShip.setHidden(true);
+        
+        System.out.println("🌑 " + targetShip.getName() + " is now HIDDEN for 2 turns!");
+        System.out.println("   Enemy cannot target this ship!");
+        
+        shadowVeilCooldown = 2;
         return true;
+    }
+    
+    public boolean isShipHidden(Ship ship) {
+        return hiddenShips.contains(ship) && shipHideTurns.get(ship) > 0;
     }
     
     
     
     
-    public boolean useSonarPulse(Board enemyBoard) {
-        if (sonarPulseCooldown > 0) {
-            System.out.println("⏳ Sonar Pulse is on cooldown for " + sonarPulseCooldown + " more turns");
+    public boolean useShadowStrike() {
+        if (shadowStrikeCooldown > 0) {
+            System.out.println("⏳ Shadow Strike is on cooldown for " + shadowStrikeCooldown + " more turns");
             return false;
         }
         
@@ -134,225 +141,159 @@ public class Kael extends GameCharacter {
             return false;
         }
         
-        System.out.println("📡 KAEL uses SONAR PULSE: \"Reveal and destroy one segment of a hidden ship.\"");
+        System.out.println("⚔️ KAEL uses SHADOW STRIKE: \"Strike from the darkness!\"");
         spendEnergy(120);
         
+        nextAttackBonus = true;
+        bonusCells = 2;
         
-        boolean shipRevealed = false;
-        for (Ship ship : enemyBoard.getShips()) {
-            if (!ship.isSunk() && ship.isHidden() && !revealedEnemyShips.contains(ship)) {
-                
-                revealedEnemyShips.add(ship);
-                shipRevealTurns.put(ship, 1); 
-                ship.setRevealed(true);
-                
-                
-                int segmentsDestroyed = destroyShipSegments(enemyBoard, ship, 1);
-                
-                System.out.println("🎯 Enemy " + ship.getName() + " revealed and lost " + 
-                                   segmentsDestroyed + " segment(s)!");
-                shipRevealed = true;
-                break;
-            }
-        }
+        System.out.println("⚔️ Next attack will destroy 2 cells!");
         
-        if (!shipRevealed) {
-            System.out.println("❌ No hidden enemy ships found!");
-        }
-        
-        sonarPulseCooldown = 3; 
-        return shipRevealed;
+        shadowStrikeCooldown = 2;
+        return true;
     }
     
-    
-    
-    
-    public int useDepthChargeBarrage(Board enemyBoard, int centerX, int centerY) {
-        if (depthChargeCooldown > 0) {
-            System.out.println("⏳ Depth Charge Barrage is on cooldown for " + depthChargeCooldown + " more turns");
-            return 0;
+    public int applyShadowStrike(Board enemyBoard, int x, int y) {
+        if (!nextAttackBonus) {
+            
+            enemyBoard.fire(x, y);
+            return 1;
         }
         
-        if (!hasEnoughEnergy(200)) {
-            System.out.println("⚠️ Not enough energy! Need 200 energy, have " + currentEnergy);
-            return 0;
-        }
-        
-        System.out.println("💣 KAEL uses DEPTH CHARGE BARRAGE! \"Targeting a 2x2 area!\"");
-        spendEnergy(200);
-        
-        
-        int minX = Math.max(0, centerX - 1);
-        int maxX = Math.min(9, centerX);
-        int minY = Math.max(0, centerY - 1);
-        int maxY = Math.min(9, centerY);
+        System.out.println("⚔️ SHADOW STRIKE ACTIVE! Destroying 2 cells!");
+        nextAttackBonus = false;
         
         int cellsDestroyed = 0;
-        boolean hitHiddenShip = false;
         
         
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                Cell cell = enemyBoard.getCell(x, y);
+        ShotResult result1 = enemyBoard.fire(x, y);
+        cellsDestroyed++;
+        System.out.println("   • Target cell (" + x + "," + y + "): " + result1);
+        
+        
+        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+        ArrayList<int[]> validTargets = new ArrayList<>();
+        
+        for (int[] dir : directions) {
+            int nx = x + dir[0];
+            int ny = y + dir[1];
+            if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+                Cell cell = enemyBoard.getCell(nx, ny);
                 if (!cell.isFiredUpon()) {
-                    ShotResult result = enemyBoard.fire(x, y);
-                    cellsDestroyed++;
-                    
-                    
-                    if (cell.hasShip()) {
-                        for (Ship ship : enemyBoard.getShips()) {
-                            if (ship.isHidden()) {
-                                hitHiddenShip = true;
-                            }
-                        }
-                    }
-                    
-                    System.out.println("💥 Depth Charge destroyed cell (" + x + "," + y + ")");
-                }
-            }
-        }
-        lastTargetWasHidden = hitHiddenShip;
-        
-        
-        if (hitHiddenShip) {
-            System.out.println("🎯 BONUS: Hit a hidden ship! Destroying one more segment!");
-            for (int attempt = 0; attempt < 20; attempt++) {
-                int x = random.nextInt(10);
-                int y = random.nextInt(10);
-                Cell cell = enemyBoard.getCell(x, y);
-                if (!cell.isFiredUpon()) {
-                    enemyBoard.fire(x, y);
-                    cellsDestroyed++;
-                    System.out.println("💥 Bonus segment at (" + x + "," + y + ") destroyed!");
-                    break;
+                    validTargets.add(new int[]{nx, ny});
                 }
             }
         }
         
-        System.out.println("💣 Depth Charge destroyed " + cellsDestroyed + " ship segments!");
-        lastCellsDestroyed = cellsDestroyed;
+        if (!validTargets.isEmpty()) {
+            int[] bonusTarget = validTargets.get(random.nextInt(validTargets.size()));
+            ShotResult result2 = enemyBoard.fire(bonusTarget[0], bonusTarget[1]);
+            cellsDestroyed++;
+            System.out.println("   • Bonus cell (" + bonusTarget[0] + "," + bonusTarget[1] + "): " + result2);
+        }
         
-        depthChargeCooldown = 4; 
         return cellsDestroyed;
     }
     
     
     
     
-    public int useTempestLock(Board enemyBoard, int centerX, int centerY) {
-        if (tempestLockCooldown > 0) {
-            System.out.println("⏳ Tempest Lock is on cooldown for " + tempestLockCooldown + " more turns");
-            return 0;
+    public boolean useShadowRealm() {
+        if (shadowRealmCooldown > 0) {
+            System.out.println("⏳ Shadow Realm is on cooldown for " + shadowRealmCooldown + " more turns");
+            return false;
         }
         
-        if (!hasEnoughEnergy(300)) {
-            System.out.println("⚠️ Not enough energy! Need 300 energy, have " + currentEnergy);
-            return 0;
+        if (!hasEnoughEnergy(250)) {
+            System.out.println("⚠️ Not enough energy! Need 250 energy, have " + currentEnergy);
+            return false;
         }
         
-        System.out.println("🌪️ KAEL uses TEMPEST LOCK - ULTIMATE! \"Total annihilation!\"");
-        spendEnergy(300);
+        System.out.println("🌑🌑🌑 KAEL uses SHADOW REALM: \"I am one with the darkness!\"");
+        spendEnergy(250);
         
+        shadowRealmActive = true;
+        shadowRealmTurns = 2;
         
-        int minX = Math.max(0, centerX - 1);
-        int maxX = Math.min(9, centerX + 1);
-        int minY = Math.max(0, centerY - 1);
-        int maxY = Math.min(9, centerY + 1);
+        System.out.println("🌑🌑🌑 Shadow Realm ACTIVE for 2 turns!");
+        System.out.println("   Every attack will destroy 2 cells!");
+        
+        shadowRealmCooldown = 4;
+        return true;
+    }
+    
+    public boolean isShadowRealmActive() {
+        return shadowRealmActive;
+    }
+    
+    public int applyShadowRealm(Board enemyBoard, int x, int y) {
+        if (!shadowRealmActive) {
+            
+            enemyBoard.fire(x, y);
+            return 1;
+        }
+        
+        System.out.println("🌑 SHADOW REALM ACTIVE! Destroying 2 cells!");
         
         int cellsDestroyed = 0;
-        int shipsHit = 0;
-        StringBuilder hitReport = new StringBuilder("🌪️ Tempest Lock destroys:\n");
         
         
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                Cell cell = enemyBoard.getCell(x, y);
+        ShotResult result1 = enemyBoard.fire(x, y);
+        cellsDestroyed++;
+        System.out.println("   • Target cell (" + x + "," + y + "): " + result1);
+        
+        
+        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+        ArrayList<int[]> validTargets = new ArrayList<>();
+        
+        for (int[] dir : directions) {
+            int nx = x + dir[0];
+            int ny = y + dir[1];
+            if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+                Cell cell = enemyBoard.getCell(nx, ny);
                 if (!cell.isFiredUpon()) {
-                    ShotResult result = enemyBoard.fire(x, y);
-                    cellsDestroyed++;
-                    hitReport.append("• Cell (").append(x).append(",").append(y).append(") destroyed!\n");
-                    
-                    if (cell.hasShip()) {
-                        shipsHit++;
-                    }
+                    validTargets.add(new int[]{nx, ny});
                 }
             }
         }
         
-        if (cellsDestroyed == 0) {
-            hitReport.append("• All cells in area already destroyed!");
-        } else {
-            hitReport.append("💥 Total: ").append(cellsDestroyed).append(" ship segments destroyed, ");
-            hitReport.append(shipsHit).append(" ships damaged!");
+        if (!validTargets.isEmpty()) {
+            int[] bonusTarget = validTargets.get(random.nextInt(validTargets.size()));
+            ShotResult result2 = enemyBoard.fire(bonusTarget[0], bonusTarget[1]);
+            cellsDestroyed++;
+            System.out.println("   • Bonus cell (" + bonusTarget[0] + "," + bonusTarget[1] + "): " + result2);
         }
         
-        System.out.println(hitReport.toString());
-        lastCellsDestroyed = cellsDestroyed;
-        
-        tempestLockCooldown = 5; 
         return cellsDestroyed;
-    }
-    
-    
-    private int destroyShipSegments(Board board, Ship ship, int segmentsToDestroy) {
-        int destroyed = 0;
-        int attempts = 0;
-        
-        while (destroyed < segmentsToDestroy && attempts < 100) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            Cell cell = board.getCell(x, y);
-            
-            
-            if (cell.hasShip() && !cell.isFiredUpon()) {
-                board.fire(x, y);
-                destroyed++;
-                System.out.println("   Destroyed segment at (" + x + "," + y + ")");
-            }
-            attempts++;
-        }
-        
-        return destroyed;
     }
     
     
     
     public void updateTurnCounter() {
         
-        if (silentDriftCooldown > 0) {
-            silentDriftCooldown--;
+        if (shadowVeilCooldown > 0) shadowVeilCooldown--;
+        if (shadowStrikeCooldown > 0) shadowStrikeCooldown--;
+        if (shadowRealmCooldown > 0) shadowRealmCooldown--;
+        
+        
+        if (shadowRealmActive) {
+            shadowRealmTurns--;
+            if (shadowRealmTurns <= 0) {
+                shadowRealmActive = false;
+                System.out.println("🌑 Shadow Realm has faded.");
+            }
         }
-        if (sonarPulseCooldown > 0) {
-            sonarPulseCooldown--;
-        }
-        if (depthChargeCooldown > 0) {
-            depthChargeCooldown--;
-        }
-        if (tempestLockCooldown > 0) {
-            tempestLockCooldown--;
-        }
         
         
-        regenerateEnergy(15);
-        
-        
-        updateHiddenShips();
-        
-        
-        updateRevealedShips();
-    }
-    
-    private void updateHiddenShips() {
         ArrayList<Ship> toRemove = new ArrayList<>();
-        
-        for (Ship ship : hiddenShips) {
-            int turnsLeft = shipHideTurns.get(ship) - 1;
+        for (Map.Entry<Ship, Integer> entry : shipHideTurns.entrySet()) {
+            int turnsLeft = entry.getValue() - 1;
             if (turnsLeft <= 0) {
-                toRemove.add(ship);
-                ship.setHidden(false);
-                System.out.println("🔓 " + ship.getName() + " is no longer hidden.");
+                toRemove.add(entry.getKey());
+                entry.getKey().setHidden(false);
+                System.out.println("🔓 " + entry.getKey().getName() + " is no longer hidden.");
             } else {
-                shipHideTurns.put(ship, turnsLeft);
+                shipHideTurns.put(entry.getKey(), turnsLeft);
             }
         }
         
@@ -360,26 +301,9 @@ public class Kael extends GameCharacter {
             hiddenShips.remove(ship);
             shipHideTurns.remove(ship);
         }
-    }
-    
-    private void updateRevealedShips() {
-        ArrayList<Ship> toRemove = new ArrayList<>();
         
-        for (Ship ship : revealedEnemyShips) {
-            int turnsLeft = shipRevealTurns.get(ship) - 1;
-            if (turnsLeft <= 0) {
-                toRemove.add(ship);
-                ship.setRevealed(false);
-                System.out.println("👁️ " + ship.getName() + " fades back into hiding.");
-            } else {
-                shipRevealTurns.put(ship, turnsLeft);
-            }
-        }
         
-        for (Ship ship : toRemove) {
-            revealedEnemyShips.remove(ship);
-            shipRevealTurns.remove(ship);
-        }
+        regenerateEnergy(15);
     }
     
     
@@ -387,36 +311,28 @@ public class Kael extends GameCharacter {
     public String getSkillStatus(int skillNum) {
         switch(skillNum) {
             case 1: 
-                if (silentDriftCooldown > 0) {
-                    return "Cooldown: " + silentDriftCooldown + " turn" + (silentDriftCooldown > 1 ? "s" : "");
+                if (shadowVeilCooldown > 0) {
+                    return "Cooldown: " + shadowVeilCooldown + " turn" + (shadowVeilCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughEnergy(80)) {
                     return "Need 80 energy";
                 } else {
                     return "Ready!";
                 }
             case 2: 
-                if (sonarPulseCooldown > 0) {
-                    return "Cooldown: " + sonarPulseCooldown + " turn" + (sonarPulseCooldown > 1 ? "s" : "");
+                if (shadowStrikeCooldown > 0) {
+                    return "Cooldown: " + shadowStrikeCooldown + " turn" + (shadowStrikeCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughEnergy(120)) {
                     return "Need 120 energy";
                 } else {
-                    return "Ready!";
+                    return "Ready! (2 cells next attack)";
                 }
             case 3: 
-                if (depthChargeCooldown > 0) {
-                    return "Cooldown: " + depthChargeCooldown + " turn" + (depthChargeCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughEnergy(200)) {
-                    return "Need 200 energy";
+                if (shadowRealmCooldown > 0) {
+                    return "Cooldown: " + shadowRealmCooldown + " turn" + (shadowRealmCooldown > 1 ? "s" : "");
+                } else if (!hasEnoughEnergy(250)) {
+                    return "Need 250 energy";
                 } else {
                     return "Ready!";
-                }
-            case 4: 
-                if (tempestLockCooldown > 0) {
-                    return "Cooldown: " + tempestLockCooldown + " turn" + (tempestLockCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughEnergy(300)) {
-                    return "Need 300 energy";
-                } else {
-                    return "ULTIMATE READY!";
                 }
             default:
                 return "";
@@ -438,24 +354,11 @@ public class Kael extends GameCharacter {
         return bar.toString();
     }
     
-    public int getHiddenShipsCount() {
-        return hiddenShips.size();
-    }
-    
-    public int getRevealedEnemiesCount() {
-        return revealedEnemyShips.size();
-    }
-    
-    public int getLastCellsDestroyed() {
-        return lastCellsDestroyed;
-    }
+    public int getHiddenShipsCount() { return hiddenShips.size(); }
+    public boolean isShadowStrikeReady() { return nextAttackBonus; }
     
     @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
-        
         System.out.println("Kael's abilities are used through skill buttons!");
     }
-    public boolean wasLastTargetHidden() {
-    return lastTargetWasHidden;
-}
 }
