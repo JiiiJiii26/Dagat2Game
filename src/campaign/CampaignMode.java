@@ -21,6 +21,7 @@ import characters.*;
 import gui.BoardPanel;
 import gui.PlacementPanel;
 import models.Board;
+import models.Cell;
 import models.Ship;
 import game.ShotResult;
 import main.Main;
@@ -39,7 +40,8 @@ public class CampaignMode {
       private boolean waitingForWhirlpoolTarget = false;
     private java.util.function.BiConsumer<Integer, Integer> currentWhirlpoolCallback;
      
-    
+    private boolean waitingForAerisShield = false;
+private java.util.function.BiConsumer<Integer, Integer> currentAerisShieldCallback;
     
     private BoardPanel playerBoardPanel;
     private BoardPanel enemyBoardPanel;
@@ -625,6 +627,7 @@ private void startTargetSelection(String skillName, SkillTargetCallback callback
     
     
     System.out.println("✅ statusLabel created: " + (statusLabel != null));
+
 }
 private JPanel createPlayerCharacterPanel() {
     JPanel panel = new JPanel(new BorderLayout());
@@ -655,7 +658,9 @@ private JPanel createPlayerCharacterPanel() {
         Color.GREEN
     ));
     
-    
+    if (playerCharacter instanceof Aeris) {
+        ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
+    }
     if (playerCharacter instanceof Jiji) {
         addJijiSkills(skillsPanel, true);
     } else if (playerCharacter instanceof Kael) {
@@ -819,29 +824,83 @@ private void addAerisSkills(JPanel panel, boolean isPlayer) {
     Aeris aeris = (Aeris) playerCharacter;
     
     
-    JButton adaptiveBtn = new JButton("🛡️ Adaptive Instinct (120)");
-    adaptiveBtn.setBackground(new Color(255, 215, 0));
-    adaptiveBtn.setForeground(Color.BLACK);
-    adaptiveBtn.setToolTipText("Reduce incoming damage by 30% for 3 turns. Getting hit twice grants +150 bonus damage.");
-    adaptiveBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    adaptiveBtn.setFocusPainted(false);
-    
-    String status1 = aeris.getSkillStatus(1);
-    if (!status1.equals("Ready!")) {
-        adaptiveBtn.setEnabled(false);
-        adaptiveBtn.setText("🛡️ Adaptive Instinct (" + status1 + ")");
-    }
-    
-    adaptiveBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            boolean used = aeris.useAdaptiveInstinct();
-            if (used) {
-                updateStatusLabel("🛡️ Adaptive Instinct! Damage reduced by 30% for 3 turns!", Color.GREEN);
-                refreshUI();
-            }
+  
+
+
+JButton adaptiveBtn = new JButton("🛡️ Adaptive Instinct (120)");
+adaptiveBtn.setBackground(new Color(255, 215, 0));
+adaptiveBtn.setForeground(Color.BLACK);
+adaptiveBtn.setToolTipText("Click on YOUR ship to shield it for 2 turns (turns blue, immune to damage)");
+
+String status1 = aeris.getSkillStatus(1);
+if (!status1.equals("Ready!")) {
+    adaptiveBtn.setEnabled(false);
+    adaptiveBtn.setText("🛡️ Adaptive Instinct (" + status1 + ")");
+}
+
+adaptiveBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        // Check mana and cooldown
+        if (!aeris.hasEnoughMana(120)) {
+            updateStatusLabel("❌ Not enough mana! Need 120 mana.", Color.RED);
+            return;
         }
-    });
-    panel.add(adaptiveBtn);
+        if (aeris.getSkillStatus(1).contains("Cooldown")) {
+            updateStatusLabel("❌ Adaptive Instinct is on cooldown!", Color.RED);
+            return;
+        }
+        
+        // Start targeting mode
+        updateStatusLabel("🛡️ Click on YOUR board to select a ship to shield!", Color.YELLOW);
+        waitingForAerisShield = true;
+        currentAerisShieldCallback = (x, y) -> {
+            System.out.println("🛡️ Aeris callback received: (" + x + "," + y + ")");
+            
+            // Find which ship is at this cell
+            Ship targetShip = null;
+            for (Ship ship : playerBoard.getShips()) {
+                if (!ship.isSunk() && !ship.isShielded()) {
+                    // For now, just shield the first available ship
+                    // You'll need to properly check position
+                    targetShip = ship;
+                    break;
+                }
+            }
+            
+            if (targetShip == null) {
+                updateStatusLabel("❌ No valid ship to shield!", Color.RED);
+                waitingForAerisShield = false;
+                return;
+            }
+            
+            if (targetShip.isShielded()) {
+                updateStatusLabel("❌ This ship is already shielded!", Color.RED);
+                waitingForAerisShield = false;
+                return;
+            }
+            
+            // Find index
+            int shipIndex = -1;
+            ArrayList<Ship> ships = playerBoard.getShips();
+            for (int i = 0; i < ships.size(); i++) {
+                if (ships.get(i) == targetShip) {
+                    shipIndex = i;
+                    break;
+                }
+            }
+            
+            boolean used = aeris.useAdaptiveInstinct(playerBoard, shipIndex);
+            if (used) {
+                updateStatusLabel("🛡️ " + targetShip.getName() + " is now SHIELDED (blue) for 2 turns!", Color.CYAN);
+                refreshUI();
+            } else {
+                updateStatusLabel("❌ Failed to shield ship!", Color.RED);
+            }
+            waitingForAerisShield = false;
+        };
+    }
+});
+panel.add(adaptiveBtn);
     
     
     JButton overdriveBtn = new JButton("⚡ Multitask Overdrive (180)");
@@ -1623,55 +1682,73 @@ private JPanel createBoardsPanel() {
     playerBoardPanel = new BoardPanel(true, playerBoard);
     enemyBoardPanel = new BoardPanel(false, enemyBoard);
     
- enemyBoardPanel.setEnemyClickHandler((row, col) -> {
+    // ===== PLAYER BOARD CLICK HANDLER (for Aeris shield targeting) =====
+    playerBoardPanel.setPlayerClickHandler((row, col) -> {
+        System.out.println("🛡️ Player board clicked at: (" + row + "," + col + ")");
+        
+        // Check for Aeris shield targeting
+        if (waitingForAerisShield && currentAerisShieldCallback != null) {
+            System.out.println("🛡️ Aeris shield targeting: (" + row + "," + col + ")");
+            currentAerisShieldCallback.accept(row, col);
+            waitingForAerisShield = false;
+            currentAerisShieldCallback = null;
+        } else {
+            System.out.println("🛡️ No active shield targeting, ignoring click");
+        }
+    });
     
-    if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
-        System.out.println("🌙 Selene's LUNAR VISION targeting: (" + row + "," + col + ")");
-        currentSeleneVisionCallback.accept(row, col);
-        waitingForSeleneVision = false;
-        currentSeleneVisionCallback = null;
-        return;
-    }
-    
-    
-    if (waitingForSeleneBinding && currentSeleneBindingCallback != null) {
-        System.out.println("🌑 Selene's ECLIPSE BINDING targeting: (" + row + "," + col + ")");
-        currentSeleneBindingCallback.accept(row, col);
-        waitingForSeleneBinding = false;
-        currentSeleneBindingCallback = null;
-        return;
-    }
-    
-    
-    if (waitingForSeleneCrescent && currentSeleneCrescentCallback != null) {
-        System.out.println("🌙 Selene's CRESCENT BLADE targeting: (" + row + "," + col + ")");
-        currentSeleneCrescentCallback.accept(row, col);
-        waitingForSeleneCrescent = false;
-        currentSeleneCrescentCallback = null;
-        return;
-    }
-    
-    
-    if (waitingForTarget && targetCallback != null) {
-        targetCallback.onTargetSelected(row, col);
-        waitingForTarget = false;
-        targetCallback = null;
-        return;
-    }
-    
-    
-    if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
-        currentWhirlpoolCallback.accept(row, col);
-        waitingForWhirlpoolTarget = false;
-        currentWhirlpoolCallback = null;
-        return;
-    }
-    
-    
-    if (playerTurn) {
-        handlePlayerAttack(row, col);
-    }
-});
+    // ===== ENEMY BOARD CLICK HANDLER =====
+    enemyBoardPanel.setEnemyClickHandler((row, col) -> {
+        System.out.println("🎯 Enemy board clicked at: (" + row + "," + col + ")");
+        
+        // Check for Selene's Lunar Vision
+        if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
+            System.out.println("🌙 Selene's LUNAR VISION targeting: (" + row + "," + col + ")");
+            currentSeleneVisionCallback.accept(row, col);
+            waitingForSeleneVision = false;
+            currentSeleneVisionCallback = null;
+            return;
+        }
+        
+        // Check for Selene's Eclipse Binding
+        if (waitingForSeleneBinding && currentSeleneBindingCallback != null) {
+            System.out.println("🌑 Selene's ECLIPSE BINDING targeting: (" + row + "," + col + ")");
+            currentSeleneBindingCallback.accept(row, col);
+            waitingForSeleneBinding = false;
+            currentSeleneBindingCallback = null;
+            return;
+        }
+        
+        // Check for Selene's Crescent Blade
+        if (waitingForSeleneCrescent && currentSeleneCrescentCallback != null) {
+            System.out.println("🌙 Selene's CRESCENT BLADE targeting: (" + row + "," + col + ")");
+            currentSeleneCrescentCallback.accept(row, col);
+            waitingForSeleneCrescent = false;
+            currentSeleneCrescentCallback = null;
+            return;
+        }
+        
+        // Check for other skill targeting
+        if (waitingForTarget && targetCallback != null) {
+            targetCallback.onTargetSelected(row, col);
+            waitingForTarget = false;
+            targetCallback = null;
+            return;
+        }
+        
+        // Check for Morgana's Whirlpool Trap
+        if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
+            currentWhirlpoolCallback.accept(row, col);
+            waitingForWhirlpoolTarget = false;
+            currentWhirlpoolCallback = null;
+            return;
+        }
+        
+        // Normal attack
+        if (playerTurn) {
+            handlePlayerAttack(row, col);
+        }
+    });
     
     panel.add(playerBoardPanel);
     panel.add(enemyBoardPanel);
@@ -1722,6 +1799,8 @@ private void handlePlayerAttack(int row, int col) {
         ((Morgana) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Selene) {  
         ((Selene) playerCharacter).updateTurnCounter();
+    }else if (playerCharacter instanceof Aeris) {  
+        ((Aeris) playerCharacter).updateTurnCounter();
     }
     
     refreshUI();
@@ -1976,6 +2055,8 @@ private void refreshCharacterPanels() {
         }
     }
     private void refreshUI() {
+        playerBoardPanel.repaint();
+    enemyBoardPanel.repaint();
      if (currentWaveIndex < waves.size()) {
         createBattleUI(waves.get(currentWaveIndex));
     }

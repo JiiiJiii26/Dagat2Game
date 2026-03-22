@@ -9,11 +9,13 @@ public class Cell {
     private boolean isFiredUpon;
     private Ship ship;  
     
-   
+   public static final Color SHIELD_BLUE = new Color(0, 100, 200);
     public static final Color OCEAN_BLUE = new Color(173, 216, 230);
     public static final Color HIT_RED = new Color(255, 99, 71);
     public static final Color MISS_GRAY = new Color(211, 211, 211);
     public static final Color SHIP_GREEN = new Color(144, 238, 144);
+
+    
     
     public Cell(int x, int y) {
         this.x = x;
@@ -55,15 +57,22 @@ public class Cell {
         return isFiredUpon;
     }
     
-    public Color getColor() {
-        if (!isFiredUpon) {
-            return OCEAN_BLUE;
-        } else if (hasShip) {
-            return HIT_RED;
-        } else {
-            return MISS_GRAY;
-        }
+   public Color getColor() {
+     if (ship != null && ship.isShielded() && !isFiredUpon) {
+        System.out.println("🔵 Cell (" + x + "," + y + ") is SHIELDED, returning blue!");
+        return SHIELD_BLUE;
     }
+    
+    if (ship != null && ship.isShielded() && !isFiredUpon) {
+        return SHIELD_BLUE;  
+    } else if (!isFiredUpon) {
+        return OCEAN_BLUE;
+    } else if (hasShip) {
+        return HIT_RED;
+    } else {
+        return MISS_GRAY;
+    }
+}
 }
 
 

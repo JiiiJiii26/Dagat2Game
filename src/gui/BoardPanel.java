@@ -13,7 +13,14 @@ public class BoardPanel extends JPanel {
     private Board board;
     private final int SIZE = 10;
     private boolean isPlayerBoard;  
+    private PlayerClickHandler playerClickHandler; 
     
+     public interface PlayerClickHandler {
+        void onPlayerCellClicked(int row, int col);
+    }
+    public void setPlayerClickHandler(PlayerClickHandler handler) {
+        this.playerClickHandler = handler;
+    }
     public BoardPanel(boolean isPlayerBoard) {
       this(isPlayerBoard, new Board());
     }
@@ -67,16 +74,22 @@ public class BoardPanel extends JPanel {
     }
     
    private void handleClick(int row, int col) {
-    if (!isPlayerBoard) {
-        if (enemyClickHandler != null) {
-            enemyClickHandler.onEnemyCellClicked(row, col);
+        if (isPlayerBoard) {
+            // For player's own board (for skills like Aeris shield)
+            if (playerClickHandler != null) {
+                playerClickHandler.onPlayerCellClicked(row, col);
+            }
         } else {
-            
-            ShotResult result = board.fire(row, col);
-            updateCell(row, col, result);
+            // For enemy board
+            if (enemyClickHandler != null) {
+                enemyClickHandler.onEnemyCellClicked(row, col);
+            } else {
+                ShotResult result = board.fire(row, col);
+                updateCell(row, col, result);
+            }
         }
     }
-}
+
    
 
     public Board getBoard() {
@@ -108,6 +121,15 @@ public void updateCell(int row, int col, ShotResult result) {
             break;
     }
  }
+ public void refreshColors() {
+    for (int row = 0; row < SIZE; row++) {
+        for (int col = 0; col < SIZE; col++) {
+            Cell cell = board.getCell(row, col);
+            gridButtons[row][col].setBackground(cell.getColor());
+            gridButtons[row][col].repaint();
+        }
+    }
+}
 }
 
 

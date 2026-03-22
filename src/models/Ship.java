@@ -8,6 +8,10 @@ public class Ship {
     private int hits;
     private boolean isSunk;
     private ArrayList<Coordinate> positions;
+    private boolean isShielded = false;
+private int shieldedTurns = 0;
+
+
     
     
     private boolean isHidden = false;
@@ -22,7 +26,52 @@ public class Ship {
         this.isSunk = false;
         this.positions = new ArrayList<>();
     }
+    public void setShielded(boolean shielded, int turns) {
+    this.isShielded = shielded;
+    this.shieldedTurns = turns;
+     System.out.println("🛡️ " + name + " shield set to: " + shielded);
+}
+public ArrayList<Coordinate> getPositions() {
+        return positions;
+    }
     
+    
+    public boolean isAtPosition(int x, int y) {
+        for (Coordinate pos : positions) {
+            if (pos.getX() == x && pos.getY() == y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+public boolean isShielded() {
+    return isShielded;
+}
+
+public boolean containsCoordinate(int x, int y) {
+    for (Coordinate pos : positions) {
+        if (pos.getX() == x && pos.getY() == y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+public void decrementShieldTurns() {
+    if (shieldedTurns > 0) {
+        shieldedTurns--;
+        if (shieldedTurns <= 0) {
+            isShielded = false;
+            System.out.println("🛡️ " + name + "'s shield has faded.");
+        }
+    }
+}
+
+public int getShieldedTurns() {
+    return shieldedTurns;
+}
     public void addPosition(int x, int y) {
         positions.add(new Coordinate(x, y));
     }
