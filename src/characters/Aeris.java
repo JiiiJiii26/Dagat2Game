@@ -42,14 +42,14 @@ public class Aeris extends GameCharacter {
     public Aeris() {
         super(
             "Aeris — The Adaptive Strategist",
-            "A master of adaptation who protects his fleet under pressure.",
+            "A master of adaptation who protects his fleet and destroys enemies.",
             2600,
             100,
             new Color(255, 215, 0)
         );
         this.currentMana = MAX_MANA;
         this.abilityName = "Adaptive Strategy";
-        this.abilityDescription = "Uses mana to shield ships, multitask, and grow stronger under pressure.";
+        this.abilityDescription = "Uses mana to shield ships, restore mana, and destroy columns of enemy cells.";
     }
     
     public void setPlayerBoard(Board board) {
@@ -88,6 +88,7 @@ public class Aeris extends GameCharacter {
     
     
     
+    
     public boolean useAdaptiveInstinct(Board playerBoard, int shipIndex) {
         if (adaptiveInstinctCooldown > 0) {
             System.out.println("⏳ Adaptive Instinct is on cooldown for " + adaptiveInstinctCooldown + " more turns");
@@ -119,22 +120,21 @@ public class Aeris extends GameCharacter {
         }
         
         System.out.println("🛡️ AERIS uses ADAPTIVE INSTINCT: \"" + targetShip.getName() + " will endure!\"");
-    spendMana(120);
-    
-    targetShip.setShielded(true, 2);
-    shieldedShips.put(targetShip, 2);
-    
-    System.out.println("🔵 " + targetShip.getName() + " is now SHIELDED for 2 turns!");
-    System.out.println("🔵 Ship.isShielded() = " + targetShip.isShielded());  // ← Debug
-    
-    adaptiveInstinctCooldown = 2;
-    return true;
-}
-    
+        spendMana(120);
+        
+        targetShip.setShielded(true, 2);
+        shieldedShips.put(targetShip, 2);
+        
+        System.out.println("🔵 " + targetShip.getName() + " is now SHIELDED for 2 turns!");
+        
+        adaptiveInstinctCooldown = 2;
+        return true;
+    }
     
     public boolean isShipImmune(Ship ship) {
         return ship.isShielded();
     }
+    
     
     
     
@@ -144,80 +144,75 @@ public class Aeris extends GameCharacter {
             return false;
         }
         
-        if (!hasEnoughMana(180)) {
-            System.out.println("⚠️ Not enough mana! Need 180 mana, have " + currentMana);
-            return false;
+        System.out.println("⚡ AERIS uses MULTITASK OVERDRIVE: \"Time to recharge!\"");
+        
+        int oldMana = currentMana;
+        currentMana += 200;
+        if (currentMana > MAX_MANA) {
+            currentMana = MAX_MANA;
         }
         
-        System.out.println("⚡ AERIS uses MULTITASK OVERDRIVE: \"I can do both!\"");
-        spendMana(180);
-        
-        overdriveActive = true;
-        extraActionAvailable = true;
-        
-        System.out.println("⚡ Extra action available! You can do two things this turn!");
+        System.out.println("⚡ Mana restored: " + oldMana + " → " + currentMana + " (+" + (currentMana - oldMana) + " mana)");
         
         multitaskOverdriveCooldown = 3;
         return true;
     }
     
-    public boolean hasExtraAction() {
-        return extraActionAvailable;
-    }
-    
-    public void consumeExtraAction() {
-        extraActionAvailable = false;
-        overdriveActive = false;
-    }
     
     
     
-    public int useRelentlessAscent(Board enemyBoard, int centerX, int centerY) {
+    public int useRelentlessAscent(Board enemyBoard, int targetY) {
         if (relentlessAscentCooldown > 0) {
             System.out.println("⏳ Relentless Ascent is on cooldown for " + relentlessAscentCooldown + " more turns");
             return 0;
         }
         
-        if (!hasEnoughMana(250)) {
-            System.out.println("⚠️ Not enough mana! Need 250 mana, have " + currentMana);
+        if (!hasEnoughMana(500)) {
+            System.out.println("⚠️ Not enough mana! Need 500 mana, have " + currentMana);
             return 0;
         }
         
-        System.out.println("⚔️ AERIS uses RELENTLESS ASCENT: \"My pain is my power!\"");
-        spendMana(250);
         
         int missingHP = maxHealth - currentHealth;
         double missingPercent = (double) missingHP / maxHealth;
         
-        int baseDamage = random.nextInt(301) + 500;
-        int bonusDamage = (int)(baseDamage * missingPercent);
-        int totalDamage = baseDamage + bonusDamage;
         
-        System.out.println("💥 Base damage: " + baseDamage);
-        System.out.println("📈 Bonus from missing HP (" + missingHP + "/" + maxHealth + "): +" + bonusDamage);
-        System.out.println("💥 Total damage: " + totalDamage);
+        int bonusCells = (int)(missingPercent * 3); 
+        int cellsToDestroy = 10 + bonusCells; 
+        cellsToDestroy = Math.min(cellsToDestroy, 10); 
         
-        int totalDealt = 0;
-        int shipsHit = 0;
-        StringBuilder hitReport = new StringBuilder("⚔️ Relentless Ascent hits:\n");
+        System.out.println("⚔️ AERIS uses RELENTLESS ASCENT: \"My pain is my power!\"");
+        System.out.println("📈 Missing HP: " + missingHP + "/" + maxHealth + " (" + (int)(missingPercent * 100) + "%)");
+        System.out.println("💥 Bonus cells: +" + bonusCells);
+        spendMana(500);
         
-        totalDealt += hitCellWithDamage(enemyBoard, centerX, centerY, totalDamage, hitReport);
-        if (enemyBoard.getCell(centerX, centerY).hasShip()) shipsHit++;
+        int cellsDestroyed = 0;
+        StringBuilder hitReport = new StringBuilder("⚔️ Relentless Ascent destroys column " + targetY + ":\n");
         
-        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
-        for (int[] dir : directions) {
-            int x = centerX + dir[0];
-            int y = centerY + dir[1];
-            if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                totalDealt += hitCellWithDamage(enemyBoard, x, y, totalDamage, hitReport);
-                if (enemyBoard.getCell(x, y).hasShip()) shipsHit++;
+        
+        for (int row = 0; row < 10; row++) {
+            Cell cell = enemyBoard.getCell(row, targetY);
+            
+            if (!cell.isFiredUpon()) {
+                ShotResult result = enemyBoard.fire(row, targetY);
+                cellsDestroyed++;
+                
+                if (cell.hasShip()) {
+                    hitReport.append("   • Ship segment at (").append(row).append(",").append(targetY)
+                           .append(") destroyed!\n");
+                } else {
+                    hitReport.append("   • Cell (").append(row).append(",").append(targetY)
+                           .append(") destroyed\n");
+                }
             } else {
-                hitReport.append("   • Out of bounds: (").append(x).append(",").append(y).append(")\n");
+                hitReport.append("   • Cell (").append(row).append(",").append(targetY)
+                       .append(") already destroyed\n");
             }
         }
         
         System.out.println(hitReport.toString());
-        System.out.println("⚔️ Relentless Ascent hit " + shipsHit + " ships for " + totalDealt + " total damage!");
+        System.out.println("⚔️ Relentless Ascent destroyed " + cellsDestroyed + " cells!");
+        
         
         double healthPercent = (double) currentHealth / maxHealth;
         if (healthPercent < 0.4) {
@@ -227,27 +222,7 @@ public class Aeris extends GameCharacter {
         }
         
         relentlessAscentCooldown = 4;
-        return totalDealt;
-    }
-    
-    private int hitCellWithDamage(Board board, int x, int y, int damage, StringBuilder report) {
-        Cell cell = board.getCell(x, y);
-        
-        if (!cell.isFiredUpon()) {
-            ShotResult result = board.fire(x, y);
-            
-            if (cell.hasShip()) {
-                report.append("   • Ship at (").append(x).append(",").append(y)
-                       .append(") takes ").append(damage).append(" damage! (").append(result).append(")\n");
-                return damage;
-            } else {
-                report.append("   • Cell (").append(x).append(",").append(y).append(") is empty\n");
-                return 0;
-            }
-        } else {
-            report.append("   • Cell (").append(x).append(",").append(y).append(") already hit\n");
-            return 0;
-        }
+        return cellsDestroyed;
     }
     
     
@@ -307,9 +282,28 @@ public class Aeris extends GameCharacter {
     
     
     
+    public void recordHit() {
+        consecutiveHits++;
+        if (consecutiveHits >= 2) {
+            nextAttackBonus = true;
+            System.out.println("⚔️ ADAPTIVE INSTINCT TRIGGERED! Next attack destroys an extra cell!");
+            consecutiveHits = 0;
+        }
+    }
+    
+    public boolean hasBonusAttack() {
+        return nextAttackBonus;
+    }
+    
+    public void consumeBonusAttack() {
+        nextAttackBonus = false;
+    }
+    
+    
+    
     public String getSkillStatus(int skillNum) {
         switch(skillNum) {
-            case 1:
+            case 1: 
                 if (adaptiveInstinctCooldown > 0) {
                     return "Cooldown: " + adaptiveInstinctCooldown + " turn" + (adaptiveInstinctCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(120)) {
@@ -317,15 +311,13 @@ public class Aeris extends GameCharacter {
                 } else {
                     return "Ready!";
                 }
-            case 2:
+            case 2: 
                 if (multitaskOverdriveCooldown > 0) {
                     return "Cooldown: " + multitaskOverdriveCooldown + " turn" + (multitaskOverdriveCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(180)) {
-                    return "Need 180 mana";
                 } else {
-                    return "Ready!";
+                    return "Ready! (+200 mana)";
                 }
-            case 3:
+            case 3: 
                 if (relentlessAscentCooldown > 0) {
                     return "Cooldown: " + relentlessAscentCooldown + " turn" + (relentlessAscentCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(250)) {
@@ -353,43 +345,12 @@ public class Aeris extends GameCharacter {
         return bar.toString();
     }
     
-    public boolean isDamageReductionActive() {
-        return !shieldedShips.isEmpty();
-    }
-    
     public boolean isStunImmuneActive() {
         return stunImmuneActive;
     }
     
-    public boolean isExtraActionAvailable() {
-        return extraActionAvailable;
-    }
-    
-    public int getConsecutiveHits() {
-        return consecutiveHits;
-    }
-    
     public int getShieldedShipCount() {
         return shieldedShips.size();
-    }
-    
-    public void recordHit() {
-        consecutiveHits++;
-        if (consecutiveHits >= 2) {
-            nextAttackBonus = true;
-            System.out.println("⚔️ ADAPTIVE INSTINCT TRIGGERED! Next attack gains +150 bonus damage!");
-            consecutiveHits = 0;
-        }
-    }
-    
-    public int applyBonusDamage(int baseDamage) {
-        if (nextAttackBonus) {
-            nextAttackBonus = false;
-            int bonus = 150;
-            System.out.println("⚔️ Bonus damage added: +" + bonus + "!");
-            return baseDamage + bonus;
-        }
-        return baseDamage;
     }
     
     @Override

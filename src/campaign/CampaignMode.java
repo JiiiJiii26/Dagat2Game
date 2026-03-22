@@ -909,82 +909,84 @@ adaptiveBtn.addActionListener(e -> {
 panel.add(adaptiveBtn);
     
     
-    JButton overdriveBtn = new JButton("⚡ Multitask Overdrive (180)");
-    overdriveBtn.setBackground(new Color(100, 200, 255));
-    overdriveBtn.setForeground(Color.BLACK);
-    overdriveBtn.setToolTipText("Perform two actions in one turn (attack + defend or reveal + attack)");
-    overdriveBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    overdriveBtn.setFocusPainted(false);
-    
-    String status2 = aeris.getSkillStatus(2);
-    if (!status2.equals("Ready!")) {
-        overdriveBtn.setEnabled(false);
-        overdriveBtn.setText("⚡ Multitask Overdrive (" + status2 + ")");
-    }
-    
-    overdriveBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            boolean used = aeris.useMultitaskOverdrive();
-            if (used) {
-                updateStatusLabel("⚡ Multitask Overdrive! Extra action available this turn!", Color.YELLOW);
-                refreshUI();
-            }
+   JButton overdriveBtn = new JButton("⚡ Multitask Overdrive");
+overdriveBtn.setBackground(new Color(100, 200, 255));
+overdriveBtn.setForeground(Color.BLACK);
+overdriveBtn.setToolTipText("Restores 200 mana. 3 turn cooldown.");
+overdriveBtn.setFont(new Font("Arial", Font.BOLD, 11));
+overdriveBtn.setFocusPainted(false);
+
+String status2 = aeris.getSkillStatus(2);
+if (!status2.equals("Ready! (Restores 200 mana)")) {
+    overdriveBtn.setEnabled(false);
+    overdriveBtn.setText("⚡ Multitask Overdrive (" + status2 + ")");
+} else {
+    overdriveBtn.setText("⚡ Multitask Overdrive (+200 mana)");
+}
+
+overdriveBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        
+        if (aeris.getSkillStatus(2).contains("Cooldown")) {
+            updateStatusLabel("❌ Multitask Overdrive is on cooldown!", Color.RED);
+            return;
         }
-    });
-    panel.add(overdriveBtn);
-    
-    
-    JButton relentlessBtn = new JButton("⚔️ Relentless Ascent (250)");
-    relentlessBtn.setBackground(new Color(200, 100, 0));
-    relentlessBtn.setForeground(Color.WHITE);
-    relentlessBtn.setToolTipText("Damage increases based on missing HP. Below 40% HP: Immune to stun for 2 turns.");
-    relentlessBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    relentlessBtn.setFocusPainted(false);
-    
-    String status3 = aeris.getSkillStatus(3);
-    if (!status3.equals("Ready!")) {
-        relentlessBtn.setEnabled(false);
-        relentlessBtn.setText("⚔️ Relentless Ascent (" + status3 + ")");
+        
+        boolean used = aeris.useMultitaskOverdrive();
+        if (used) {
+            updateStatusLabel("⚡ Multitask Overdrive! Restored 200 mana!", Color.GREEN);
+            refreshUI();  
+        } else {
+            updateStatusLabel("❌ Cannot use Multitask Overdrive!", Color.RED);
+        }
     }
+});
+panel.add(overdriveBtn);
     
-    relentlessBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
+    
+   
+JButton relentlessBtn = new JButton("⚔️ Relentless Ascent (500)");
+relentlessBtn.setBackground(new Color(200, 100, 0));
+relentlessBtn.setForeground(Color.WHITE);
+relentlessBtn.setToolTipText("Destroys an entire column! Bonus cells destroyed when low on HP.");
+relentlessBtn.setFont(new Font("Arial", Font.BOLD, 11));
+relentlessBtn.setFocusPainted(false);
+
+String status3 = aeris.getSkillStatus(3);
+if (!status3.equals("Ready!")) {
+    relentlessBtn.setEnabled(false);
+    relentlessBtn.setText("⚔️ Relentless Ascent (" + status3 + ")");
+}
+
+relentlessBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        updateStatusLabel("⚔️ Click on enemy board to select a column to destroy!", Color.YELLOW);
+        
+        waitingForTarget = true;
+        currentSkillName = "RELENTLESS ASCENT";
+        targetCallback = (x, y) -> {
             
-            String input = JOptionPane.showInputDialog(frame, 
-                "⚔️ RELENTLESS ASCENT\n\nEnter target coordinates (row,col):\nExample: 5,5\n\nDamage increases based on missing HP!", 
-                "Relentless Ascent", 
-                JOptionPane.QUESTION_MESSAGE);
-            if (input != null) {
-                try {
-                    String[] parts = input.split(",");
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    
-                    if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                        int damage = aeris.useRelentlessAscent(enemyBoard, x, y);
-                        if (damage > 0) {
-                            updateStatusLabel("⚔️ Relentless Ascent dealt " + damage + " damage!", Color.ORANGE);
-                            enemyBoardPanel.updateCell(x, y, ShotResult.HIT);
-                            refreshUI();
-                        }
-                    } else {
-                        updateStatusLabel("❌ Invalid coordinates!", Color.RED);
-                    }
-                } catch (Exception ex) {
-                    updateStatusLabel("❌ Invalid format! Use: row,col", Color.RED);
-                }
+            if (y < 0 || y > 9) {
+                updateStatusLabel("❌ Invalid column!", Color.RED);
+                waitingForTarget = false;
+                return;
             }
-        }
-    });
-    panel.add(relentlessBtn);
-    
-    
-    if (aeris.isDamageReductionActive()) {
-        JLabel reductionLabel = new JLabel("🛡️ Damage Reduction ACTIVE", SwingConstants.CENTER);
-        reductionLabel.setForeground(Color.GREEN);
-        reductionLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(reductionLabel);
+            
+            int cellsDestroyed = aeris.useRelentlessAscent(enemyBoard, y);
+            if (cellsDestroyed > 0) {
+                updateStatusLabel("⚔️ Relentless Ascent destroyed " + cellsDestroyed + " cells in column " + y + "!", Color.ORANGE);
+                refreshUI();
+            } else {
+                updateStatusLabel("❌ Cannot use Relentless Ascent!", Color.RED);
+            }
+            waitingForTarget = false;
+        };
     }
+});
+panel.add(relentlessBtn);
+    
+    
+    
     
     if (aeris.isStunImmuneActive()) {
         JLabel stunLabel = new JLabel("⚡ Stun Immune ACTIVE", SwingConstants.CENTER);
@@ -993,19 +995,9 @@ panel.add(adaptiveBtn);
         panel.add(stunLabel);
     }
     
-    if (aeris.isExtraActionAvailable()) {
-        JLabel extraLabel = new JLabel("⚡ Extra Action Available!", SwingConstants.CENTER);
-        extraLabel.setForeground(Color.CYAN);
-        extraLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(extraLabel);
-    }
+   
     
-    if (aeris.getConsecutiveHits() > 0) {
-        JLabel consecutiveLabel = new JLabel("⚠️ Hit " + aeris.getConsecutiveHits() + "/2 for bonus", SwingConstants.CENTER);
-        consecutiveLabel.setForeground(Color.RED);
-        consecutiveLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(consecutiveLabel);
-    }
+
     
     
     JLabel manaLabel = new JLabel(aeris.getManaBar(), SwingConstants.CENTER);
