@@ -135,70 +135,78 @@ public class SkillPanel extends JPanel {
    private void addKaelSkills(JPanel panel, GridBagConstraints gbc) {
     Kael kael = (Kael) character;
     
-    // Shadow Veil
-    gbc.gridy++;
-    JLabel veilLabel = new JLabel("🌑 SHADOW VEIL");
-    veilLabel.setFont(new Font("Arial", Font.BOLD, 11));
-    veilLabel.setForeground(new Color(75, 0, 130));
-    panel.add(veilLabel, gbc);
     
     gbc.gridy++;
-    JButton veilBtn = new JButton("USE (80 energy)");
-    veilBtn.setBackground(new Color(75, 0, 130));
-    veilBtn.setForeground(Color.WHITE);
-    veilBtn.addActionListener(e -> {
-        boolean used = kael.useShadowVeil();
-        if (used) {
-            showMessage("🌑 Shadow Veil! One ship is hidden!");
-        } else {
-            showMessage("❌ Cannot use Shadow Veil!");
-        }
+    JLabel stepLabel = new JLabel("🌑 SHADOW STEP");
+    stepLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    stepLabel.setForeground(new Color(75, 0, 130));
+    panel.add(stepLabel, gbc);
+    
+    gbc.gridy++;
+    JButton stepBtn = new JButton("USE (100 energy)");
+    stepBtn.setBackground(new Color(75, 0, 130));
+    stepBtn.setForeground(Color.WHITE);
+    stepBtn.setToolTipText("Teleport one of your ships to a new location");
+    stepBtn.addActionListener(e -> {
+        
+        
+        showMessage("🌑 Shadow Step: Use this skill from the battle screen!");
     });
-    panel.add(veilBtn, gbc);
-    
-    // Shadow Strike
-    gbc.gridy++;
-    JLabel strikeLabel = new JLabel("⚔️ SHADOW STRIKE");
-    strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
-    strikeLabel.setForeground(new Color(100, 150, 255));
-    panel.add(strikeLabel, gbc);
+    panel.add(stepBtn, gbc);
     
     gbc.gridy++;
-    JButton strikeBtn = new JButton("USE (120 energy)");
-    strikeBtn.setBackground(new Color(100, 150, 255));
-    strikeBtn.setForeground(Color.BLACK);
-    strikeBtn.addActionListener(e -> {
-        boolean used = kael.useShadowStrike();
-        if (used) {
-            showMessage("⚔️ Shadow Strike ready! Next attack destroys 2 cells!");
-        } else {
-            showMessage("❌ Cannot use Shadow Strike!");
-        }
+    JLabel stepDesc = new JLabel("Teleport one of your ships");
+    stepDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    stepDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(stepDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel bladeLabel = new JLabel("⚔️ SHADOW BLADE");
+    bladeLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    bladeLabel.setForeground(new Color(100, 150, 255));
+    panel.add(bladeLabel, gbc);
+    
+    gbc.gridy++;
+    JButton bladeBtn = new JButton("USE (150 energy)");
+    bladeBtn.setBackground(new Color(100, 150, 255));
+    bladeBtn.setForeground(Color.BLACK);
+    bladeBtn.setToolTipText("Cut through a row or column, destroying every other cell");
+    bladeBtn.addActionListener(e -> {
+        showMessage("⚔️ Shadow Blade: Choose direction, then click on enemy board!");
     });
-    panel.add(strikeBtn, gbc);
-    
-    // Shadow Realm
-    gbc.gridy++;
-    JLabel realmLabel = new JLabel("🌑🌑🌑 SHADOW REALM");
-    realmLabel.setFont(new Font("Arial", Font.BOLD, 11));
-    realmLabel.setForeground(new Color(50, 0, 100));
-    panel.add(realmLabel, gbc);
+    panel.add(bladeBtn, gbc);
     
     gbc.gridy++;
-    JButton realmBtn = new JButton("USE (250 energy)");
-    realmBtn.setBackground(new Color(50, 0, 100));
-    realmBtn.setForeground(Color.WHITE);
-    realmBtn.addActionListener(e -> {
-        boolean used = kael.useShadowRealm();
-        if (used) {
-            showMessage("🌑🌑🌑 Shadow Realm active! All attacks destroy 2 cells for 2 turns!");
-        } else {
-            showMessage("❌ Cannot use Shadow Realm!");
-        }
+    JLabel bladeDesc = new JLabel("Destroy every other cell in a row/column");
+    bladeDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    bladeDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(bladeDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel domainLabel = new JLabel("🌑🌑🌑 SHADOW DOMAIN");
+    domainLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    domainLabel.setForeground(new Color(50, 0, 100));
+    panel.add(domainLabel, gbc);
+    
+    gbc.gridy++;
+    JButton domainBtn = new JButton("USE (200 energy)");
+    domainBtn.setBackground(new Color(50, 0, 100));
+    domainBtn.setForeground(Color.WHITE);
+    domainBtn.setToolTipText("Create a 3x3 shadow explosion!");
+    domainBtn.addActionListener(e -> {
+        showMessage("🌑🌑🌑 Shadow Domain: Click on enemy board to create explosion!");
     });
-    panel.add(realmBtn, gbc);
+    panel.add(domainBtn, gbc);
     
-    // Energy display
+    gbc.gridy++;
+    JLabel domainDesc = new JLabel("3x3 area explosion - destroys all cells");
+    domainDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    domainDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(domainDesc, gbc);
+    
+    
     gbc.gridy++;
     JLabel energyLabel = new JLabel(kael.getEnergyBar(), SwingConstants.CENTER);
     energyLabel.setFont(new Font("Arial", Font.BOLD, 10));

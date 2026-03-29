@@ -27,6 +27,7 @@ import game.ShotResult;
 import main.Main;
 
 public class CampaignMode {
+   
     
     private JFrame frame;
     private List<GameCharacter> possibleEnemies;  
@@ -56,6 +57,18 @@ private JButton lastClickedSkillButton;
 private int extraTurnsRemaining = 0;
 
   
+private boolean waitingForKaelStepSource = false;
+private boolean waitingForKaelStepDestination = false;
+private int[] stepSourceCoordinates = new int[2];
+
+
+private boolean waitingForKaelBlade = false;
+private java.util.function.BiConsumer<Integer, Integer> currentKaelBladeCallback;
+private boolean bladeDirectionHorizontal = true;
+
+
+private boolean waitingForKaelDomain = false;
+private java.util.function.BiConsumer<Integer, Integer> currentKaelDomainCallback;
     
 
     private boolean waitingForSeleneVision = false;
@@ -156,25 +169,33 @@ private void useKaelEnemySkill() {
     int skillChoice = enemyRandom.nextInt(3);
     
     switch(skillChoice) {
-        case 0:
-            if (enemyKael.hasEnoughEnergy(80)) {
-                System.out.println("🌑 Enemy Kael uses SHADOW VEIL!");
-                enemyKael.useShadowVeil();
-                showEnemySkillMessage("Kael hides one of their ships!");
+        case 0: 
+            if (enemyKael.hasEnoughEnergy(100)) {
+                System.out.println("🌑 Enemy Kael uses SHADOW STEP!");
+                showEnemySkillMessage("Kael teleports one of their ships!");
             }
             break;
-        case 1:
-            if (enemyKael.hasEnoughEnergy(120)) {
-                System.out.println("⚔️ Enemy Kael uses SHADOW STRIKE!");
-                enemyKael.useShadowStrike();
-                showEnemySkillMessage("Kael prepares a powerful strike!");
+        case 1: 
+            if (enemyKael.hasEnoughEnergy(150)) {
+                System.out.println("⚔️ Enemy Kael uses SHADOW BLADE!");
+                int x = enemyRandom.nextInt(10);
+                int y = enemyRandom.nextInt(10);
+                boolean horizontal = enemyRandom.nextBoolean();
+                int destroyed = enemyKael.useShadowBlade(playerBoard, x, y, horizontal);
+                if (destroyed > 0) {
+                    showEnemySkillMessage("Kael's shadow blade destroyed " + destroyed + " cells!");
+                }
             }
             break;
-        case 2:
-            if (enemyKael.hasEnoughEnergy(250)) {
-                System.out.println("🌑🌑🌑 Enemy Kael uses SHADOW REALM!");
-                enemyKael.useShadowRealm();
-                showEnemySkillMessage("KAEL ENTERS THE SHADOW REALM!");
+        case 2: 
+            if (enemyKael.hasEnoughEnergy(200)) {
+                System.out.println("🌑🌑🌑 Enemy Kael uses SHADOW DOMAIN!");
+                int x = enemyRandom.nextInt(8);
+                int y = enemyRandom.nextInt(8);
+                int destroyed = enemyKael.useShadowDomain(playerBoard, x, y);
+                if (destroyed > 0) {
+                    showEnemySkillMessage("Kael's shadow domain destroyed " + destroyed + " cells!");
+                }
             }
             break;
     }
@@ -651,7 +672,11 @@ private JPanel createPlayerCharacterPanel() {
     
     if (playerCharacter instanceof Aeris) {
         ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
-    }
+    }if (playerCharacter instanceof Kael) {
+    ((Kael) playerCharacter).setPlayerBoard(playerBoard);
+}
+
+
     if (playerCharacter instanceof Jiji) {
         addJijiSkills(skillsPanel, true);
     } else if (playerCharacter instanceof Kael) {
@@ -1269,113 +1294,108 @@ private void addJijiSkills(JPanel panel, boolean isPlayer) {
 private void addKaelSkills(JPanel panel, boolean isPlayer) {
     Kael kael = (Kael) playerCharacter;
     
-    // ===== SHADOW VEIL =====
-    JButton shadowVeilBtn = new JButton("🌑 Shadow Veil (80)");
-    shadowVeilBtn.setBackground(new Color(75, 0, 130));
-    shadowVeilBtn.setForeground(Color.WHITE);
-    shadowVeilBtn.setToolTipText("Hide one of your ships for 2 turns");
-    shadowVeilBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    shadowVeilBtn.setFocusPainted(false);
+    
+    JButton stepBtn = new JButton("🌑 Shadow Step (100)");
+    stepBtn.setBackground(new Color(75, 0, 130));
+    stepBtn.setForeground(Color.WHITE);
+    stepBtn.setToolTipText("Click on YOUR ship, then click on destination");
+    stepBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    stepBtn.setFocusPainted(false);
     
     String status1 = kael.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
-        shadowVeilBtn.setEnabled(false);
-        shadowVeilBtn.setText("🌑 Shadow Veil (" + status1 + ")");
+        stepBtn.setEnabled(false);
+        stepBtn.setText("🌑 Shadow Step (" + status1 + ")");
     }
     
-    shadowVeilBtn.addActionListener(e -> {
+    stepBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            boolean used = kael.useShadowVeil();
-            if (used) {
-                updateStatusLabel("🌑 Shadow Veil! One of your ships is hidden for 2 turns!", Color.CYAN);
-                refreshUI();
-            } else {
-                updateStatusLabel("❌ Cannot use Shadow Veil!\n" + kael.getSkillStatus(1), Color.RED);
-            }
+            updateStatusLabel("🌑 Click on YOUR ship to teleport!", Color.YELLOW);
+            waitingForKaelStepSource = true;
+            waitingForKaelStepDestination = false;
         }
     });
-    panel.add(shadowVeilBtn);
+    panel.add(stepBtn);
     
-    // ===== SHADOW STRIKE =====
-    JButton shadowStrikeBtn = new JButton("⚔️ Shadow Strike (120)");
-    shadowStrikeBtn.setBackground(new Color(100, 150, 255));
-    shadowStrikeBtn.setForeground(Color.BLACK);
-    shadowStrikeBtn.setToolTipText("Next attack destroys 2 cells instead of 1");
-    shadowStrikeBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    shadowStrikeBtn.setFocusPainted(false);
+    
+    JButton bladeBtn = new JButton("⚔️ Shadow Blade (150)");
+    bladeBtn.setBackground(new Color(100, 150, 255));
+    bladeBtn.setForeground(Color.BLACK);
+    bladeBtn.setToolTipText("Choose direction, then click on enemy board");
+    bladeBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    bladeBtn.setFocusPainted(false);
     
     String status2 = kael.getSkillStatus(2);
-    if (!status2.equals("Ready! (2 cells next attack)")) {
-        shadowStrikeBtn.setEnabled(false);
-        shadowStrikeBtn.setText("⚔️ Shadow Strike (" + status2 + ")");
-    } else {
-        shadowStrikeBtn.setText("⚔️ SHADOW STRIKE READY!");
-        shadowStrikeBtn.setBackground(new Color(255, 200, 100));
+    if (!status2.equals("Ready!")) {
+        bladeBtn.setEnabled(false);
+        bladeBtn.setText("⚔️ Shadow Blade (" + status2 + ")");
     }
     
-    shadowStrikeBtn.addActionListener(e -> {
+    bladeBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            boolean used = kael.useShadowStrike();
-            if (used) {
-                updateStatusLabel("⚔️ Shadow Strike activated! Next attack destroys 2 cells!", Color.YELLOW);
-                refreshUI();
-            } else {
-                updateStatusLabel("❌ Cannot use Shadow Strike!\n" + kael.getSkillStatus(2), Color.RED);
+            String[] options = {"Horizontal (→)", "Vertical (↓)"};
+            int choice = JOptionPane.showOptionDialog(frame,
+                "⚔️ SHADOW BLADE\n\nChoose cut direction:",
+                "Shadow Blade",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+            
+            if (choice >= 0) {
+                bladeDirectionHorizontal = (choice == 0);
+                updateStatusLabel("⚔️ Click on ENEMY board to cut " + 
+                    (bladeDirectionHorizontal ? "HORIZONTALLY" : "VERTICALLY") + "!", Color.YELLOW);
+                waitingForKaelBlade = true;
+                currentKaelBladeCallback = (x, y) -> {
+                    int cellsDestroyed = kael.useShadowBlade(enemyBoard, x, y, bladeDirectionHorizontal);
+                    if (cellsDestroyed > 0) {
+                        updateStatusLabel("⚔️ Shadow Blade destroyed " + cellsDestroyed + " cells!", Color.ORANGE);
+                        refreshUI();
+                    } else {
+                        updateStatusLabel("❌ Cannot use Shadow Blade!", Color.RED);
+                    }
+                    waitingForKaelBlade = false;
+                };
             }
         }
     });
-    panel.add(shadowStrikeBtn);
+    panel.add(bladeBtn);
     
-    // ===== SHADOW REALM =====
-    JButton shadowRealmBtn = new JButton("🌑🌑🌑 Shadow Realm (250)");
-    shadowRealmBtn.setBackground(new Color(50, 0, 100));
-    shadowRealmBtn.setForeground(Color.WHITE);
-    shadowRealmBtn.setToolTipText("ULTIMATE: All attacks destroy 2 cells for 2 turns!");
-    shadowRealmBtn.setFont(new Font("Arial", Font.BOLD, 12));
-    shadowRealmBtn.setFocusPainted(false);
+    
+    JButton domainBtn = new JButton("🌑🌑🌑 Shadow Domain (200)");
+    domainBtn.setBackground(new Color(50, 0, 100));
+    domainBtn.setForeground(Color.WHITE);
+    domainBtn.setToolTipText("ULTIMATE: Click on enemy board to create 3x3 shadow explosion!");
+    domainBtn.setFont(new Font("Arial", Font.BOLD, 12));
+    domainBtn.setFocusPainted(false);
     
     String status3 = kael.getSkillStatus(3);
     if (!status3.equals("Ready!")) {
-        shadowRealmBtn.setEnabled(false);
-        shadowRealmBtn.setText("🌑🌑🌑 Shadow Realm (" + status3 + ")");
+        domainBtn.setEnabled(false);
+        domainBtn.setText("🌑🌑🌑 Shadow Domain (" + status3 + ")");
     }
     
-    shadowRealmBtn.addActionListener(e -> {
+    domainBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            boolean used = kael.useShadowRealm();
-            if (used) {
-                updateStatusLabel("🌑🌑🌑 SHADOW REALM ACTIVATED! All attacks destroy 2 cells for 2 turns!", Color.MAGENTA);
-                refreshUI();
-            } else {
-                updateStatusLabel("❌ Cannot use Shadow Realm!\n" + kael.getSkillStatus(3), Color.RED);
-            }
+            updateStatusLabel("🌑🌑🌑 Click on ENEMY board to create shadow explosion!", Color.YELLOW);
+            waitingForKaelDomain = true;
+            currentKaelDomainCallback = (x, y) -> {
+                int cellsDestroyed = kael.useShadowDomain(enemyBoard, x, y);
+                if (cellsDestroyed > 0) {
+                    updateStatusLabel("🌑🌑🌑 Shadow Domain destroyed " + cellsDestroyed + " cells!", Color.MAGENTA);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Shadow Domain!", Color.RED);
+                }
+                waitingForKaelDomain = false;
+            };
         }
     });
-    panel.add(shadowRealmBtn);
+    panel.add(domainBtn);
     
-    // ===== STATUS INDICATORS =====
-    if (kael.isShadowRealmActive()) {
-        JLabel realmLabel = new JLabel("🌑🌑🌑 SHADOW REALM ACTIVE", SwingConstants.CENTER);
-        realmLabel.setForeground(Color.MAGENTA);
-        realmLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        panel.add(realmLabel);
-    }
     
-    if (kael.isShadowStrikeReady()) {
-        JLabel strikeLabel = new JLabel("⚔️ SHADOW STRIKE READY", SwingConstants.CENTER);
-        strikeLabel.setForeground(Color.YELLOW);
-        strikeLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(strikeLabel);
-    }
-    
-    if (kael.getHiddenShipsCount() > 0) {
-        JLabel hiddenLabel = new JLabel("🌑 " + kael.getHiddenShipsCount() + " ship(s) hidden", SwingConstants.CENTER);
-        hiddenLabel.setForeground(new Color(150, 150, 255));
-        hiddenLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(hiddenLabel);
-    }
-    
-    // ===== ENERGY DISPLAY =====
     JLabel energyLabel = new JLabel(kael.getEnergyBar(), SwingConstants.CENTER);
     energyLabel.setFont(new Font("Arial", Font.BOLD, 10));
     energyLabel.setForeground(new Color(100, 200, 255));
@@ -1821,6 +1841,37 @@ private JPanel createBoardsPanel() {
     
     
     playerBoardPanel.setPlayerClickHandler((row, col) -> {
+
+         if (waitingForKaelStepSource) {
+        System.out.println("🌑 Kael's SHADOW STEP source: (" + row + "," + col + ")");
+        stepSourceCoordinates[0] = row;
+        stepSourceCoordinates[1] = col;
+        
+        waitingForKaelStepSource = false;
+        waitingForKaelStepDestination = true;
+        
+        updateStatusLabel("🌑 Now click on YOUR board for the destination!", Color.YELLOW);
+        return;
+    }
+    
+    
+    if (waitingForKaelStepDestination) {
+        System.out.println("🌑 Kael's SHADOW STEP destination: (" + row + "," + col + ")");
+        
+        Kael kael = (Kael) playerCharacter;
+        boolean used = kael.useShadowStep(playerBoard, 
+            stepSourceCoordinates[0], stepSourceCoordinates[1], row, col);
+        
+        if (used) {
+            updateStatusLabel("🌑 Shadow Step! Ship teleported successfully!", Color.CYAN);
+            refreshUI();
+        } else {
+            updateStatusLabel("❌ Cannot use Shadow Step!", Color.RED);
+        }
+        
+        waitingForKaelStepDestination = false;
+        return;
+    }
         System.out.println("🛡️ Player board clicked at: (" + row + "," + col + ")");
         
         
@@ -1838,7 +1889,22 @@ private JPanel createBoardsPanel() {
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
         System.out.println("🎯 Enemy board clicked at: (" + row + "," + col + ")");
         
-        
+         if (waitingForKaelBlade && currentKaelBladeCallback != null) {
+        System.out.println("⚔️ Kael's SHADOW BLADE targeting: (" + row + "," + col + ")");
+        currentKaelBladeCallback.accept(row, col);
+        waitingForKaelBlade = false;
+        currentKaelBladeCallback = null;
+        return;
+    }
+    
+    
+    if (waitingForKaelDomain && currentKaelDomainCallback != null) {
+        System.out.println("🌑🌑🌑 Kael's SHADOW DOMAIN targeting: (" + row + "," + col + ")");
+        currentKaelDomainCallback.accept(row, col);
+        waitingForKaelDomain = false;
+        currentKaelDomainCallback = null;
+        return;
+    }
         if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
             System.out.println("🌙 Selene's LUNAR VISION targeting: (" + row + "," + col + ")");
             currentSeleneVisionCallback.accept(row, col);
@@ -1901,26 +1967,13 @@ private void handlePlayerAttack(int row, int col) {
     if (playerCharacter instanceof Kael) {
         Kael kael = (Kael) playerCharacter;
         
-        // Check Shadow Realm first (overrides Shadow Strike)
-        if (kael.isShadowRealmActive()) {
-            kael.applyShadowRealm(enemyBoard, row, col);
-            result = ShotResult.HIT;
-            updateStatusLabel("🌑 Shadow Realm attack! 2 cells destroyed!", Color.MAGENTA);
-        } 
-        // Then check Shadow Strike
-        else if (kael.isShadowStrikeReady()) {
-            kael.applyShadowStrike(enemyBoard, row, col);
-            result = ShotResult.HIT;
-            updateStatusLabel("⚔️ Shadow Strike! 2 cells destroyed!", Color.YELLOW);
-        } 
-        // Normal attack
-        else {
-            result = enemyBoard.fire(row, col);
-            updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
-                              result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
-        }
+        if (playerCharacter instanceof Kael) {
+        result = enemyBoard.fire(row, col);
+        updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
+                          result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
+    } 
     } else if (playerCharacter instanceof Jiji) {
-        // Handle Jiji's Overclock
+        
         Jiji jiji = (Jiji) playerCharacter;
         result = enemyBoard.fire(row, col);
         updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
@@ -1933,7 +1986,7 @@ private void handlePlayerAttack(int row, int col) {
     
     enemyBoardPanel.updateCell(row, col, result);
     
-    // Update character turn counters
+    
     if (playerCharacter instanceof Jiji) {
         ((Jiji) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Kael) {
@@ -1960,7 +2013,7 @@ private void handlePlayerAttack(int row, int col) {
         return;
     }
     
-    // Extra turn from Selene
+    
     if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
         if (selene.hasExtraTurn()) {
@@ -1975,7 +2028,7 @@ private void handlePlayerAttack(int row, int col) {
     
     playerTurn = false;
     
-    // Enemy turn countdown
+    
     for (int i = 3; i > 0; i--) {
         final int count = i;
         Timer countTimer = new Timer((4-i) * 300, e -> {
@@ -2096,18 +2149,7 @@ private void useStrategicEnemySkill() {
             return;
         }
     }
-    
-    if (currentEnemy instanceof Kael && playerShipsRemaining > 3) {
-        
-        Kael kael = (Kael) currentEnemy;
-        if (kael.hasEnoughEnergy(300)) {
-            int x = random.nextInt(7) + 1;
-            int y = random.nextInt(7) + 1;
-            kael.useShadowRealm();
-            showEnemySkillMessage("Kael unleashes Tempest Lock on your fleet!");
-            return;
-        }
-    }
+  
     
     if (currentEnemy instanceof Jiji && playerShipsRemaining < 3) {
         
