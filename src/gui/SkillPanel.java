@@ -214,47 +214,149 @@ public class SkillPanel extends JPanel {
     panel.add(energyLabel, gbc);
 }
     
-    private void addValeriusSkills(JPanel panel, GridBagConstraints gbc) {
-        Valerius valerius = (Valerius) character;
+   private void addValeriusSkills(JPanel panel, GridBagConstraints gbc) {
+    Valerius valerius = (Valerius) character;
+    
+    
+    gbc.gridy++;
+    JLabel radarLabel = new JLabel("📡 RADAR OVERLOAD");
+    radarLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    radarLabel.setForeground(new Color(169, 169, 169));
+    panel.add(radarLabel, gbc);
+    
+    gbc.gridy++;
+    JButton radarBtn = new JButton("USE (50 mana)");
+    radarBtn.setBackground(new Color(169, 169, 169));
+    radarBtn.setForeground(Color.WHITE);
+    radarBtn.setToolTipText("Disable enemy skills for 2 turns");
+    radarBtn.addActionListener(e -> {
+        boolean used = valerius.useRadarOverload();
+        if (used) {
+            showMessage("📡 Radar Overload! Enemy skills disabled for 2 turns!");
+        } else {
+            showMessage("❌ Cannot use Radar Overload!\n" + valerius.getSkillStatus(1));
+        }
+    });
+    panel.add(radarBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel radarDesc = new JLabel("Disable enemy skills for 2 turns");
+    radarDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    radarDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(radarDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel strikeLabel = new JLabel("🎯 PRECISION STRIKE");
+    strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    strikeLabel.setForeground(new Color(200, 100, 0));
+    panel.add(strikeLabel, gbc);
+    
+    gbc.gridy++;
+    JButton strikeBtn = new JButton("USE (120 mana)");
+    strikeBtn.setBackground(new Color(200, 100, 0));
+    strikeBtn.setForeground(Color.WHITE);
+    strikeBtn.setToolTipText("Next attack destroys 2 cells in a line");
+    strikeBtn.addActionListener(e -> {
+        String[] options = {"Horizontal (→)", "Vertical (↓)"};
+        int choice = JOptionPane.showOptionDialog(null,
+            "🎯 PRECISION STRIKE\n\nChoose attack direction:",
+            "Precision Strike",
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0]);
         
-        
-        addSkillRow(panel, gbc, 2,
-            "📡 RADAR OVERLOAD",
-            "50 mana - Disable enemy skills 2 turns",
-            new Color(169, 169, 169),
-            e -> {
-                if (valerius.useRadarOverload()) {
-                    showMessage("Radar Overload! Enemy skills disabled!");
+        if (choice >= 0) {
+            boolean horizontal = (choice == 0);
+            boolean used = valerius.usePrecisionStrike();
+            if (used) {
+                String input = JOptionPane.showInputDialog(null,
+                    "Enter target coordinates (row,col):\nExample: 5,5",
+                    "Precision Strike Target",
+                    JOptionPane.QUESTION_MESSAGE);
+                if (input != null) {
+                    try {
+                        String[] parts = input.split(",");
+                        int x = Integer.parseInt(parts[0].trim());
+                        int y = Integer.parseInt(parts[1].trim());
+                        int destroyed = valerius.applyPrecisionStrike(getEnemyBoard(), x, y, horizontal);
+                        showMessage("🎯 Precision Strike destroyed " + destroyed + " cells!");
+                    } catch (Exception ex) {
+                        showMessage("❌ Invalid coordinates!");
+                    }
                 }
-            });
+            } else {
+                showMessage("❌ Cannot use Precision Strike!\n" + valerius.getSkillStatus(2));
+            }
+        }
+    });
+    panel.add(strikeBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel strikeDesc = new JLabel("Next attack destroys 2 cells in a line");
+    strikeDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    strikeDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(strikeDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel fortressLabel = new JLabel("🏰 FORTRESS MODE");
+    fortressLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    fortressLabel.setForeground(new Color(100, 50, 0));
+    panel.add(fortressLabel, gbc);
+    
+    gbc.gridy++;
+    JButton fortressBtn = new JButton("USE (300 mana)");
+    fortressBtn.setBackground(new Color(100, 50, 0));
+    fortressBtn.setForeground(Color.WHITE);
+    fortressBtn.setToolTipText("Protect a ship - it will block 1 hit (choose from battle screen)");
+    fortressBtn.addActionListener(e -> {
         
-        
-        addSkillRow(panel, gbc, 3,
-            "🛡️ KINETIC BARRIER",
-            "90 mana - Shield 3x3 area",
-            new Color(0, 255, 255),
-            e -> {
-                promptForTarget("Kinetic Barrier", (x, y) -> {
-                    if (valerius.useKineticBarrier(getPlayerBoard(), x, y)) {
-                        showMessage("Barrier deployed!");
-                    }
-                });
-            });
-        
-        
-        addSkillRow(panel, gbc, 4,
-            "🎯 ORBITAL RAILGUN",
-            "280 mana - Massive damage + scan",
-            new Color(255, 69, 0),
-            e -> {
-                promptForTarget("Orbital Railgun", (x, y) -> {
-                    ShotResult result = valerius.useOrbitalRailgun(getEnemyBoard(), x, y);
-                    if (result != ShotResult.INVALID) {
-                        showMessage("Railgun fired!");
-                    }
-                });
-            });
+        showMessage("🏰 Fortress Mode: Use this skill from the battle screen to select a ship to protect!");
+    });
+    panel.add(fortressBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel fortressDesc = new JLabel("Protect a ship - blocks 1 hit");
+    fortressDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    fortressDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(fortressDesc, gbc);
+    
+    
+    if (valerius.areEnemySkillsDisabled()) {
+        gbc.gridy++;
+        JLabel disabledLabel = new JLabel("🚫 Enemy skills DISABLED", SwingConstants.CENTER);
+        disabledLabel.setForeground(Color.RED);
+        disabledLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(disabledLabel, gbc);
     }
+    
+    
+    if (valerius.hasProtectedShip()) {
+        gbc.gridy++;
+        JLabel protectedLabel = new JLabel("🛡️ " + valerius.getProtectedShipName() + " is PROTECTED", SwingConstants.CENTER);
+        protectedLabel.setForeground(Color.CYAN);
+        protectedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(protectedLabel, gbc);
+    }
+    
+    if (valerius.isScrapperResolveActive()) {
+        gbc.gridy++;
+        JLabel resolveLabel = new JLabel("⚡ Scrapper's Resolve ACTIVE", SwingConstants.CENTER);
+        resolveLabel.setForeground(Color.ORANGE);
+        resolveLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(resolveLabel, gbc);
+    }
+    
+    
+    gbc.gridy++;
+    JLabel manaLabel = new JLabel(valerius.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel, gbc);
+}
     
     private void addSkyeSkills(JPanel panel, GridBagConstraints gbc) {
         Skye skye = (Skye) character;
@@ -380,10 +482,10 @@ public class SkillPanel extends JPanel {
             Jiji j = (Jiji) character;
             return "⚡ Mana: " + j.getCurrentMana() + "/" + j.getMaxMana();
         }
-        if (character instanceof Kael) {
-            Kael k = (Kael) character;
-            return "⚡ Energy: " + k.getCurrentEnergy() + "/" + k.getMaxEnergy();
-        }
+       if (character instanceof Kael) {
+        Kael k = (Kael) character;
+        return "⚡ Energy: " + k.getCurrentEnergy() + "/" + k.getMaxEnergy();
+    }
         if (character instanceof Valerius) {
             Valerius v = (Valerius) character;
             return "⚡ Mana: " + v.getCurrentMana() + "/" + v.getMaxMana();

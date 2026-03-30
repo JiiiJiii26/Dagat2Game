@@ -43,6 +43,8 @@ public class CampaignMode {
      
     private boolean waitingForAerisShield = false;
 private java.util.function.BiConsumer<Integer, Integer> currentAerisShieldCallback;
+
+
     
     private BoardPanel playerBoardPanel;
     private BoardPanel enemyBoardPanel;
@@ -125,13 +127,33 @@ private void useEnemySkill() {
             useValeriusEnemySkill();
         } else if (currentEnemy instanceof Skye) {
             useSkyeEnemySkill();
-        }
+        } 
     } else {
         System.out.println("🤖 Enemy decides to just attack normally.");
     }
 }
 
-
+private void healPlayerShips() {
+    System.out.println("🏥 Healing player ships between waves...");
+    
+    
+    for (Ship ship : playerBoard.getShips()) {
+        ship.heal();
+    }
+    
+    
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            Cell cell = playerBoard.getCell(i, j);
+            cell.resetFiredUpon();
+        }
+    }
+    
+    
+    refreshUI();
+    
+    System.out.println("✅ Player ships healed!");
+}
 private void useJijiEnemySkill() {
     Jiji enemyJiji = (Jiji) currentEnemy;
     
@@ -204,7 +226,6 @@ private void useKaelEnemySkill() {
 private void useValeriusEnemySkill() {
     Valerius enemyValerius = (Valerius) currentEnemy;
     
-    
     int skillChoice = enemyRandom.nextInt(3);
     
     switch(skillChoice) {
@@ -212,28 +233,32 @@ private void useValeriusEnemySkill() {
             if (enemyValerius.hasEnoughMana(50)) {
                 System.out.println("📡 Enemy Valerius uses RADAR OVERLOAD!");
                 enemyValerius.useRadarOverload();
-                showEnemySkillMessage("Valerius jams your radar! Your skills are disabled!");
+                showEnemySkillMessage("Valerius jams your radar! Your skills are disabled for 2 turns!");
             }
             break;
         case 1: 
-            if (enemyValerius.hasEnoughMana(90)) {
-                System.out.println("🛡️ Enemy Valerius uses KINETIC BARRIER!");
-                int x = enemyRandom.nextInt(8);
-                int y = enemyRandom.nextInt(8);
-                enemyValerius.useKineticBarrier(enemyBoard, x, y);
-                showEnemySkillMessage("Valerius deploys a kinetic barrier around his ships!");
-            }
-            break;
-        case 2: 
-            if (enemyValerius.hasEnoughMana(280)) {
-                System.out.println("🎯 Enemy Valerius uses ORBITAL RAILGUN!");
+            if (enemyValerius.hasEnoughMana(120)) {
+                System.out.println("🎯 Enemy Valerius uses PRECISION STRIKE!");
+                boolean horizontal = enemyRandom.nextBoolean();
                 int x = enemyRandom.nextInt(10);
                 int y = enemyRandom.nextInt(10);
-                enemyValerius.useOrbitalRailgun(playerBoard, x, y);
-                playerBoardPanel.updateCell(x, y, ShotResult.HIT);
-                showEnemySkillMessage("Valerius fires his railgun at (" + x + "," + y + ")!");
+                int destroyed = enemyValerius.applyPrecisionStrike(playerBoard, x, y, horizontal);
+                if (destroyed > 0) {
+                    showEnemySkillMessage("Valerius's precision strike destroyed " + destroyed + " cells!");
+                }
             }
             break;
+    case 2: 
+    if (enemyValerius.hasEnoughMana(300)) {
+        System.out.println("🏰 Enemy Valerius uses FORTRESS MODE!");
+        
+        if (!playerBoard.getShips().isEmpty()) {
+            int randomShipIndex = enemyRandom.nextInt(playerBoard.getShips().size());
+            enemyValerius.useFortressMode(randomShipIndex);
+            showEnemySkillMessage("Valerius protects one of his ships!");
+        }
+    }
+    break;
     }
 }
 
@@ -674,6 +699,9 @@ private JPanel createPlayerCharacterPanel() {
         ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
     }if (playerCharacter instanceof Kael) {
     ((Kael) playerCharacter).setPlayerBoard(playerBoard);
+}
+if (playerCharacter instanceof Valerius) {
+    ((Valerius) playerCharacter).setPlayerBoard(playerBoard);
 }
 
 
@@ -1545,6 +1573,7 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     radarBtn.setForeground(Color.WHITE);
     radarBtn.setToolTipText("Disable enemy skills for 2 turns");
     radarBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    radarBtn.setFocusPainted(false);
     
     String status1 = valerius.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
@@ -1556,107 +1585,156 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
         if (isPlayer && playerTurn) {
             boolean used = valerius.useRadarOverload();
             if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "📡 RADAR OVERLOAD!\nEnemy skills disabled for 2 turns!", 
-                    "Skill Used", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                updateStatusLabel("📡 Radar Overload! Enemy skills disabled for 2 turns!", Color.ORANGE);
                 refreshUI();
+            } else {
+                updateStatusLabel("❌ Cannot use Radar Overload!\n" + valerius.getSkillStatus(1), Color.RED);
             }
         }
     });
     panel.add(radarBtn);
     
     
-    JButton barrierBtn = new JButton("🛡️ Kinetic Barrier (90)");
-    barrierBtn.setBackground(new Color(100, 149, 237));
-    barrierBtn.setForeground(Color.WHITE);
-    barrierBtn.setToolTipText("Click on YOUR board to place 3x3 shield");
-    barrierBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    JButton strikeBtn = new JButton("🎯 Precision Strike (120)");
+    strikeBtn.setBackground(new Color(200, 100, 0));
+    strikeBtn.setForeground(Color.WHITE);
+    strikeBtn.setToolTipText("Next attack destroys 2 cells in a line");
+    strikeBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    strikeBtn.setFocusPainted(false);
     
     String status2 = valerius.getSkillStatus(2);
     if (!status2.equals("Ready!")) {
-        barrierBtn.setEnabled(false);
-        barrierBtn.setText("🛡️ Kinetic Barrier (" + status2 + ")");
+        strikeBtn.setEnabled(false);
+        strikeBtn.setText("🎯 Precision Strike (" + status2 + ")");
     }
     
-    barrierBtn.addActionListener(e -> {
+    strikeBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
+            String[] options = {"Horizontal (→)", "Vertical (↓)"};
+            int choice = JOptionPane.showOptionDialog(frame,
+                "🎯 PRECISION STRIKE\n\nChoose attack direction:",
+                "Precision Strike",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
             
-            JOptionPane.showMessageDialog(frame,
-                "🛡️ KINETIC BARRIER\n\nClick on YOUR board to place the shield.",
-                "Select Target",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            
-            
-            String input = JOptionPane.showInputDialog(frame, 
-                "Enter center coordinates (row,col):", 
-                "Barrier Placement", 
-                JOptionPane.QUESTION_MESSAGE);
-            if (input != null) {
-                try {
-                    String[] parts = input.split(",");
-                    int x = Integer.parseInt(parts[0].trim());
-                    int y = Integer.parseInt(parts[1].trim());
-                    boolean used = valerius.useKineticBarrier(playerBoard, x, y);
-                    if (used) {
-                        JOptionPane.showMessageDialog(frame, 
-                            "🛡️ Barrier deployed at (" + x + "," + y + ")!", 
-                            "Skill Used", 
-                            JOptionPane.INFORMATION_MESSAGE);
+            if (choice >= 0) {
+                boolean horizontal = (choice == 0);
+                valerius.usePrecisionStrike();
+                
+                updateStatusLabel("🎯 Click on enemy board to strike " + 
+                    (horizontal ? "HORIZONTALLY" : "VERTICALLY") + "!", Color.YELLOW);
+                waitingForTarget = true;
+                currentSkillName = "PRECISION STRIKE";
+                targetCallback = (x, y) -> {
+                    int destroyed = valerius.applyPrecisionStrike(enemyBoard, x, y, horizontal);
+                    if (destroyed > 0) {
+                        updateStatusLabel("🎯 Precision Strike destroyed " + destroyed + " cells!", Color.ORANGE);
                         refreshUI();
                     }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(frame, "Invalid coordinates!", "Error", JOptionPane.ERROR_MESSAGE);
+                    waitingForTarget = false;
+                };
+            }
+        }
+    });
+    panel.add(strikeBtn);
+    
+    
+    JButton fortressBtn = new JButton("🏰 Fortress Mode (300)");
+    fortressBtn.setBackground(new Color(100, 50, 0));
+    fortressBtn.setForeground(Color.WHITE);
+    fortressBtn.setToolTipText("Protect a ship - it will block 1 hit");
+    fortressBtn.setFont(new Font("Arial", Font.BOLD, 12));
+    fortressBtn.setFocusPainted(false);
+    
+    String status3 = valerius.getSkillStatus(3);
+    if (!status3.equals("Ready!") && !status3.contains("protected")) {
+        fortressBtn.setEnabled(false);
+        fortressBtn.setText("🏰 Fortress Mode (" + status3 + ")");
+    }
+    
+    fortressBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            if (!valerius.hasEnoughMana(300)) {
+                updateStatusLabel("❌ Not enough mana! Need 300 mana.", Color.RED);
+                return;
+            }
+            if (valerius.getSkillStatus(3).contains("Cooldown")) {
+                updateStatusLabel("❌ Fortress Mode is on cooldown!", Color.RED);
+                return;
+            }
+            
+            
+            ArrayList<Ship> ships = playerBoard.getShips();
+            String[] shipNames = new String[ships.size()];
+            for (int i = 0; i < ships.size(); i++) {
+                Ship ship = ships.get(i);
+                if (ship.isSunk()) {
+                    shipNames[i] = ship.getName() + " 💀 (SUNK)";
+                } else if (valerius.isShipProtected(ship)) {
+                    shipNames[i] = ship.getName() + " 🛡️ (PROTECTED)";
+                } else {
+                    shipNames[i] = ship.getName() + " 🚢";
+                }
+            }
+            
+            int choice = JOptionPane.showOptionDialog(frame,
+                "🛡️ FORTRESS MODE\n\nSelect a ship to protect:\nIt will block 1 hit!",
+                "Fortress Mode",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                shipNames,
+                shipNames[0]);
+            
+            if (choice >= 0) {
+                Ship selectedShip = ships.get(choice);
+                if (!selectedShip.isSunk() && !valerius.isShipProtected(selectedShip)) {
+                    boolean used = valerius.useFortressMode(choice);
+                    if (used) {
+                        updateStatusLabel("🏰 Fortress Mode! " + selectedShip.getName() + " will block 1 hit!", Color.GREEN);
+                        refreshUI();
+                    } else {
+                        updateStatusLabel("❌ Cannot use Fortress Mode!", Color.RED);
+                    }
+                } else {
+                    updateStatusLabel("❌ " + selectedShip.getName() + " cannot be protected!", Color.RED);
                 }
             }
         }
     });
-    panel.add(barrierBtn);
-    
-    
-    JButton railgunBtn = new JButton("🎯 Orbital Railgun (280)");
-    railgunBtn.setBackground(Color.RED);
-    railgunBtn.setForeground(Color.WHITE);
-    railgunBtn.setToolTipText("Click on a cell to fire the railgun");
-    railgunBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    
-    String status3 = valerius.getSkillStatus(3);
-    if (!status3.equals("Ready!")) {
-        railgunBtn.setEnabled(false);
-        railgunBtn.setText("🎯 Orbital Railgun (" + status3 + ")");
-    }
-    
-    railgunBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            startTargetSelection("ORBITAL RAILGUN - Click target cell", (x, y) -> {
-                ShotResult result = valerius.useOrbitalRailgun(enemyBoard, x, y);
-                if (result != ShotResult.INVALID) {
-                    enemyBoardPanel.updateCell(x, y, result);
-                    JOptionPane.showMessageDialog(frame, 
-                        "🎯 Railgun fired at (" + x + "," + y + ")!\nResult: " + result, 
-                        "Skill Used", 
-                        JOptionPane.INFORMATION_MESSAGE);
-                    refreshUI();
-                }
-            }, railgunBtn);
-        }
-    });
-    panel.add(railgunBtn);
+    panel.add(fortressBtn);
     
     
     if (valerius.areEnemySkillsDisabled()) {
-        JLabel disabledLabel = new JLabel("🚫 Enemy skills disabled", SwingConstants.CENTER);
+        JLabel disabledLabel = new JLabel("🚫 Enemy skills DISABLED", SwingConstants.CENTER);
         disabledLabel.setForeground(Color.RED);
+        disabledLabel.setFont(new Font("Arial", Font.BOLD, 10));
         panel.add(disabledLabel);
     }
+    
+    if (valerius.hasProtectedShip()) {
+        JLabel protectedLabel = new JLabel("🛡️ " + valerius.getProtectedShipName() + " is PROTECTED", SwingConstants.CENTER);
+        protectedLabel.setForeground(Color.CYAN);
+        protectedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(protectedLabel);
+    }
+    
+    if (valerius.isScrapperResolveActive()) {
+        JLabel resolveLabel = new JLabel("⚡ Scrapper's Resolve ACTIVE", SwingConstants.CENTER);
+        resolveLabel.setForeground(Color.ORANGE);
+        resolveLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(resolveLabel);
+    }
+    
     
     JLabel manaLabel = new JLabel(valerius.getManaBar(), SwingConstants.CENTER);
     manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
     manaLabel.setForeground(Color.CYAN);
     panel.add(manaLabel);
 }
-
 private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     Skye skye = (Skye) playerCharacter;
     
@@ -2089,14 +2167,8 @@ private void enemyTurn() {
         } else {
             playerBoardPanel.updateCell(x, y, result);
         }
-    } else if (playerCharacter instanceof Valerius) {
-        Valerius valerius = (Valerius) playerCharacter;
-        result = valerius.applyBarrier(x, y, result);
-        playerBoardPanel.updateCell(x, y, result);
-        if (result == ShotResult.MISS && valerius.isCellShielded(x, y)) {
-            updateStatusLabel("🛡️ KINETIC BARRIER protected your ship!", Color.CYAN);
-        }
-    } else {
+    } 
+    else {
         playerBoardPanel.updateCell(x, y, result);
     }
     
@@ -2132,27 +2204,25 @@ private void useStrategicEnemySkill() {
     
     double enemyHealthPercent = (double)currentEnemy.getCurrentHealth() / currentEnemy.getMaxHealth();
     
-    
     int playerShipsRemaining = 0;
     for (Ship ship : playerBoard.getShips()) {
         if (!ship.isSunk()) playerShipsRemaining++;
     }
     
-    if (currentEnemy instanceof Valerius && enemyHealthPercent < 0.3) {
-        
-        Valerius valerius = (Valerius) currentEnemy;
-        if (valerius.hasEnoughMana(90)) {
+    
+    
+    if (currentEnemy instanceof Kael && playerShipsRemaining > 3) {
+        Kael kael = (Kael) currentEnemy;
+        if (kael.hasEnoughEnergy(200)) {
             int x = random.nextInt(8);
             int y = random.nextInt(8);
-            valerius.useKineticBarrier(enemyBoard, x, y);
-            showEnemySkillMessage("Valerius deploys emergency barrier!");
+            kael.useShadowDomain(playerBoard, x, y);
+            showEnemySkillMessage("Kael's shadow domain consumes your fleet!");
             return;
         }
     }
-  
     
     if (currentEnemy instanceof Jiji && playerShipsRemaining < 3) {
-        
         Jiji jiji = (Jiji) currentEnemy;
         if (jiji.hasEnoughMana(400)) {
             jiji.useSystemOverload(playerBoard);
@@ -2162,7 +2232,6 @@ private void useStrategicEnemySkill() {
     }
     
     if (currentEnemy instanceof Skye && playerShipsRemaining == playerBoard.getShips().size()) {
-        
         Skye skye = (Skye) currentEnemy;
         if (skye.hasEnoughMana(70)) {
             skye.useCatSwarm(playerBoard);
@@ -2179,31 +2248,39 @@ private void refreshCharacterPanels() {
     
     createBattleUI(waves.get(currentWaveIndex));
 }
+    private void resetPlayerBoard() {
     
-    private void waveComplete() {
-          updateStatusLabel("🎉 WAVE CLEAR! Well done!", Color.GREEN);
-        currentWaveIndex++;
+    healPlayerShips();
+}
+
+  private void waveComplete() {
+    updateStatusLabel("🎉 WAVE CLEAR! Well done!", Color.GREEN);
+    currentWaveIndex++;
+    
+    String message = "🎉 Victory! You defeated " + currentEnemy.getName() + "!\n\n";
+    
+    if (currentWaveIndex < waves.size()) {
+        message += "Next wave: " + waves.get(currentWaveIndex).enemy.getName();
         
-        String message = "🎉 Victory! You defeated " + currentEnemy.getName() + "!\n\n";
         
-        if (currentWaveIndex < waves.size()) {
-            message += "Next wave: " + waves.get(currentWaveIndex).enemy.getName();
-        } else {
-            message += "You've completed all waves!";
-        }
+        healPlayerShips();  
         
-        int result = JOptionPane.showConfirmDialog(frame,
-            message,
-            "Wave Complete",
-            JOptionPane.YES_NO_OPTION);
-            
-        if (result == JOptionPane.YES_OPTION && currentWaveIndex < waves.size()) {
-            loadWave(currentWaveIndex);
-        } else {
-            Main.showMainMenu();
-        }
+        
+    } else {
+        message += "You've completed all waves!";
     }
     
+    int result = JOptionPane.showConfirmDialog(frame,
+        message,
+        "Wave Complete",
+        JOptionPane.YES_NO_OPTION);
+        
+    if (result == JOptionPane.YES_OPTION && currentWaveIndex < waves.size()) {
+        loadWave(currentWaveIndex);
+    } else {
+        Main.showMainMenu();
+    }
+}
     private void gameOver() {
         JOptionPane.showMessageDialog(frame,
             "💀 Game Over! " + currentEnemy.getName() + " has defeated you.\n\nTry again?",

@@ -37,6 +37,13 @@ private boolean isFullyRevealed = false;
     public boolean isFullyRevealed() {
     return isFullyRevealed;
 }
+
+public void heal() {
+    this.hits = 0;
+    this.isSunk = false;
+    this.damageTaken = 0;
+    System.out.println("🏥 " + name + " has been fully repaired!");
+}
 public void setFullyRevealed(boolean revealed) {
     this.isFullyRevealed = revealed;
 }

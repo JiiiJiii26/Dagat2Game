@@ -85,47 +85,55 @@ public class Cell {
         return isFiredUpon;
     }
   public Color getColor() {
-        
-        if (isRevealed && !isFiredUpon) {
-            if (hasShip) {
-                return new Color(255, 200, 100);  
-            } else {
-                return new Color(200, 200, 150);  
-            }
-        }
-        
-        
-        if (isFiredUpon) {
-            if (hasShip) {
-                if (ship != null && ship.isInfected()) {
-                    return INFECTED_HIT;
-                }
-                return HIT_RED;
-            } else {
-                return MISS_GRAY;
-            }
-        }
-        
-        
-        if (isPlayerBoard) {
-            
-            if (hasShip && ship != null && ship.isInfected()) {
-                return INFECTED_PURPLE;
-            }
-            if (ship != null && ship.isShielded()) {
-                return SHIELD_BLUE;
-            }
-            if (hasShip) {
-                return SHIP_GREEN;
-            }
-            return OCEAN_BLUE;
+    
+    if (isRevealed && !isFiredUpon) {
+        if (hasShip) {
+            return new Color(255, 200, 100);
         } else {
-            
-            return OCEAN_BLUE;
+            return new Color(200, 200, 150);
         }
     }
+    
+    
+    if (isFiredUpon) {
+        if (hasShip) {
+            if (ship != null && ship.isInfected()) {
+                return INFECTED_HIT;
+            }
+            return HIT_RED;
+        } else {
+            return MISS_GRAY;
+        }
+    }
+    
+    
+    if (isPlayerBoard) {
+        
+        if (ship != null && ship.isShielded()) {
+            return SHIELD_BLUE;  
+        }
+        
+        if (hasShip && ship != null && ship.isInfected()) {
+            return INFECTED_PURPLE;
+        }
+        
+        if (hasShip) {
+            return SHIP_GREEN;
+        }
+        return OCEAN_BLUE;
+    }
+    
+    
+    else {
+        return OCEAN_BLUE;
+    }
+}
 public Ship getShip() {
     return ship;
+}
+
+public void resetFiredUpon() {
+    this.isFiredUpon = false;
 }
 }
 

@@ -23,14 +23,19 @@ public class Board {
     if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
         return ShotResult.INVALID;
     }
+      Cell cell = grid[x][y];
+
+       if (cell.hasShip() && cell.getShip() != null && cell.getShip().isShielded()) {
+        System.out.println("🔵 Fortress Mode blocked the attack at (" + x + "," + y + ")!");
+        return ShotResult.MISS;
+    }
     
-    
-    if (grid[x][y].isFiredUpon()) {
+    if (cell.isFiredUpon()) {
         System.out.println("Already fired at (" + x + "," + y + ")");
         return ShotResult.ALREADY_FIRED;
     }
     
-    ShotResult result = grid[x][y].fire();
+    ShotResult result = cell.fire();
     System.out.println("Fired at (" + x + "," + y + "): " + result);
     return result;
 }
