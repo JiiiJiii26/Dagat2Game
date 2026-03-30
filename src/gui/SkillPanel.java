@@ -4,7 +4,11 @@ import characters.*;
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.ActionListener;
-import models.Board;    
+import java.util.ArrayList;
+
+import models.Board;
+import models.Ship;
+
 import javax.swing.border.TitledBorder;    
 import game.ShotResult;      
 
@@ -82,7 +86,10 @@ public class SkillPanel extends JPanel {
             addValeriusSkills(mainPanel, gbc);
         } else if (character instanceof Skye) {
             addSkyeSkills(mainPanel, gbc);
-        } else {
+        }else if(character instanceof Aeris) {
+            addAerisSkills(mainPanel, gbc);
+        }
+        else {
             addGenericSkills(mainPanel, gbc);
         }
         
@@ -131,6 +138,112 @@ public class SkillPanel extends JPanel {
                 }
             });
     }
+private void addAerisSkills(JPanel panel, GridBagConstraints gbc) {
+    Aeris aeris = (Aeris) character;
+    
+    
+    gbc.gridy++;
+    JLabel shieldLabel = new JLabel("🛡️ ADAPTIVE INSTINCT");
+    shieldLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    shieldLabel.setForeground(new Color(100, 200, 255));
+    panel.add(shieldLabel, gbc);
+    
+    gbc.gridy++;
+    JButton shieldBtn = new JButton("USE (120 mana)");
+    shieldBtn.setBackground(new Color(100, 200, 255));
+    shieldBtn.setForeground(Color.BLACK);
+    shieldBtn.addActionListener(e -> {
+        String status = aeris.getSkillStatus(1);
+        if (status.equals("Ready!")) {
+            showShipSelectionDialog(aeris);
+        } else {
+            showMessage("❌ Cannot use Adaptive Instinct!\n" + status);
+        }
+    });
+    panel.add(shieldBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel shieldDesc = new JLabel("Shield a ship for 2 turns");
+    shieldDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    shieldDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(shieldDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel overdriveLabel = new JLabel("⚡ MULTITASK OVERDRIVE");
+    overdriveLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    overdriveLabel.setForeground(new Color(255, 215, 0));
+    panel.add(overdriveLabel, gbc);
+    
+    gbc.gridy++;
+    JButton overdriveBtn = new JButton("USE (Restores 200 mana)");
+    overdriveBtn.setBackground(new Color(255, 215, 0));
+    overdriveBtn.setForeground(Color.BLACK);
+    overdriveBtn.addActionListener(e -> {
+        String status = aeris.getSkillStatus(2);
+        if (status.equals("Ready!") || status.equals("Ready! (+200 mana)")) {
+            boolean used = aeris.useMultitaskOverdrive();
+            if (used) {
+                showMessage("⚡ Multitask Overdrive! Restored 200 mana!");
+                updateUI();
+            } else {
+                showMessage("❌ Cannot use Multitask Overdrive!\n" + aeris.getSkillStatus(2));
+            }
+        } else {
+            showMessage("❌ Cannot use Multitask Overdrive!\n" + status);
+        }
+    });
+    panel.add(overdriveBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel overdriveDesc = new JLabel("Restores 200 mana (3 turn cooldown)");
+    overdriveDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    overdriveDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(overdriveDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel ascentLabel = new JLabel("⚔️ RELENTLESS ASCENT");
+    ascentLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    ascentLabel.setForeground(new Color(200, 50, 50));
+    panel.add(ascentLabel, gbc);
+    
+    gbc.gridy++;
+    JButton ascentBtn = new JButton("USE (500 mana)");
+    ascentBtn.setBackground(new Color(200, 50, 50));
+    ascentBtn.setForeground(Color.WHITE);
+    ascentBtn.addActionListener(e -> {
+        String status = aeris.getSkillStatus(3);
+        if (status.equals("Ready!")) {
+            showMessage("⚔️ Relentless Ascent: Click on a column (0-9) on enemy board!");
+        } else {
+            showMessage("❌ Cannot use Relentless Ascent!\n" + status);
+        }
+    });
+    panel.add(ascentBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel ascentDesc = new JLabel("Destroys an entire column (more damage when low HP)");
+    ascentDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    ascentDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(ascentDesc, gbc);
+    
+    
+    if (aeris.isStunImmuneActive()) {
+        gbc.gridy++;
+        JLabel stunLabel = new JLabel("⚡ STUN IMMUNE ACTIVE", SwingConstants.CENTER);
+        stunLabel.setForeground(Color.YELLOW);
+        stunLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(stunLabel, gbc);
+    }
+    
+    
+    gbc.gridy++;
+    JLabel manaLabel = new JLabel(aeris.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel, gbc);
+}
     
    private void addKaelSkills(JPanel panel, GridBagConstraints gbc) {
     Kael kael = (Kael) character;
@@ -644,4 +757,52 @@ public void updateUI() {
             updateTimer.stop();
         }
     }
+    private void showShipSelectionDialog(Aeris aeris) {
+    
+    ArrayList<Ship> availableShips = new ArrayList<>();
+    for (Ship ship : getPlayerBoard().getShips()) {
+        if (!ship.isSunk() && !ship.isShielded()) {
+            availableShips.add(ship);
+        }
+    }
+    
+    if (availableShips.isEmpty()) {
+        showMessage("❌ No available ships to shield! All ships are either sunk or already shielded.");
+        return;
+    }
+    
+    
+    String[] shipNames = new String[availableShips.size()];
+    for (int i = 0; i < availableShips.size(); i++) {
+        Ship ship = availableShips.get(i);
+        shipNames[i] = ship.getName() + " (HP: " + ship.getRemainingHealth() + "/" + ship.getSize() + ")";
+    }
+    
+    
+    String selectedShip = (String) JOptionPane.showInputDialog(
+        this,
+        "Select a ship to shield for 2 turns:",
+        "Adaptive Instinct",
+        JOptionPane.QUESTION_MESSAGE,
+        null,
+        shipNames,
+        shipNames[0]
+    );
+    
+    if (selectedShip != null) {
+        
+        for (int i = 0; i < availableShips.size(); i++) {
+            if (shipNames[i].equals(selectedShip)) {
+                boolean used = aeris.useAdaptiveInstinct(getPlayerBoard(), i);
+                if (used) {
+                    showMessage("🛡️ " + availableShips.get(i).getName() + " is now SHIELDED for 2 turns!");
+                    updateUI();
+                } else {
+                    showMessage("❌ Failed to shield ship!");
+                }
+                break;
+            }
+        }
+    }
+}
 }

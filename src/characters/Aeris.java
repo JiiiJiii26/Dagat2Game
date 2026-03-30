@@ -320,8 +320,8 @@ public class Aeris extends GameCharacter {
             case 3: 
                 if (relentlessAscentCooldown > 0) {
                     return "Cooldown: " + relentlessAscentCooldown + " turn" + (relentlessAscentCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(250)) {
-                    return "Need 250 mana";
+                } else if (!hasEnoughMana(500)) {
+                    return "Need 500 mana";
                 } else {
                     return "Ready!";
                 }

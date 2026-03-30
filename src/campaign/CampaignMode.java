@@ -1035,180 +1035,109 @@ private void addAerisSkills(JPanel panel, boolean isPlayer) {
     Aeris aeris = (Aeris) playerCharacter;
     
     
-  
-
-
-JButton adaptiveBtn = new JButton("🛡️ Adaptive Instinct (120)");
-adaptiveBtn.setBackground(new Color(255, 215, 0));
-adaptiveBtn.setForeground(Color.BLACK);
-adaptiveBtn.setToolTipText("Click on YOUR ship to shield it for 2 turns (turns blue, immune to damage)");
-
-String status1 = aeris.getSkillStatus(1);
-if (!status1.equals("Ready!")) {
-    adaptiveBtn.setEnabled(false);
-    adaptiveBtn.setText("🛡️ Adaptive Instinct (" + status1 + ")");
-}
-
-adaptiveBtn.addActionListener(e -> {
-    if (isPlayer && playerTurn) {
-        
-        if (!aeris.hasEnoughMana(120)) {
-            updateStatusLabel("❌ Not enough mana! Need 120 mana.", Color.RED);
-            return;
-        }
-        if (aeris.getSkillStatus(1).contains("Cooldown")) {
-            updateStatusLabel("❌ Adaptive Instinct is on cooldown!", Color.RED);
-            return;
-        }
-        
-        
-        updateStatusLabel("🛡️ Click on YOUR board to select a ship to shield!", Color.YELLOW);
-        waitingForAerisShield = true;
-     currentAerisShieldCallback = (x, y) -> {
-    System.out.println("🛡️ Aeris callback received: (" + x + "," + y + ")");
+    JButton adaptiveBtn = new JButton("🛡️ Adaptive Instinct (120)");
+    adaptiveBtn.setBackground(new Color(255, 215, 0));
+    adaptiveBtn.setForeground(Color.BLACK);
+    adaptiveBtn.setToolTipText("Click on YOUR ship to shield it for 2 turns");
     
-    
-    Ship targetShip = null;
-    for (Ship ship : playerBoard.getShips()) {
-        if (ship.containsCell(x, y)) {
-            targetShip = ship;
-            System.out.println("🔵 Found ship: " + ship.getName() + " at (" + x + "," + y + ")");
-            break;
-        }
+    String status1 = aeris.getSkillStatus(1);
+    if (!status1.equals("Ready!")) {
+        adaptiveBtn.setEnabled(false);
+        adaptiveBtn.setText("🛡️ Adaptive Instinct (" + status1 + ")");
     }
     
-    if (targetShip == null) {
-        updateStatusLabel("❌ No ship at that location!", Color.RED);
-        waitingForAerisShield = false;
-        return;
-    }
-    
-    if (targetShip.isSunk()) {
-        updateStatusLabel("❌ This ship is already sunk!", Color.RED);
-        waitingForAerisShield = false;
-        return;
-    }
-    
-    if (targetShip.isShielded()) {
-        updateStatusLabel("❌ " + targetShip.getName() + " is already shielded!", Color.RED);
-        waitingForAerisShield = false;
-        return;
-    }
-    
-    
-    int shipIndex = -1;
-    ArrayList<Ship> ships = playerBoard.getShips();
-    for (int i = 0; i < ships.size(); i++) {
-        if (ships.get(i) == targetShip) {
-            shipIndex = i;
-            break;
-        }
-    }
-    
-    boolean used = aeris.useAdaptiveInstinct(playerBoard, shipIndex);
-    if (used) {
-        updateStatusLabel("🔵 " + targetShip.getName() + " is now SHIELDED (blue) for 2 turns!", Color.CYAN);
-        playerBoardPanel.refreshColors();
-        refreshUI();
-    } else {
-        updateStatusLabel("❌ Failed to shield " + targetShip.getName() + "!", Color.RED);
-    }
-    waitingForAerisShield = false;
-};
-    }
-});
-panel.add(adaptiveBtn);
-    
-    
-   JButton overdriveBtn = new JButton("⚡ Multitask Overdrive");
-overdriveBtn.setBackground(new Color(100, 200, 255));
-overdriveBtn.setForeground(Color.BLACK);
-overdriveBtn.setToolTipText("Restores 200 mana. 3 turn cooldown.");
-overdriveBtn.setFont(new Font("Arial", Font.BOLD, 11));
-overdriveBtn.setFocusPainted(false);
-
-String status2 = aeris.getSkillStatus(2);
-if (!status2.equals("Ready! (Restores 200 mana)")) {
-    overdriveBtn.setEnabled(false);
-    overdriveBtn.setText("⚡ Multitask Overdrive (" + status2 + ")");
-} else {
-    overdriveBtn.setText("⚡ Multitask Overdrive (+200 mana)");
-}
-
-overdriveBtn.addActionListener(e -> {
-    if (isPlayer && playerTurn) {
-        
-        if (aeris.getSkillStatus(2).contains("Cooldown")) {
-            updateStatusLabel("❌ Multitask Overdrive is on cooldown!", Color.RED);
-            return;
-        }
-        
-        boolean used = aeris.useMultitaskOverdrive();
-        if (used) {
-            updateStatusLabel("⚡ Multitask Overdrive! Restored 200 mana!", Color.GREEN);
-            refreshUI();  
-        } else {
-            updateStatusLabel("❌ Cannot use Multitask Overdrive!", Color.RED);
-        }
-    }
-});
-panel.add(overdriveBtn);
-    
-    
-   
-JButton relentlessBtn = new JButton("⚔️ Relentless Ascent (500)");
-relentlessBtn.setBackground(new Color(200, 100, 0));
-relentlessBtn.setForeground(Color.WHITE);
-relentlessBtn.setToolTipText("Destroys an entire column! Bonus cells destroyed when low on HP.");
-relentlessBtn.setFont(new Font("Arial", Font.BOLD, 11));
-relentlessBtn.setFocusPainted(false);
-
-String status3 = aeris.getSkillStatus(3);
-if (!status3.equals("Ready!")) {
-    relentlessBtn.setEnabled(false);
-    relentlessBtn.setText("⚔️ Relentless Ascent (" + status3 + ")");
-}
-
-relentlessBtn.addActionListener(e -> {
-    if (isPlayer && playerTurn) {
-        updateStatusLabel("⚔️ Click on enemy board to select a column to destroy!", Color.YELLOW);
-        
-        waitingForTarget = true;
-        currentSkillName = "RELENTLESS ASCENT";
-        targetCallback = (x, y) -> {
-            
-            if (y < 0 || y > 9) {
-                updateStatusLabel("❌ Invalid column!", Color.RED);
-                waitingForTarget = false;
+    adaptiveBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            if (!aeris.hasEnoughMana(120)) {
+                updateStatusLabel("❌ Not enough mana! Need 120 mana.", Color.RED);
+                return;
+            }
+            if (aeris.getSkillStatus(1).contains("Cooldown")) {
+                updateStatusLabel("❌ Adaptive Instinct is on cooldown!", Color.RED);
                 return;
             }
             
-            int cellsDestroyed = aeris.useRelentlessAscent(enemyBoard, y);
-            if (cellsDestroyed > 0) {
-                updateStatusLabel("⚔️ Relentless Ascent destroyed " + cellsDestroyed + " cells in column " + y + "!", Color.ORANGE);
+            updateStatusLabel("🛡️ Click on YOUR board to select a ship to shield!", Color.YELLOW);
+            waitingForAerisShield = true;
+            currentAerisShieldCallback = (x, y) -> {
+                
+            };
+        }
+    });
+    panel.add(adaptiveBtn);
+    
+    
+    JButton overdriveBtn = new JButton("⚡ Multitask Overdrive");
+    overdriveBtn.setBackground(new Color(100, 200, 255));
+    overdriveBtn.setForeground(Color.BLACK);
+    overdriveBtn.setToolTipText("Restores 200 mana. 3 turn cooldown.");
+    overdriveBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    overdriveBtn.setFocusPainted(false);
+    
+    String status2 = aeris.getSkillStatus(2);
+    if (status2.contains("Cooldown")) {  
+        overdriveBtn.setEnabled(false);
+        overdriveBtn.setText("⚡ Multitask Overdrive (" + status2 + ")");
+    } else {
+        overdriveBtn.setEnabled(true);  
+        overdriveBtn.setText("⚡ Multitask Overdrive (+200 mana)");
+    }
+    
+    overdriveBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            if (aeris.getSkillStatus(2).contains("Cooldown")) {
+                updateStatusLabel("❌ Multitask Overdrive is on cooldown!", Color.RED);
+                return;
+            }
+            
+            boolean used = aeris.useMultitaskOverdrive();
+            if (used) {
+                updateStatusLabel("⚡ Multitask Overdrive! Restored 200 mana!", Color.GREEN);
                 refreshUI();
             } else {
-                updateStatusLabel("❌ Cannot use Relentless Ascent!", Color.RED);
+                updateStatusLabel("❌ Cannot use Multitask Overdrive!", Color.RED);
             }
-            waitingForTarget = false;
-        };
+        }
+    });
+    panel.add(overdriveBtn);
+    
+    
+    JButton relentlessBtn = new JButton("⚔️ Relentless Ascent (500)");
+    relentlessBtn.setBackground(new Color(200, 100, 0));
+    relentlessBtn.setForeground(Color.WHITE);
+    relentlessBtn.setToolTipText("Destroys an entire column! Bonus cells destroyed when low on HP.");
+    relentlessBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    relentlessBtn.setFocusPainted(false);
+    
+    String status3 = aeris.getSkillStatus(3);
+    if (!status3.equals("Ready!")) {
+        relentlessBtn.setEnabled(false);
+        relentlessBtn.setText("⚔️ Relentless Ascent (" + status3 + ")");
     }
-});
-panel.add(relentlessBtn);
     
-    
-    
-    
-    if (aeris.isStunImmuneActive()) {
-        JLabel stunLabel = new JLabel("⚡ Stun Immune ACTIVE", SwingConstants.CENTER);
-        stunLabel.setForeground(Color.YELLOW);
-        stunLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(stunLabel);
-    }
-    
-   
-    
-
+    relentlessBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            updateStatusLabel("⚔️ Click on enemy board to select a column to destroy!", Color.YELLOW);
+            waitingForTarget = true;
+            currentSkillName = "RELENTLESS ASCENT";
+            targetCallback = (x, y) -> {
+                if (y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid column!", Color.RED);
+                    waitingForTarget = false;
+                    return;
+                }
+                int cellsDestroyed = aeris.useRelentlessAscent(enemyBoard, y);
+                if (cellsDestroyed > 0) {
+                    updateStatusLabel("⚔️ Relentless Ascent destroyed " + cellsDestroyed + " cells in column " + y + "!", Color.ORANGE);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Relentless Ascent!", Color.RED);
+                }
+                waitingForTarget = false;
+            };
+        }
+    });
+    panel.add(relentlessBtn);
     
     
     JLabel manaLabel = new JLabel(aeris.getManaBar(), SwingConstants.CENTER);
@@ -2053,14 +1982,14 @@ private JPanel createBoardsPanel() {
 }
     
 private void handlePlayerAttack(int row, int col) {
-    // Check if cell was already fired upon
+    
     if (enemyBoard.isCellFiredUpon(row, col)) {
         updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
         JOptionPane.showMessageDialog(null,
             "⚠️ You already shot at (" + row + "," + col + ")!\nChoose another cell!",
             "Invalid Target",
             JOptionPane.WARNING_MESSAGE);
-        return; // Exit the method - don't allow the shot
+        return; 
     }
     
     updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
