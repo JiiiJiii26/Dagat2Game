@@ -2,14 +2,17 @@ package models;
 
 import game.ShotResult;
 import java.util.ArrayList;
+
 public class Board {
     private final Cell[][] grid;
     private final ArrayList<Ship> ships;
     private final int SIZE = 10;
+    private boolean[][] firedUpon;
     
     public Board() {
         grid = new Cell[SIZE][SIZE];
-        ships = new ArrayList<>();
+        ships = new ArrayList<Ship>();
+        firedUpon = new boolean[SIZE][SIZE];
         
         
         for (int i = 0; i < SIZE; i++) {
@@ -17,31 +20,50 @@ public class Board {
                 grid[i][j] = new Cell(i, j);
             }
         }
+        
+        
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                firedUpon[i][j] = false;
+            }
+        }
     }
     
-   public ShotResult fire(int x, int y) {
-    if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
-        return ShotResult.INVALID;
-    }
-      Cell cell = grid[x][y];
-
-       if (cell.hasShip() && cell.getShip() != null && cell.getShip().isShielded()) {
-        System.out.println("🔵 Fortress Mode blocked the attack at (" + x + "," + y + ")!");
-        return ShotResult.MISS;
+    public boolean isCellFiredUpon(int x, int y) {
+        if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return true;
+        return firedUpon[x][y];
     }
     
-    if (cell.isFiredUpon()) {
-        System.out.println("Already fired at (" + x + "," + y + ")");
-        return ShotResult.ALREADY_FIRED;
+    public String getDuplicateShotMessage(int x, int y) {
+        return "⚠️ You already shot at (" + x + "," + y + ")!\nChoose another cell!";
     }
     
-    ShotResult result = cell.fire();
-    System.out.println("Fired at (" + x + "," + y + "): " + result);
-    return result;
-}
+    public ShotResult fire(int x, int y) {
+        if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) {
+            return ShotResult.INVALID;
+        }
+        
+        
+        firedUpon[x][y] = true;
+        
+        Cell cell = grid[x][y];
+        
+        if (cell.hasShip() && cell.getShip() != null && cell.getShip().isShielded()) {
+            System.out.println("🔵 Fortress Mode blocked the attack at (" + x + "," + y + ")!");
+            return ShotResult.MISS;
+        }
+        
+        if (cell.isFiredUpon()) {
+            System.out.println("Already fired at (" + x + "," + y + ")");
+            return ShotResult.ALREADY_FIRED;
+        }
+        
+        ShotResult result = cell.fire();
+        System.out.println("Fired at (" + x + "," + y + "): " + result);
+        return result;
+    }
     
     public boolean placeShip(Ship ship, int startX, int startY, boolean horizontal) {
-        
         if (horizontal) {
             if (startY + ship.getSize() > SIZE) return false;
             for (int i = 0; i < ship.getSize(); i++) {
@@ -54,21 +76,19 @@ public class Board {
             }
         }
         
-        
         if (horizontal) {
-        for (int i = 0; i < ship.getSize(); i++) {
-            grid[startX][startY + i].placeShip(ship);
-            
+            for (int i = 0; i < ship.getSize(); i++) {
+                grid[startX][startY + i].placeShip(ship);
+            }
+        } else {
+            for (int i = 0; i < ship.getSize(); i++) {
+                grid[startX + i][startY].placeShip(ship);
+            }
         }
-    } else {
-        for (int i = 0; i < ship.getSize(); i++) {
-            grid[startX + i][startY].placeShip(ship);
-        }
+        
+        ships.add(ship);
+        return true;
     }
-    
-    ships.add(ship);
-    return true;
-}
     
     public boolean allShipsSunk() {
         for (Ship ship : ships) {
@@ -86,14 +106,8 @@ public class Board {
     public int getSize() {
         return SIZE;
     }
+    
     public ArrayList<Ship> getShips() {
-    return ships;
+        return ships;
+    }
 }
-
-}
-
-
-
-
-
-

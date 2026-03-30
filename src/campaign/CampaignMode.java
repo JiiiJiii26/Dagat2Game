@@ -261,27 +261,11 @@ private void useValeriusEnemySkill() {
 private void useSkyeEnemySkill() {
     Skye enemySkye = (Skye) currentEnemy;
     
-    
-    int skillChoice = enemyRandom.nextInt(3);
+    int skillChoice = enemyRandom.nextInt(3);  
     
     switch(skillChoice) {
         case 0: 
             if (enemySkye.hasEnoughMana(70)) {
-                System.out.println("🐱 Enemy Skye uses CAT SWARM!");
-                enemySkye.useCatSwarm(playerBoard);
-                showEnemySkillMessage("Skye summons a swarm of cats! Your ships are scattered!");
-            }
-            break;
-        case 1: 
-            if (enemySkye.hasEnoughMana(50)) {
-                System.out.println("🔴 Enemy Skye uses LASER POINTER!");
-                enemySkye.useLaserPointer();
-                
-                showEnemySkillMessage("Skye distracts you with a laser pointer!");
-            }
-            break;
-        case 2: 
-            if (enemySkye.hasEnoughMana(380)) {
                 System.out.println("🌿 Enemy Skye uses CATNIP EXPLOSION!");
                 int x = enemyRandom.nextInt(8);
                 int y = enemyRandom.nextInt(8);
@@ -289,7 +273,38 @@ private void useSkyeEnemySkill() {
                 showEnemySkillMessage("Skye detonates a catnip bomb near your fleet!");
             }
             break;
+        case 1: 
+            if (enemySkye.hasEnoughMana(50)) {
+                System.out.println("🔴 Enemy Skye uses LASER POINTER!");
+                enemySkye.useLaserPointer();
+                showEnemySkillMessage("Skye distracts you with a laser pointer!");
+            }
+            break;
+        case 2: 
+            if (enemySkye.hasEnoughMana(200)) {
+                System.out.println("😺 Enemy Skye uses NINE LIVES!");
+                
+                
+                Ship sunkShip = findSunkShip(enemyBoard);
+                if (sunkShip != null) {
+                    
+                    Ship.Coordinate pos = sunkShip.getPositions().get(0);
+                    enemySkye.useNineLives(enemyBoard, pos.getX(), pos.getY());
+                    showEnemySkillMessage("Skye revives one of her ships! Nine Lives!");
+                }
+            }
+            break;
     }
+}
+
+
+private Ship findSunkShip(Board board) {
+    for (Ship ship : board.getShips()) {
+        if (ship.isSunk()) {
+            return ship;
+        }
+    }
+    return null;
 }
 
 private void showEnemySkillMessage(String message) {
@@ -1706,36 +1721,51 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
     Skye skye = (Skye) playerCharacter;
     
     
-    JButton catSwarmBtn = new JButton("🐱 Cat Swarm (70)");
-    catSwarmBtn.setBackground(new Color(255, 165, 0));
-    catSwarmBtn.setForeground(Color.BLACK);
-    catSwarmBtn.setToolTipText("Summon cats to randomly reposition enemy ships");
+    JButton catnipBtn = new JButton("🌿 Catnip Explosion (70)");
+    catnipBtn.setBackground(new Color(50, 205, 50));
+    catnipBtn.setForeground(Color.BLACK);
+    catnipBtn.setToolTipText("Destroy a 2x2 area on enemy board!");
+    catnipBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    catnipBtn.setFocusPainted(false);
     
     String status1 = skye.getSkillStatus(1);
     if (!status1.equals("Ready!")) {
-        catSwarmBtn.setEnabled(false);
-        catSwarmBtn.setText("🐱 Cat Swarm (" + status1 + ")");
+        catnipBtn.setEnabled(false);
+        catnipBtn.setText("🌿 Catnip Explosion (" + status1 + ")");
     }
     
-    catSwarmBtn.addActionListener(e -> {
+    catnipBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            boolean used = skye.useCatSwarm(enemyBoard);
-            if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "🐱 CAT SWARM!\nEnemy ships are being knocked around!", 
-                    "Skill Used", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                refreshUI();
-            }
+            updateStatusLabel("🌿 Click on enemy board to detonate catnip bomb (2x2 area)!", Color.YELLOW);
+            waitingForTarget = true;
+            currentSkillName = "CATNIP EXPLOSION";
+            targetCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForTarget = false;
+                    return;
+                }
+                
+                int cellsDestroyed = skye.useCatnipExplosion(enemyBoard, x, y);
+                if (cellsDestroyed > 0) {
+                    updateStatusLabel("🌿 Catnip Explosion destroyed " + cellsDestroyed + " cells!", Color.GREEN);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot use Catnip Explosion!", Color.RED);
+                }
+                waitingForTarget = false;
+            };
         }
     });
-    panel.add(catSwarmBtn);
+    panel.add(catnipBtn);
     
     
     JButton laserBtn = new JButton("🔴 Laser Pointer (50)");
     laserBtn.setBackground(new Color(255, 100, 100));
     laserBtn.setForeground(Color.BLACK);
-    laserBtn.setToolTipText("Enemy skips their next turn");
+    laserBtn.setToolTipText("Enemy skips their next turn!");
+    laserBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    laserBtn.setFocusPainted(false);
     
     String status2 = skye.getSkillStatus(2);
     if (!status2.equals("Ready!")) {
@@ -1747,56 +1777,74 @@ private void addSkyeSkills(JPanel panel, boolean isPlayer) {
         if (isPlayer && playerTurn) {
             boolean used = skye.useLaserPointer();
             if (used) {
-                JOptionPane.showMessageDialog(frame, 
-                    "🔴 LASER POINTER!\nEnemy will skip their next turn!", 
-                    "Skill Used", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                updateStatusLabel("🔴 Laser Pointer! Enemy will skip their next turn!", Color.YELLOW);
                 refreshUI();
+            } else {
+                updateStatusLabel("❌ Cannot use Laser Pointer!\n" + skye.getSkillStatus(2), Color.RED);
             }
         }
     });
     panel.add(laserBtn);
     
     
-    JButton catnipBtn = new JButton("🌿 Catnip Explosion (380)");
-    catnipBtn.setBackground(new Color(50, 205, 50));
-    catnipBtn.setForeground(Color.BLACK);
-    catnipBtn.setToolTipText("Click to target center of 2x2 catnip area");
+    JButton reviveBtn = new JButton("😺 Nine Lives (200)");
+    reviveBtn.setBackground(new Color(255, 165, 0));
+    reviveBtn.setForeground(Color.BLACK);
+    reviveBtn.setToolTipText("Revive a fallen ship on YOUR board!");
+    reviveBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    reviveBtn.setFocusPainted(false);
     
     String status3 = skye.getSkillStatus(3);
     if (!status3.equals("Ready!")) {
-        catnipBtn.setEnabled(false);
-        catnipBtn.setText("🌿 Catnip Explosion (" + status3 + ")");
+        reviveBtn.setEnabled(false);
+        reviveBtn.setText("😺 Nine Lives (" + status3 + ")");
     }
     
-    catnipBtn.addActionListener(e -> {
+    reviveBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            startTargetSelection("CATNIP EXPLOSION - Click center of 2x2 area", (x, y) -> {
-                int cellsDestroyed = skye.useCatnipExplosion(enemyBoard, x, y);
-                if (cellsDestroyed > 0) {
-                    JOptionPane.showMessageDialog(frame, 
-                        "🌿 CATNIP EXPLOSION!\nDestroyed " + cellsDestroyed + " segments!\nEnemy is distracted!", 
-                        "Skill Used", 
-                        JOptionPane.INFORMATION_MESSAGE);
-                    refreshUI();
+            updateStatusLabel("😺 Click on a SUNK ship on YOUR board to revive it!", Color.YELLOW);
+            waitingForAerisShield = true;  
+            currentAerisShieldCallback = (x, y) -> {
+                if (x < 0 || x > 9 || y < 0 || y > 9) {
+                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
+                    waitingForAerisShield = false;
+                    return;
                 }
-            }, catnipBtn);
+                
+                boolean used = skye.useNineLives(playerBoard, x, y);
+                if (used) {
+                    updateStatusLabel("😺 Nine Lives! A ship has been REVIVED!", Color.GREEN);
+                    refreshUI();
+                } else {
+                    updateStatusLabel("❌ Cannot revive that ship!", Color.RED);
+                }
+                waitingForAerisShield = false;
+            };
         }
     });
-    panel.add(catnipBtn);
+    panel.add(reviveBtn);
     
     
-    JLabel nineLivesLabel = new JLabel(skye.getNineLivesDisplay(), SwingConstants.CENTER);
-    nineLivesLabel.setFont(new Font("Arial", Font.BOLD, 12));
-    nineLivesLabel.setForeground(Color.PINK);
-    panel.add(nineLivesLabel);
+    if (skye.isEnemyDistracted()) {
+        JLabel distractedLabel = new JLabel("🌿 Enemy DISTRACTED by catnip", SwingConstants.CENTER);
+        distractedLabel.setForeground(Color.GREEN);
+        distractedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(distractedLabel);
+    }
+    
+    if (skye.getReviveUses() > 0) {
+        JLabel reviveLabel = new JLabel("😺 Nine Lives used: " + skye.getReviveUses(), SwingConstants.CENTER);
+        reviveLabel.setForeground(Color.ORANGE);
+        reviveLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(reviveLabel);
+    }
+    
     
     JLabel manaLabel = new JLabel(skye.getManaBar(), SwingConstants.CENTER);
     manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
     manaLabel.setForeground(Color.CYAN);
     panel.add(manaLabel);
 }
-
 private JPanel createEnemyCharacterPanel(CampaignWave wave) {
     JPanel panel = new JPanel(new BorderLayout());
     panel.setBackground(new Color(50, 0, 0)); 
@@ -2005,6 +2053,16 @@ private JPanel createBoardsPanel() {
 }
     
 private void handlePlayerAttack(int row, int col) {
+    // Check if cell was already fired upon
+    if (enemyBoard.isCellFiredUpon(row, col)) {
+        updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
+        JOptionPane.showMessageDialog(null,
+            "⚠️ You already shot at (" + row + "," + col + ")!\nChoose another cell!",
+            "Invalid Target",
+            JOptionPane.WARNING_MESSAGE);
+        return; // Exit the method - don't allow the shot
+    }
+    
     updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
     
     ShotResult result = ShotResult.MISS;
@@ -2013,12 +2071,11 @@ private void handlePlayerAttack(int row, int col) {
         Kael kael = (Kael) playerCharacter;
         
         if (playerCharacter instanceof Kael) {
-        result = enemyBoard.fire(row, col);
-        updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
-                          result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
-    } 
+            result = enemyBoard.fire(row, col);
+            updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
+                              result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
+        } 
     } else if (playerCharacter instanceof Jiji) {
-        
         Jiji jiji = (Jiji) playerCharacter;
         result = enemyBoard.fire(row, col);
         updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
@@ -2030,6 +2087,7 @@ private void handlePlayerAttack(int row, int col) {
     }
     
     enemyBoardPanel.updateCell(row, col, result);
+
     
     
     if (playerCharacter instanceof Jiji) {
@@ -2232,14 +2290,7 @@ private void useStrategicEnemySkill() {
         }
     }
     
-    if (currentEnemy instanceof Skye && playerShipsRemaining == playerBoard.getShips().size()) {
-        Skye skye = (Skye) currentEnemy;
-        if (skye.hasEnoughMana(70)) {
-            skye.useCatSwarm(playerBoard);
-            showEnemySkillMessage("Skye's cats scramble your formation!");
-            return;
-        }
-    }
+   
     
     
     useEnemySkill();

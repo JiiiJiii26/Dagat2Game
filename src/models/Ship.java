@@ -38,6 +38,12 @@ private boolean isFullyRevealed = false;
     return isFullyRevealed;
 }
 
+public void revive() {
+    this.hits = 0;
+    this.isSunk = false;
+    this.damageTaken = 0;
+    System.out.println("😺 " + name + " has been REVIVED!");
+}
 public void heal() {
     this.hits = 0;
     this.isSunk = false;

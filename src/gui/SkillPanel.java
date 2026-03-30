@@ -358,59 +358,117 @@ public class SkillPanel extends JPanel {
     panel.add(manaLabel, gbc);
 }
     
-    private void addSkyeSkills(JPanel panel, GridBagConstraints gbc) {
-        Skye skye = (Skye) character;
-        
-        
-        JLabel nineLives = new JLabel(skye.getNineLivesDisplay(), SwingConstants.CENTER);
-        nineLives.setFont(new Font("Arial", Font.BOLD, 14));
-        nineLives.setForeground(Color.PINK);
-        gbc.gridy = 2;
-        gbc.gridwidth = 2;
-        panel.add(nineLives, gbc);
-        
-        
-        addSkillRow(panel, gbc, 3,
-            "🐱 CAT SWARM",
-            "70 mana - Shuffle enemy ships",
-            new Color(255, 165, 0),
-            e -> {
-                if (skye.useCatSwarm(getEnemyBoard())) {
-                    showMessage("Cat Swarm! Enemy ships scrambled!");
-                }
-            });
-        
-        
-        addSkillRow(panel, gbc, 4,
-            "🔴 LASER POINTER",
-            "50 mana - Enemy skips turn",
-            new Color(255, 100, 100),
-            e -> {
-                if (skye.useLaserPointer()) {
-                    showMessage("Laser Pointer! Enemy distracted!");
-                }
-            });
-        
-        
-        addSkillRow(panel, gbc, 5,
-            "🌿 CATNIP EXPLOSION",
-            "380 mana - Damage + debuff",
-            new Color(50, 205, 50),
-            e -> {
-                promptForTarget("Catnip Explosion", (x, y) -> {
-                    int damage = skye.useCatnipExplosion(getEnemyBoard(), x, y);
-                    if (damage > 0) {
-                        showMessage("Catnip Explosion dealt " + damage + " damage!");
-                    }
-                });
-            });
-        
-        
-        Timer catTimer = new Timer(5000, e -> {
-            showMessage("😺 " + skye.getRandomCatSound());
-        });
-        catTimer.start();
+  private void addSkyeSkills(JPanel panel, GridBagConstraints gbc) {
+    Skye skye = (Skye) character;
+    
+    
+  gbc.gridy++;
+JLabel catnipLabel = new JLabel("🌿 CATNIP EXPLOSION");
+catnipLabel.setFont(new Font("Arial", Font.BOLD, 11));
+catnipLabel.setForeground(new Color(50, 205, 50));
+panel.add(catnipLabel, gbc);
+
+gbc.gridy++;
+JButton catnipBtn = new JButton("USE (70 mana)");
+catnipBtn.setBackground(new Color(50, 205, 50));
+catnipBtn.setForeground(Color.BLACK);
+catnipBtn.setToolTipText("Destroy a 2x2 area on enemy board");
+catnipBtn.addActionListener(e -> {
+    String status = skye.getSkillStatus(1);
+    if (status.equals("Ready!")) {
+        showMessage("🌿 Catnip Explosion: Click on enemy board to select target location!");
+    } else {
+        showMessage("❌ Cannot use Catnip Explosion!\n" + status);
     }
+});
+panel.add(catnipBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel catnipDesc = new JLabel("Destroy 2x2 area on enemy board");
+    catnipDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    catnipDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(catnipDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel laserLabel = new JLabel("🔴 LASER POINTER");
+    laserLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    laserLabel.setForeground(new Color(255, 100, 100));
+    panel.add(laserLabel, gbc);
+    
+    gbc.gridy++;
+    JButton laserBtn = new JButton("USE (50 mana)");
+    laserBtn.setBackground(new Color(255, 100, 100));
+    laserBtn.setForeground(Color.BLACK);
+    laserBtn.setToolTipText("Enemy skips their next turn");
+    laserBtn.addActionListener(e -> {
+        boolean used = skye.useLaserPointer();
+        if (used) {
+            showMessage("🔴 Laser Pointer! Enemy will skip their next turn!");
+        } else {
+            showMessage("❌ Cannot use Laser Pointer!\n" + skye.getSkillStatus(2));
+        }
+    });
+    panel.add(laserBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel laserDesc = new JLabel("Enemy skips their next turn");
+    laserDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    laserDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(laserDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel reviveLabel = new JLabel("😺 NINE LIVES");
+    reviveLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    reviveLabel.setForeground(new Color(255, 165, 0));
+    panel.add(reviveLabel, gbc);
+    
+    gbc.gridy++;
+    JButton reviveBtn = new JButton("USE (200 mana)");
+reviveBtn.setBackground(new Color(255, 165, 0));
+reviveBtn.setForeground(Color.BLACK);
+reviveBtn.setToolTipText("Revive a fallen ship on your board");
+reviveBtn.addActionListener(e -> {
+    String status = skye.getSkillStatus(3);
+    if (status.equals("Ready!")) {
+        showMessage("😺 Nine Lives: Click on your own board to revive a sunk ship!");
+    } else {
+        showMessage("❌ Cannot use Nine Lives!\n" + status);
+    }
+});
+panel.add(reviveBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel reviveDesc = new JLabel("Revive a fallen ship");
+    reviveDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    reviveDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(reviveDesc, gbc);
+    
+    
+    if (skye.isEnemyDistracted()) {
+        gbc.gridy++;
+        JLabel distractedLabel = new JLabel("🌿 Enemy DISTRACTED", SwingConstants.CENTER);
+        distractedLabel.setForeground(Color.GREEN);
+        distractedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(distractedLabel, gbc);
+    }
+    
+    if (skye.getReviveUses() > 0) {
+        gbc.gridy++;
+        JLabel reviveUsedLabel = new JLabel("😺 Nine Lives used: " + skye.getReviveUses(), SwingConstants.CENTER);
+        reviveUsedLabel.setForeground(Color.ORANGE);
+        reviveUsedLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(reviveUsedLabel, gbc);
+    }
+    
+    
+    gbc.gridy++;
+    JLabel manaLabel = new JLabel(skye.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel, gbc);
+}
     
     private void addGenericSkills(JPanel panel, GridBagConstraints gbc) {
         
@@ -511,10 +569,11 @@ public class SkillPanel extends JPanel {
             }
             return "Passive: Scrapper's Resolve - Damage reduction below 20% HP";
         }
-        if (character instanceof Skye) {
-            Skye s = (Skye) character;
-            return "Passive: Nine Lives - " + s.getNineLivesRemaining() + " ships protected";
-        }
+       if (character instanceof Skye) {
+    Skye s = (Skye) character;
+    int livesRemaining = 9 - s.getReviveUses();
+    return "Passive: Nine Lives - " + livesRemaining + " lives remaining (" + s.getReviveUses() + " used)";
+}
         return "";
     }
     
