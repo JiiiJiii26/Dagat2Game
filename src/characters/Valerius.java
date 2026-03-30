@@ -172,7 +172,7 @@ public class Valerius extends GameCharacter {
     
     
     
-   public boolean useFortressMode(int shipIndex) {
+  public boolean useFortressMode() {
     if (fortressModeCooldown > 0) {
         System.out.println("⏳ Fortress Mode is on cooldown for " + fortressModeCooldown + " more turns");
         return false;
@@ -185,47 +185,27 @@ public class Valerius extends GameCharacter {
     
     Board playerBoard = getPlayerBoard();
     if (playerBoard == null) {
-        System.out.println("⚠️ Cannot protect ship - player board reference is null!");
+        System.out.println("⚠️ Cannot shield ships - player board reference is null!");
         return false;
     }
     
-    ArrayList<Ship> availableShips = new ArrayList<>();
-    for (Ship ship : playerBoard.getShips()) {
-        if (!ship.isSunk() && ship != protectedShip) {
-            availableShips.add(ship);
-        }
-    }
-    
-    if (availableShips.isEmpty()) {
-        System.out.println("⚠️ No available ships to protect!");
-        return false;
-    }
-    
-    Ship targetShip;
-    if (shipIndex >= 0 && shipIndex < availableShips.size()) {
-        targetShip = availableShips.get(shipIndex);
-    } else {
-        targetShip = availableShips.get(0);
-    }
-    
-    System.out.println("🏰 VALERIUS uses FORTRESS MODE: \"" + targetShip.getName() + " will be protected!\"");
+    System.out.println("🏰 VALERIUS uses FORTRESS MODE: \"I am the Iron Shoreline! I will not fall!\"");
     spendMana(300);
     
     
-    if (protectedShip != null) {
-        protectedShip.setShielded(false, 0);
-        System.out.println("🛡️ Previous protection removed from " + protectedShip.getName());
+    int shipsShielded = 0;
+    for (Ship ship : playerBoard.getShips()) {
+        if (!ship.isSunk()) {
+            ship.setShielded(true, 2);  
+            shipsShielded++;
+            System.out.println("🔵 " + ship.getName() + " is now SHIELDED!");
+        }
     }
     
+    System.out.println("🏰 FORTRESS MODE ACTIVE for 2 turns!");
+    System.out.println("   " + shipsShielded + " ships are now SHIELDED and will block 1 hit each!");
     
-    protectedShip = targetShip;
-    protectionRemaining = 1;
-    protectedShip.setShielded(true, 1);
-    
-    System.out.println("🛡️ " + targetShip.getName() + " is now PROTECTED! It will block 1 hit!");
-    System.out.println("🔵 " + targetShip.getName() + " turns BLUE!");
-    
-    fortressModeCooldown = 4;
+    fortressModeCooldown = 5;
     return true;
 }
     

@@ -14,6 +14,7 @@ public abstract class GameCharacter {
     protected Color characterColor;
     protected String abilityName;
     protected String abilityDescription;
+    protected Board board;
     
     public GameCharacter(String name, String description, int maxHealth, int maxSpecialMeter, Color color) {
         this.name = name;
@@ -35,6 +36,13 @@ public abstract class GameCharacter {
             }
         }
     }
+    public void setBoard(Board board) {
+    this.board = board;
+}
+
+public Board getBoard() {
+    return board;
+}
     
     public boolean canUseSpecial() {
         return specialMeter >= maxSpecialMeter;

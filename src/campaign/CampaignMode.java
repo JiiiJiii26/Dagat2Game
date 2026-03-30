@@ -251,12 +251,8 @@ private void useValeriusEnemySkill() {
     case 2: 
     if (enemyValerius.hasEnoughMana(300)) {
         System.out.println("🏰 Enemy Valerius uses FORTRESS MODE!");
-        
-        if (!playerBoard.getShips().isEmpty()) {
-            int randomShipIndex = enemyRandom.nextInt(playerBoard.getShips().size());
-            enemyValerius.useFortressMode(randomShipIndex);
-            showEnemySkillMessage("Valerius protects one of his ships!");
-        }
+        enemyValerius.useFortressMode();  
+        showEnemySkillMessage("Valerius shields ALL his ships for 2 turns!");
     }
     break;
     }
@@ -1642,70 +1638,41 @@ private void addValeriusSkills(JPanel panel, boolean isPlayer) {
     panel.add(strikeBtn);
     
     
-    JButton fortressBtn = new JButton("🏰 Fortress Mode (300)");
-    fortressBtn.setBackground(new Color(100, 50, 0));
-    fortressBtn.setForeground(Color.WHITE);
-    fortressBtn.setToolTipText("Protect a ship - it will block 1 hit");
-    fortressBtn.setFont(new Font("Arial", Font.BOLD, 12));
-    fortressBtn.setFocusPainted(false);
-    
-    String status3 = valerius.getSkillStatus(3);
-    if (!status3.equals("Ready!") && !status3.contains("protected")) {
-        fortressBtn.setEnabled(false);
-        fortressBtn.setText("🏰 Fortress Mode (" + status3 + ")");
-    }
-    
-    fortressBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            if (!valerius.hasEnoughMana(300)) {
-                updateStatusLabel("❌ Not enough mana! Need 300 mana.", Color.RED);
-                return;
-            }
-            if (valerius.getSkillStatus(3).contains("Cooldown")) {
-                updateStatusLabel("❌ Fortress Mode is on cooldown!", Color.RED);
-                return;
-            }
-            
-            
-            ArrayList<Ship> ships = playerBoard.getShips();
-            String[] shipNames = new String[ships.size()];
-            for (int i = 0; i < ships.size(); i++) {
-                Ship ship = ships.get(i);
-                if (ship.isSunk()) {
-                    shipNames[i] = ship.getName() + " 💀 (SUNK)";
-                } else if (valerius.isShipProtected(ship)) {
-                    shipNames[i] = ship.getName() + " 🛡️ (PROTECTED)";
-                } else {
-                    shipNames[i] = ship.getName() + " 🚢";
-                }
-            }
-            
-            int choice = JOptionPane.showOptionDialog(frame,
-                "🛡️ FORTRESS MODE\n\nSelect a ship to protect:\nIt will block 1 hit!",
-                "Fortress Mode",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                shipNames,
-                shipNames[0]);
-            
-            if (choice >= 0) {
-                Ship selectedShip = ships.get(choice);
-                if (!selectedShip.isSunk() && !valerius.isShipProtected(selectedShip)) {
-                    boolean used = valerius.useFortressMode(choice);
-                    if (used) {
-                        updateStatusLabel("🏰 Fortress Mode! " + selectedShip.getName() + " will block 1 hit!", Color.GREEN);
-                        refreshUI();
-                    } else {
-                        updateStatusLabel("❌ Cannot use Fortress Mode!", Color.RED);
-                    }
-                } else {
-                    updateStatusLabel("❌ " + selectedShip.getName() + " cannot be protected!", Color.RED);
-                }
-            }
+  
+JButton fortressBtn = new JButton("🏰 Fortress Mode (300)");
+fortressBtn.setBackground(new Color(100, 50, 0));
+fortressBtn.setForeground(Color.WHITE);
+fortressBtn.setToolTipText("ULTIMATE: Shield ALL your ships for 2 turns (each blocks 1 hit)");
+fortressBtn.setFont(new Font("Arial", Font.BOLD, 12));
+fortressBtn.setFocusPainted(false);
+
+String status3 = valerius.getSkillStatus(3);
+if (!status3.equals("Ready!")) {
+    fortressBtn.setEnabled(false);
+    fortressBtn.setText("🏰 Fortress Mode (" + status3 + ")");
+}
+
+fortressBtn.addActionListener(e -> {
+    if (isPlayer && playerTurn) {
+        if (!valerius.hasEnoughMana(300)) {
+            updateStatusLabel("❌ Not enough mana! Need 300 mana.", Color.RED);
+            return;
         }
-    });
-    panel.add(fortressBtn);
+        if (valerius.getSkillStatus(3).contains("Cooldown")) {
+            updateStatusLabel("❌ Fortress Mode is on cooldown!", Color.RED);
+            return;
+        }
+        
+        boolean used = valerius.useFortressMode();  
+        if (used) {
+            updateStatusLabel("🏰 FORTRESS MODE ACTIVATED! All ships are SHIELDED for 2 turns!", Color.GREEN);
+            refreshUI();
+        } else {
+            updateStatusLabel("❌ Cannot use Fortress Mode!", Color.RED);
+        }
+    }
+});
+panel.add(fortressBtn);
     
     
     if (valerius.areEnemySkillsDisabled()) {
@@ -2197,6 +2164,20 @@ private void enemyTurn() {
     playerTurn = true;
     resetStatusLabel();
 }
+private int getTotalShipSegments(GameCharacter character) {
+    Board board = null;
+    if (character == currentEnemy) {
+        board = enemyBoard;
+    } else {
+        board = playerBoard;
+    }
+    
+    int total = 0;
+    for (Ship ship : board.getShips()) {
+        total += ship.getSize();
+    }
+    return total;
+}
 
 private void useStrategicEnemySkill() {
     if (currentEnemy == null) return;
@@ -2209,7 +2190,27 @@ private void useStrategicEnemySkill() {
         if (!ship.isSunk()) playerShipsRemaining++;
     }
     
+   if (currentEnemy instanceof Valerius) {
     
+    int remainingSegments = 0;
+    for (Ship ship : currentEnemy.getBoard().getShips()) {
+        if (!ship.isSunk()) {
+            remainingSegments += ship.getRemainingHealth();
+        }
+    }
+    int totalSegments = getTotalShipSegments(currentEnemy);
+    double segmentsPercent = (double)remainingSegments / totalSegments;
+    
+    
+    if (segmentsPercent < 0.3) {
+        Valerius valerius = (Valerius) currentEnemy;
+        if (valerius.hasEnoughMana(300)) {
+            valerius.useFortressMode();
+            showEnemySkillMessage("Valerius activates Fortress Mode to protect his remaining ships!");
+            return;
+        }
+    }
+}
     
     if (currentEnemy instanceof Kael && playerShipsRemaining > 3) {
         Kael kael = (Kael) currentEnemy;
