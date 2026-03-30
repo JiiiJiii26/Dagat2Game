@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Selene extends GameCharacter {
-    
+    private int moonBlessingStacks = 0;
     private Random random = new Random();
     private int currentMana;
     private static final int MAX_MANA = 500;
-    private int extraTurns = 0;  // Tracks extra turns from Eclipse Binding
+    private int extraTurns = 0;  
     
     
     private int lunarVisionCooldown = 0;
@@ -110,63 +110,51 @@ public boolean useLunarVision(Board enemyBoard, int centerX, int centerY) {
     }
     
     
-    int row = centerX;
-    int startCol = Math.max(0, centerY - 1);
-    int endCol = Math.min(9, centerY + 1);
+    int startX = Math.max(0, centerX - 1);
+    int endX = Math.min(9, centerX + 1);
+    int startY = Math.max(0, centerY - 1);
+    int endY = Math.min(9, centerY + 1);
     
-    System.out.println("🔮 SELENE uses LUNAR VISION at row " + row + ", columns " + startCol + "-" + endCol + "! \"The moon reveals all...\"");
+    System.out.println("🔮 SELENE uses LUNAR VISION at (" + centerX + "," + centerY + ")! \"The moon reveals all...\"");
     spendMana(60);
     
     int shipsFound = 0;
-    int emptyCells = 0;
-    StringBuilder visionReport = new StringBuilder("🔮 Lunar Vision reveals:\n");
+    int cellsRevealed = 0;
+    StringBuilder visionReport = new StringBuilder("🔮 Lunar Vision reveals 3x3 area:\n");
     
-    for (int col = startCol; col <= endCol; col++) {
-        Cell cell = enemyBoard.getCell(row, col);
-        String cellKey = row + "," + col;
-        
-        if (!revealedCells.contains(cellKey)) {
-            revealedCells.add(cellKey);
+    for (int x = startX; x <= endX; x++) {
+        for (int y = startY; y <= endY; y++) {
+            Cell cell = enemyBoard.getCell(x, y);
+            String cellKey = x + "," + y;
             
-            if (cell.hasShip() && !cell.isFiredUpon()) {
+            if (!revealedCells.contains(cellKey)) {
+                revealedCells.add(cellKey);
+                cellsRevealed++;
                 
-                int damage = random.nextInt(51) + 50; 
-                ShotResult result = enemyBoard.fire(row, col);
-                shipsFound++;
-                visionReport.append("   • (").append(row).append(",").append(col)
-                           .append(") SHIP! Takes ").append(damage).append(" damage! (").append(result).append(")\n");
-            } else if (cell.hasShip() && cell.isFiredUpon()) {
-                visionReport.append("   • (").append(row).append(",").append(col)
-                           .append(") SHIP (already hit)\n");
-            } else {
-                
-                if (!cell.isFiredUpon()) {
-                    enemyBoard.fire(row, col); 
-                    emptyCells++;
-                    visionReport.append("   • (").append(row).append(",").append(col)
-                               .append(") empty\n");
+                if (cell.hasShip() && !cell.isFiredUpon()) {
+                    shipsFound++;
+                    visionReport.append("   • 🚢 SHIP at (").append(x).append(",").append(y).append(")!\n");
+                    
+                    enemyBoard.fire(x, y);
+                } else if (cell.hasShip()) {
+                    visionReport.append("   • 🚢 SHIP at (").append(x).append(",").append(y).append(") (already damaged)\n");
                 } else {
-                    visionReport.append("   • (").append(row).append(",").append(col)
-                               .append(") already revealed\n");
+                    visionReport.append("   • 💧 Empty at (").append(x).append(",").append(y).append(")\n");
                 }
             }
-        } else {
-            visionReport.append("   • (").append(row).append(",").append(col)
-                       .append(") already revealed\n");
         }
     }
     
     System.out.println(visionReport.toString());
-    System.out.println("🔮 Revealed " + shipsFound + " ship segments and " + emptyCells + " empty cells!");
+    System.out.println("🔮 Revealed " + cellsRevealed + " cells, found " + shipsFound + " ships!");
     
-    lunarVisionCooldown = 2; 
+    lunarVisionCooldown = 3;
     return true;
 }
     
     
     
-    
-   public boolean useEclipseBinding() {
+  public boolean useEclipseBinding(Board enemyBoard) {
     if (eclipseBindingCooldown > 0) {
         System.out.println("⏳ Eclipse Binding is on cooldown for " + eclipseBindingCooldown + " more turns");
         return false;
@@ -177,92 +165,117 @@ public boolean useLunarVision(Board enemyBoard, int centerX, int centerY) {
         return false;
     }
     
-    System.out.println("🌑 SELENE uses ECLIPSE BINDING! \"The moon grants you extra time...\"");
+    System.out.println("🌑 SELENE uses ECLIPSE BINDING! \"The moon binds your fleet!\"");
     spendMana(150);
     
-    // Set the number of extra turns
+    
     extraTurns = 2;
     
-    System.out.println("🌑 Eclipse Binding gives you 2 EXTRA TURNS!");
-    System.out.println("You will get to act " + (extraTurns + 1) + " times this turn!");
     
-    eclipseBindingCooldown = 4; // 4 turns cooldown
+    enemyShipsTrapped = true;
+    trapTurns = 1;
+    
+    
+    trappedShipCells.clear();
+    for (Ship ship : enemyBoard.getShips()) {
+        if (!ship.isSunk()) {
+            for (Ship.Coordinate pos : ship.getPositions()) {
+                trappedShipCells.add(pos.getX() + "," + pos.getY());
+            }
+        }
+    }
+    
+    System.out.println("🌑 Eclipse Binding gives you 2 EXTRA TURNS and TRAPS enemy ships for 1 turn!");
+    System.out.println("Trapped ships will deal 50% less damage next turn!");
+    
+    eclipseBindingCooldown = 5;
     return true;
 }
 
+
+public int applyTrapDamageReduction(int incomingDamage) {
+    if (enemyShipsTrapped) {
+        int reduced = incomingDamage / 2;
+        System.out.println("🌑 Enemy ships are trapped! Damage reduced from " + incomingDamage + " to " + reduced);
+        return reduced;
+    }
+    return incomingDamage;
+}
     
-    public boolean isCellBound(int x, int y) {
-        return trappedShipCells.contains(x + "," + y) && enemyShipsTrapped;
+    
+    
+    
+ public int useCrescentBlade(Board enemyBoard, int centerX, int centerY) {
+    if (crescentBladeCooldown > 0) {
+        System.out.println("⏳ Crescent Blade is on cooldown for " + crescentBladeCooldown + " more turns");
+        return 0;
     }
     
-    
-    
-    
-    public int useCrescentBlade(Board enemyBoard, int centerX, int centerY) {
-        if (crescentBladeCooldown > 0) {
-            System.out.println("⏳ Crescent Blade is on cooldown for " + crescentBladeCooldown + " more turns");
-            return 0;
-        }
-        
-        if (!hasEnoughMana(400)) {
-            System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
-            return 0;
-        }
-        
-        System.out.println("🌙 SELENE uses CRESCENT BLADE at (" + centerX + "," + centerY + ")! \"Witness the edge of the moon!\"");
-        spendMana(400);
-        
-        int totalDamage = 0;
-        int shipsHit = 0;
-        StringBuilder hitReport = new StringBuilder("🌙 Crescent Blade hits:\n");
-        
-        
-        int centerDamage = hitCell(enemyBoard, centerX, centerY, hitReport);
-        totalDamage += centerDamage;
-        if (centerDamage > 0) shipsHit++;
-        
-        
-        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
-        for (int[] dir : directions) {
-            int x = centerX + dir[0];
-            int y = centerY + dir[1];
-            if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                int damage = hitCell(enemyBoard, x, y, hitReport);
-                totalDamage += damage;
-                if (damage > 0) shipsHit++;
-            } else {
-                hitReport.append("   • Out of bounds: (").append(x).append(",").append(y).append(")\n");
-            }
-        }
-        
-        System.out.println(hitReport.toString());
-        System.out.println("🌙 Crescent Blade hit " + shipsHit + " ships for " + totalDamage + " damage!");
-        
-        crescentBladeCooldown = 4; 
-        return totalDamage;
+    if (!hasEnoughMana(400)) {
+        System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
+        return 0;
     }
     
-    private int hitCell(Board board, int x, int y, StringBuilder report) {
-        Cell cell = board.getCell(x, y);
-        
-        if (!cell.isFiredUpon()) {
-            int damage = random.nextInt(151) + 200; 
-            ShotResult result = board.fire(x, y);
-            
-            if (cell.hasShip()) {
-                report.append("   • Ship at (").append(x).append(",").append(y)
-                       .append(") takes ").append(damage).append(" damage! (").append(result).append(")\n");
-                return damage;
-            } else {
-                report.append("   • Cell (").append(x).append(",").append(y)
-                       .append(") sliced by moonlight (Miss)\n");
-                return 0;
+    System.out.println("🌙 SELENE uses CRESCENT BLADE at (" + centerX + "," + centerY + ")! \"Witness the edge of the moon!\"");
+    spendMana(400);
+    
+    int totalDamage = 0;
+    int shipsHit = 0;
+    int cellsDestroyed = 0;
+    StringBuilder hitReport = new StringBuilder("🌙 Crescent Blade strikes:\n");
+    
+    
+    for (int x = Math.max(0, centerX - 1); x <= Math.min(9, centerX + 1); x++) {
+        for (int y = Math.max(0, centerY - 1); y <= Math.min(9, centerY + 1); y++) {
+            int damage = hitCellWithBonus(enemyBoard, x, y, hitReport);
+            totalDamage += damage;
+            if (damage > 0) {
+                shipsHit++;
+                cellsDestroyed++;
             }
+        }
+    }
+    
+    System.out.println(hitReport.toString());
+    System.out.println("🌙 Crescent Blade hit " + shipsHit + " ship segments for " + totalDamage + " damage!");
+    
+    
+    if (nightTime) {
+        System.out.println("🌙 MOON'S WRATH! Crescent Blade leaves burning moonlight!");
+        
+    }
+    
+    crescentBladeCooldown = 5;
+    return totalDamage;
+}
+
+private int hitCellWithBonus(Board board, int x, int y, StringBuilder report) {
+    Cell cell = board.getCell(x, y);
+    
+    if (!cell.isFiredUpon()) {
+        int damage = random.nextInt(151) + 200;
+        
+        
+        if (nightTime) {
+            damage = (int)(damage * 1.3);
+        }
+        
+        ShotResult result = board.fire(x, y);
+        
+        if (cell.hasShip()) {
+            report.append("   • 🚢 Ship at (").append(x).append(",").append(y)
+                   .append(") takes ").append(damage).append(" damage! ").append(result).append("\n");
+            return damage;
         } else {
-            report.append("   • Cell (").append(x).append(",").append(y).append(") already hit\n");
+            report.append("   • 💧 Cell (").append(x).append(",").append(y)
+                   .append(") sliced by moonlight\n");
             return 0;
         }
+    } else {
+        report.append("   • ⚠️ Cell (").append(x).append(",").append(y).append(") already hit\n");
+        return 0;
     }
+}
     
     
     
@@ -293,7 +306,8 @@ public boolean useLunarVision(Board enemyBoard, int centerX, int centerY) {
         }
         
         
-        regenerateMana(12);
+        int regenAmount = 12 + (moonBlessingStacks * 5);
+    regenerateMana(regenAmount);
     }
     
     public boolean isNightTime() {
@@ -311,37 +325,61 @@ public boolean useLunarVision(Board enemyBoard, int centerX, int centerY) {
     
     
     
-    public String getSkillStatus(int skillNum) {
-        switch(skillNum) {
-            case 1: 
-                if (lunarVisionCooldown > 0) {
-                    return "Cooldown: " + lunarVisionCooldown + " turn" + (lunarVisionCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(60)) {
-                    return "Need 60 mana";
-                } else {
-                    return "Ready!";
-                }
-            case 2: 
-                if (eclipseBindingCooldown > 0) {
-                    return "Cooldown: " + eclipseBindingCooldown + " turn" + (eclipseBindingCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(150)) {
-                    return "Need 150 mana";
-                } else {
-                    return "Ready!";
-                }
-            case 3: 
-                if (crescentBladeCooldown > 0) {
-                    return "Cooldown: " + crescentBladeCooldown + " turn" + (crescentBladeCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(400)) {
-                    return "Need 400 mana";
-                } else {
-                    return "Ready!";
-                }
-            default:
-                return "";
-        }
+  
+public String getMoonPhase() {
+    if (nightTime) {
+        return "🌙 FULL MOON (Level " + moonBlessingStacks + ")";
     }
-    
+    return "🌑 NEW MOON (" + getTurnsUntilNight() + " turns until night)";
+}
+
+
+public String getPassiveText() {
+    if (nightTime) {
+        return "🌙 Moon's Blessing ACTIVE - +" + (moonBlessingStacks * 5) + "% damage, +" + (moonBlessingStacks * 5) + " mana/turn";
+    }
+    return "🌑 Moon's Blessing - Night falls every 3 turns";
+}
+
+
+public String getTrapStatus() {
+    if (enemyShipsTrapped) {
+        return "🌑 Enemy ships TRAPPED (" + trapTurns + " turn remaining)";
+    }
+    return "";
+}
+
+
+public String getSkillStatus(int skillNum) {
+    switch(skillNum) {
+        case 1: 
+            if (lunarVisionCooldown > 0) {
+                return "Cooldown: " + lunarVisionCooldown;
+            } else if (!hasEnoughMana(60)) {
+                return "Need 60 mana";
+            } else {
+                return "Ready! (Reveals 3x3 area)";
+            }
+        case 2: 
+            if (eclipseBindingCooldown > 0) {
+                return "Cooldown: " + eclipseBindingCooldown;
+            } else if (!hasEnoughMana(150)) {
+                return "Need 150 mana";
+            } else {
+                return "Ready! (+2 turns + trap)";
+            }
+        case 3: 
+            if (crescentBladeCooldown > 0) {
+                return "Cooldown: " + crescentBladeCooldown;
+            } else if (!hasEnoughMana(400)) {
+                return "Need 400 mana";
+            } else {
+                return nightTime ? "Ready! (🌙 Empowered by moonlight!)" : "Ready!";
+            }
+        default:
+            return "";
+    }
+}
     public String getManaBar() {
         int percent = (currentMana * 100) / MAX_MANA;
         int bars = percent / 10;

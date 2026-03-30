@@ -947,7 +947,7 @@ if (!status2.equals("Ready!")) {
 
 eclipseBtn.addActionListener(e -> {
     if (isPlayer && playerTurn) {
-        boolean used = selene.useEclipseBinding();  
+        boolean used = selene.useEclipseBinding(enemyBoard);  
         if (used) {
             updateStatusLabel("🌑 Eclipse Binding! You gain 2 EXTRA TURNS!", Color.MAGENTA);
             refreshUI();
