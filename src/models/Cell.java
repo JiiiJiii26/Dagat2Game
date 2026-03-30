@@ -135,6 +135,11 @@ public Ship getShip() {
 public void resetFiredUpon() {
     this.isFiredUpon = false;
 }
+public void reviveShipSegment() {
+    this.isFiredUpon = false;  // Allow the cell to be shown as repaired
+    // Don't remove the ship - it's still there, just revived
+    System.out.println("😺 Cell (" + x + "," + y + ") has been revived!");
+}
 }
 
 

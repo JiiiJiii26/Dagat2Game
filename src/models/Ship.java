@@ -12,6 +12,7 @@ public class Ship {
 private int shieldedTurns = 0;
 private boolean isInfected = false; 
 private boolean isFullyRevealed = false;
+ private int[] hitSegments;
 
 
     
@@ -27,7 +28,50 @@ private boolean isFullyRevealed = false;
         this.hits = 0;
         this.isSunk = false;
         this.positions = new ArrayList<>();
+        this.hitSegments = new int[size]; 
+         for (int i = 0; i < size; i++) {
+            hitSegments[i] = 0;
+        }
     }
+    
+    public void hit() {
+        if (!isSunk) {
+            hits++;
+            if (hits >= size) {
+                isSunk = true;
+            }
+        }
+    }
+    public void hitSegment(int segmentIndex) {
+    if (!isSunk && segmentIndex >= 0 && segmentIndex < size) {
+        
+        if (hitSegments[segmentIndex] == 0) {
+            hitSegments[segmentIndex] = 1;
+            hits++;
+            damageTaken++;
+            if (hits >= size) {
+                isSunk = true;
+                System.out.println("💀 " + name + " has been SUNK!");
+            } else {
+                System.out.println("💥 " + name + " segment " + segmentIndex + " destroyed! (" + hits + "/" + size + " hits)");
+            }
+        } else {
+            System.out.println("⚠️ Segment " + segmentIndex + " already destroyed!");
+        }
+    }
+}
+public boolean isFullyDestroyed() {
+    return isSunk;
+}
+
+public int[] getHitSegments() {
+    return hitSegments;
+}
+
+public boolean isSegmentDestroyed(int segmentIndex) {
+    return segmentIndex >= 0 && segmentIndex < size && hitSegments[segmentIndex] == 1;
+}
+    
    public void setInfected(boolean infected) {
         this.isInfected = infected;
         if (infected) {
@@ -42,7 +86,20 @@ public void revive() {
     this.hits = 0;
     this.isSunk = false;
     this.damageTaken = 0;
-    System.out.println("😺 " + name + " has been REVIVED!");
+    
+    
+    for (int i = 0; i < size; i++) {
+        hitSegments[i] = 0;
+    }
+    
+    
+    this.isInfected = false;
+    this.isHidden = false;
+    this.isRevealed = false;
+    this.isReinforced = false;
+    
+    
+    System.out.println("😺 " + name + " has been FULLY REVIVED with all " + size + " segments restored!");
 }
 public void heal() {
     this.hits = 0;

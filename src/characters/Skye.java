@@ -169,53 +169,72 @@ public class Skye extends GameCharacter {
     
     
     public boolean useNineLives(Board playerBoard, int targetX, int targetY) {
-        if (nineLivesCooldown > 0) {
-            System.out.println("⏳ Nine Lives is on cooldown for " + nineLivesCooldown + " more turns");
-            return false;
-        }
-        
-        if (!hasEnoughMana(200)) {
-            System.out.println("⚠️ Not enough mana! Need 200 mana, have " + currentMana);
-            return false;
-        }
-        
-        System.out.println("😺 SKYE uses NINE LIVES: \"Cats always land on their feet... even battleships?\"");
-        spendMana(200);
-        
-        
-        Cell targetCell = playerBoard.getCell(targetX, targetY);
-        
-        if (!targetCell.hasShip()) {
-            System.out.println("⚠️ No ship at that location!");
-            return false;
-        }
-        
-        Ship targetShip = targetCell.getShip();
-        if (!targetShip.isSunk()) {
-            System.out.println("⚠️ This ship is not sunk!");
-            return false;
-        }
-        
-        
-        reviveShip(targetShip);
-        
-        System.out.println("😺 " + targetShip.getName() + " has been REVIVED by one of its nine lives!");
-        System.out.println(getRandomCatSound());
-        System.out.println("Lives used: " + (++reviveUses));
-        
-        nineLivesCooldown = 5;
-        return true;
+    if (nineLivesCooldown > 0) {
+        System.out.println("⏳ Nine Lives is on cooldown for " + nineLivesCooldown + " more turns");
+        return false;
     }
     
-    private void reviveShip(Ship ship) {
-        ship.revive();  
+    if (!hasEnoughMana(200)) {
+        System.out.println("⚠️ Not enough mana! Need 200 mana, have " + currentMana);
+        return false;
     }
     
+    Cell targetCell = playerBoard.getCell(targetX, targetY);
+    
+    if (!targetCell.hasShip()) {
+        System.out.println("⚠️ No ship at that location!");
+        return false;
+    }
+    
+    Ship targetShip = targetCell.getShip();
+    
+    // Check if the ship is fully destroyed/sunk
+    if (!targetShip.isSunk()) {
+        System.out.println("⚠️ This ship is not sunk! It has " + targetShip.getRemainingHealth() + "/" + targetShip.getSize() + " segments remaining.");
+        System.out.println("💡 Nine Lives only works on FULLY DESTROYED ships!");
+        return false;
+    }
+    
+    System.out.println("😺 SKYE uses NINE LIVES: \"Cats always land on their feet... even battleships?\"");
+    spendMana(200);
+    
+    // Revive the entire ship
+    reviveFullShip(playerBoard, targetShip);
+    
+    System.out.println("😺 " + targetShip.getName() + " has been FULLY REVIVED with all " + targetShip.getSize() + " segments restored!");
+    System.out.println(getRandomCatSound());
+    System.out.println("✨ Nine Lives used: " + (++reviveUses) + "/9");
+    
+    nineLivesCooldown = 5;
+    return true;
+}
+
+private void reviveFullShip(Board playerBoard, Ship ship) {
+    // 1. Revive the ship object itself
+    ship.revive();
+    
+    // 2. Update all cells that contain this ship
+    for (int i = 0; i < playerBoard.getSize(); i++) {
+        for (int j = 0; j < playerBoard.getSize(); j++) {
+            Cell cell = playerBoard.getCell(i, j);
+            if (cell.hasShip() && cell.getShip() == ship) {
+                // Reset the cell's fired status for this segment
+                cell.reviveShipSegment();
+            }
+        }
+    }
+    
+    // 3. Also update the firedUpon array for these positions
+    // This allows the player to see the ship is back
+    for (Ship.Coordinate pos : ship.getPositions()) {
+        // Mark these cells as NOT fired upon anymore for visual purposes
+        // But careful - this might be game-breaking
+        // Alternative: Just update the visual without changing game state
+    }
+}
     public int getReviveUses() {
-        return reviveUses;
-    }
-    
-    
+    return reviveUses;
+}
     
     public void updateTurnCounter() {
         
