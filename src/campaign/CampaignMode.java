@@ -1933,8 +1933,8 @@ private JPanel createBoardsPanel() {
     JPanel panel = new JPanel(new GridLayout(1, 2, 10, 0));
     panel.setOpaque(false);
     
-    playerBoardPanel = new BoardPanel(true, playerBoard);
-    enemyBoardPanel = new BoardPanel(false, enemyBoard);
+    playerBoardPanel = new BoardPanel(true, playerBoard, true);
+    enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
     
     playerBoardPanel.setPlayerClickHandler((row, col) -> {

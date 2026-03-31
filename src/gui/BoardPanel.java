@@ -7,84 +7,119 @@ import models.Board;
 import models.Cell;
 import models.Ship; 
 
-
 public class BoardPanel extends JPanel {
     private JButton[][] gridButtons;
     private Board board;
     private final int SIZE = 10;
     private boolean isPlayerBoard;  
+    private boolean showShips;  
     private PlayerClickHandler playerClickHandler; 
     
-     public interface PlayerClickHandler {
+    public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
     }
+    
     public void setPlayerClickHandler(PlayerClickHandler handler) {
         this.playerClickHandler = handler;
     }
-    public BoardPanel(boolean isPlayerBoard) {
-      this(isPlayerBoard, new Board());
+    
+    // Backward compatible constructor for existing code
+    public BoardPanel(boolean isPlayerBoard, Board board) {
+        this(isPlayerBoard, board, isPlayerBoard);
     }
-    public BoardPanel(boolean isPlayerBoard, Board existingBoard) {
-    this.isPlayerBoard = isPlayerBoard;
-    this.board = existingBoard;
-
-     for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
-            board.getCell(i, j).setPlayerBoard(isPlayerBoard);
+    
+    public BoardPanel(boolean isPlayerBoard, boolean showShips) {
+        this(isPlayerBoard, new Board(), showShips);
+    }
+    
+    public BoardPanel(boolean isPlayerBoard, Board board, boolean showShips) {
+        this.isPlayerBoard = isPlayerBoard;
+        this.board = board;
+        this.showShips = showShips;  
+        
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                board.getCell(i, j).setPlayerBoard(isPlayerBoard);
+            }
+        }
+        
+        setLayout(new GridLayout(SIZE, SIZE));
+        setPreferredSize(new Dimension(400, 400));
+        
+        gridButtons = new JButton[SIZE][SIZE];
+        
+        initializeButtons();
+    }
+    
+    private void initializeButtons() {
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
+                JButton button = new JButton();
+                button.putClientProperty("row", row);
+                button.putClientProperty("col", col);
+                
+                Cell cell = board.getCell(row, col);
+                
+                updateButtonAppearance(button, cell);
+                
+                button.setOpaque(true);
+                button.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                
+                button.addActionListener(e -> {
+                    JButton clicked = (JButton) e.getSource();
+                    int r = (int) clicked.getClientProperty("row");
+                    int c = (int) clicked.getClientProperty("col");
+                    handleClick(r, c);
+                });
+                
+                gridButtons[row][col] = button;
+                add(button);
+            }
         }
     }
     
-    setLayout(new GridLayout(SIZE, SIZE));
-    setPreferredSize(new Dimension(400, 400));
-    
-    gridButtons = new JButton[SIZE][SIZE];
-    
-    
-  
-    
-    initializeButtons();
-}
-    
-  private void initializeButtons() {
-    for (int row = 0; row < SIZE; row++) {
-        for (int col = 0; col < SIZE; col++) {
-            JButton button = new JButton();
-            button.putClientProperty("row", row);
-            button.putClientProperty("col", col);
+    private void updateButtonAppearance(JButton button, Cell cell) {
+        Color cellColor = cell.getColor();
+        
+        // Check if it's a hit (red/purple) or miss (gray) based on color
+        if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
+            button.setBackground(cellColor);
+            // Check if it's a sunk ship or just hit
+            if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
+                button.setText("💀");
+            } else {
+                button.setText("💥");
+            }
+        } 
+        else if (cellColor.equals(Cell.MISS_GRAY)) {
+            button.setBackground(Cell.MISS_GRAY);
+            button.setText("•");
+        } 
+        else {
+            // Not hit or miss - show water
+            button.setBackground(cellColor);
+            button.setText("");
             
-            Cell cell = board.getCell(row, col);
-            
-            
-            button.setBackground(cell.getColor());
-            button.setOpaque(true);
-            button.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            
-            
-            
-            
-            
-            
-            button.addActionListener(e -> {
-                JButton clicked = (JButton) e.getSource();
-                int r = (int) clicked.getClientProperty("row");
-                int c = (int) clicked.getClientProperty("col");
-                handleClick(r, c);
-            });
-            
-            gridButtons[row][col] = button;
-            add(button);
+            // Only show ships if showShips is true (player's own board)
+            if (showShips && cell.hasShip()) {
+                // Don't change background color, just add a ship icon or keep the ship color
+                if (cell.getShip() != null && cell.getShip().isShielded()) {
+                    button.setText("🛡️"); // Shielded ship
+                } else if (cell.getShip() != null && cell.getShip().isInfected()) {
+                    button.setText("🦠"); // Infected ship
+                } else {
+                    button.setText("⛵"); // Regular ship
+                }
+            }
         }
     }
-}
     
-   private void handleClick(int row, int col) {
+    private void handleClick(int row, int col) {
         if (isPlayerBoard) {
-            
             if (playerClickHandler != null) {
                 playerClickHandler.onPlayerCellClicked(row, col);
             }
         } else {
-            
             if (enemyClickHandler != null) {
                 enemyClickHandler.onEnemyCellClicked(row, col);
             } else {
@@ -93,51 +128,51 @@ public class BoardPanel extends JPanel {
             }
         }
     }
-
-   
-
+    
     public Board getBoard() {
         return board;
     }
+    
     public interface EnemyClickHandler {
-    void onEnemyCellClicked(int row, int col);
-}
-private EnemyClickHandler enemyClickHandler;
-
-public void setEnemyClickHandler(EnemyClickHandler handler) {
-    this.enemyClickHandler = handler;
-}
-public void updateCell(int row, int col, ShotResult result) {
-    switch(result) {
-        case HIT:
-            gridButtons[row][col].setBackground(Cell.HIT_RED);
-            gridButtons[row][col].setText("💥");
-            break;
-        case MISS:
-            gridButtons[row][col].setBackground(Cell.MISS_GRAY);
-            gridButtons[row][col].setText("•");
-            break;
-        case SUNK:
-            gridButtons[row][col].setBackground(Cell.HIT_RED);
-            gridButtons[row][col].setText("💀");
-            break;
-        default:
-            break;
+        void onEnemyCellClicked(int row, int col);
     }
- }
-public void refreshColors() {
-    for (int row = 0; row < SIZE; row++) {
-        for (int col = 0; col < SIZE; col++) {
-            Cell cell = board.getCell(row, col);
-            gridButtons[row][col].setBackground(cell.getColor());
+    
+    private EnemyClickHandler enemyClickHandler;
+    
+    public void setEnemyClickHandler(EnemyClickHandler handler) {
+        this.enemyClickHandler = handler;
+    }
+    
+    public void updateCell(int row, int col, ShotResult result) {
+        Cell cell = board.getCell(row, col);
+        JButton button = gridButtons[row][col];
+        
+        switch(result) {
+            case HIT:
+                button.setBackground(Cell.HIT_RED);
+                button.setText("💥");
+                break;
+            case MISS:
+                button.setBackground(Cell.MISS_GRAY);
+                button.setText("•");
+                break;
+            case SUNK:
+                button.setBackground(Cell.HIT_RED);
+                button.setText("💀");
+                break;
+            default:
+                break;
         }
     }
-    repaint();
+    
+    public void refreshColors() {
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
+                Cell cell = board.getCell(row, col);
+                JButton button = gridButtons[row][col];
+                updateButtonAppearance(button, cell);
+            }
+        }
+        repaint();
+    }
 }
-}
-
-
-
-
-
-

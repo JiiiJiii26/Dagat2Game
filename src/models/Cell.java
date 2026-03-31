@@ -10,6 +10,9 @@ public class Cell {
     private Ship ship;  
       private boolean isRevealed; 
      private boolean isPlayerBoard = false;
+      private boolean isMiss; 
+      private boolean isHit;
+      private boolean hasBeenFired;
     
    public static final Color SHIELD_BLUE = new Color(0, 100, 200);
     public static final Color OCEAN_BLUE = new Color(173, 216, 230);
@@ -136,10 +139,17 @@ public void resetFiredUpon() {
     this.isFiredUpon = false;
 }
 public void reviveShipSegment() {
-    this.isFiredUpon = false;  // Allow the cell to be shown as repaired
-    // Don't remove the ship - it's still there, just revived
+    this.isFiredUpon = false;  
+    
     System.out.println("😺 Cell (" + x + "," + y + ") has been revived!");
 }
+   
+    
+    
+    public boolean isMiss() { 
+        return !isHit && hasBeenFired; 
+    }
+
 }
 
 

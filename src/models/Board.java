@@ -33,6 +33,14 @@ public class Board {
         if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return true;
         return firedUpon[x][y];
     }
+    public boolean areAllShipsSunk() {
+    for (Ship ship : ships) {
+        if (!ship.isSunk()) {
+            return false;
+        }
+    }
+    return true;
+}
     
     public String getDuplicateShotMessage(int x, int y) {
         return "⚠️ You already shot at (" + x + "," + y + ")!\nChoose another cell!";

@@ -4,8 +4,8 @@ import game.LocalMultiplayer;
 import game.ShotResult;
 import models.Board;
 import models.Cell;
-import java.awt.*;
 import models.Ship;
+import java.awt.*;
 import javax.swing.*;
 
 public class MultiplayerBattlePanel extends JPanel {
@@ -17,55 +17,50 @@ public class MultiplayerBattlePanel extends JPanel {
     private JLabel statusLabel;
     private JLabel player1ShipsLabel;
     private JLabel player2ShipsLabel;
+    private JPanel boardsPanel;
     
     public MultiplayerBattlePanel(LocalMultiplayer game) {
         this.game = game;
         setLayout(new BorderLayout());
         setBackground(new Color(25, 25, 112));
         
-        // Top panel with turn indicator
+        createGamePanels();
+        updateBoardViews(); 
+    }
+    
+    private void createGamePanels() {
+        
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(new Color(25, 25, 112));
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        turnLabel = new JLabel("PLAYER 1'S TURN", SwingConstants.CENTER);
+        turnLabel = new JLabel("", SwingConstants.CENTER);
         turnLabel.setFont(new Font("Arial", Font.BOLD, 24));
         turnLabel.setForeground(new Color(173, 216, 230));
         topPanel.add(turnLabel, BorderLayout.CENTER);
         
-        // Boards panel
-        JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        
+        boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         boardsPanel.setBackground(new Color(25, 25, 112));
         boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        // Player 1 board (left) - shows player 2's shots on player 1's board
-        JPanel player1Panel = createBoardPanel("PLAYER 1", game.getPlayer1Board(), true);
-        player1BoardPanel = (BoardPanel) ((JPanel) player1Panel.getComponent(1));
         
-        // Player 2 board (right) - shows player 1's shots on player 2's board
-        JPanel player2Panel = createBoardPanel("PLAYER 2", game.getPlayer2Board(), false);
-        player2BoardPanel = (BoardPanel) ((JPanel) player2Panel.getComponent(1));
-        
-        boardsPanel.add(player1Panel);
-        boardsPanel.add(player2Panel);
-        
-        // Ship counters
         JPanel counterPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         counterPanel.setBackground(new Color(25, 25, 112));
         counterPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
         
-        player1ShipsLabel = new JLabel(getShipCount(game.getPlayer1Board()), SwingConstants.CENTER);
+        player1ShipsLabel = new JLabel("", SwingConstants.CENTER);
         player1ShipsLabel.setFont(new Font("Arial", Font.BOLD, 14));
         player1ShipsLabel.setForeground(Color.GREEN);
         
-        player2ShipsLabel = new JLabel(getShipCount(game.getPlayer2Board()), SwingConstants.CENTER);
+        player2ShipsLabel = new JLabel("", SwingConstants.CENTER);
         player2ShipsLabel.setFont(new Font("Arial", Font.BOLD, 14));
         player2ShipsLabel.setForeground(Color.RED);
         
         counterPanel.add(player1ShipsLabel);
         counterPanel.add(player2ShipsLabel);
         
-        // Status panel
+        
         JPanel statusPanel = new JPanel();
         statusPanel.setBackground(new Color(25, 25, 112));
         statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
@@ -79,12 +74,69 @@ public class MultiplayerBattlePanel extends JPanel {
         add(boardsPanel, BorderLayout.CENTER);
         add(counterPanel, BorderLayout.SOUTH);
         add(statusPanel, BorderLayout.SOUTH);
-        
-        // Set up click handlers
-        setupClickHandlers();
     }
     
-    private JPanel createBoardPanel(String title, Board board, boolean isPlayer1) {
+    private void updateBoardViews() {
+        
+        boardsPanel.removeAll();
+        
+        if (game.isPlayer1Turn()) {
+            
+            
+            
+            JPanel player1View = createBoardPanel("YOUR FLEET", game.getPlayer1Board(), true);
+            JPanel player2View = createBoardPanel("ENEMY WATERS", game.getPlayer2Board(), false);
+            boardsPanel.add(player1View);
+            boardsPanel.add(player2View);
+            
+            
+            player1BoardPanel = (BoardPanel) ((JPanel) player1View.getComponent(1));
+            player2BoardPanel = (BoardPanel) ((JPanel) player2View.getComponent(1));
+            
+            
+            
+            player2BoardPanel.setEnemyClickHandler((row, col) -> {
+                handleShot(1, row, col); 
+            });
+            
+            
+            player1BoardPanel.setPlayerClickHandler(null);
+            
+        } else {
+            
+            
+            
+            JPanel player2View = createBoardPanel("YOUR FLEET", game.getPlayer2Board(), true);
+            JPanel player1View = createBoardPanel("ENEMY WATERS", game.getPlayer1Board(), false);
+            boardsPanel.add(player2View);
+            boardsPanel.add(player1View);
+            
+            
+            player2BoardPanel = (BoardPanel) ((JPanel) player2View.getComponent(1));
+            player1BoardPanel = (BoardPanel) ((JPanel) player1View.getComponent(1));
+            
+            
+            
+            player1BoardPanel.setEnemyClickHandler((row, col) -> {
+                handleShot(2, row, col); 
+            });
+            
+            
+            player2BoardPanel.setPlayerClickHandler(null);
+        }
+        
+        boardsPanel.revalidate();
+        boardsPanel.repaint();
+        
+        
+        updateTurnDisplay();
+        
+        
+        player1ShipsLabel.setText(getShipCount(game.getPlayer1Board()));
+        player2ShipsLabel.setText(getShipCount(game.getPlayer2Board()));
+    }
+    
+    private JPanel createBoardPanel(String title, Board board, boolean showShips) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(25, 25, 112));
         
@@ -93,34 +145,20 @@ public class MultiplayerBattlePanel extends JPanel {
         label.setForeground(Color.WHITE);
         panel.add(label, BorderLayout.NORTH);
         
-        // For the board that shows the player's own ships, we show ships
-        BoardPanel boardPanel = new BoardPanel(true, board);
+        
+        BoardPanel boardPanel = new BoardPanel(false, board, showShips);
         panel.add(boardPanel, BorderLayout.CENTER);
         
         return panel;
     }
     
-    private void setupClickHandlers() {
-        // Player 2's board is where Player 1 clicks to attack
-        player2BoardPanel.setEnemyClickHandler((row, col) -> {
-            if (game.isPlayer1Turn()) {
-                handleShot(1, row, col);
-            }
-        });
-        
-        // We need a custom handler for Player 1's board for Player 2's attacks
-        // This requires adding a player click handler to BoardPanel
-        player1BoardPanel.setPlayerClickHandler((row, col) -> {
-            if (!game.isPlayer1Turn()) {
-                handleShot(2, row, col);
-            }
-        });
-    }
-    
     private void handleShot(int playerNumber, int row, int col) {
+        
+        boolean wasPlayer1Turn = game.isPlayer1Turn();
+        
         ShotResult result = game.fire(playerNumber, row, col);
         
-        // Update display based on result
+        
         String message;
         Color color;
         
@@ -147,7 +185,6 @@ public class MultiplayerBattlePanel extends JPanel {
             statusLabel.setText(message);
             statusLabel.setForeground(color);
             
-            // Reset status after 1 second
             Timer timer = new Timer(1000, e -> {
                 statusLabel.setText("Click on enemy waters to fire!");
                 statusLabel.setForeground(Color.WHITE);
@@ -156,16 +193,43 @@ public class MultiplayerBattlePanel extends JPanel {
             timer.start();
         }
         
-        // Update ship counters
+        
+        if (player1BoardPanel != null) {
+            player1BoardPanel.refreshColors();
+        }
+        if (player2BoardPanel != null) {
+            player2BoardPanel.refreshColors();
+        }
+        
+        
         player1ShipsLabel.setText(getShipCount(game.getPlayer1Board()));
         player2ShipsLabel.setText(getShipCount(game.getPlayer2Board()));
         
-        // Update turn display
-        updateTurnDisplay();
         
-        // Refresh boards
-        player1BoardPanel.refreshColors();
-        player2BoardPanel.refreshColors();
+        if (wasPlayer1Turn != game.isPlayer1Turn()) {
+            
+            updateBoardViews();
+        } else {
+            
+            updateTurnDisplay();
+        }
+        
+        
+        if (game.isGameOver()) {
+            String winner = game.getWinner();
+            statusLabel.setText("GAME OVER! " + winner + " WINS!");
+            statusLabel.setForeground(Color.YELLOW);
+            
+            
+            if (player1BoardPanel != null) {
+                player1BoardPanel.setEnemyClickHandler(null);
+                player1BoardPanel.setPlayerClickHandler(null);
+            }
+            if (player2BoardPanel != null) {
+                player2BoardPanel.setEnemyClickHandler(null);
+                player2BoardPanel.setPlayerClickHandler(null);
+            }
+        }
     }
     
     private void updateTurnDisplay() {

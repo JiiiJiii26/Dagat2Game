@@ -19,6 +19,19 @@ public class LocalMultiplayer {
         void onGameEnd(int winnerPlayerNumber);
         void onBoardUpdate(Board board, boolean isPlayer1);
     }
+    public boolean isGameOver() {
+    // Check if either player has no ships left
+    return player1Board.areAllShipsSunk() || player2Board.areAllShipsSunk();
+}
+
+public String getWinner() {
+    if (player1Board.areAllShipsSunk()) {
+        return "PLAYER 2";
+    } else if (player2Board.areAllShipsSunk()) {
+        return "PLAYER 1";
+    }
+    return "NO WINNER YET";
+}
     
     public LocalMultiplayer(GameListener listener) {
         this.listener = listener;
