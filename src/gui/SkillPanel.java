@@ -582,6 +582,108 @@ panel.add(reviveBtn, gbc);
     manaLabel.setForeground(Color.CYAN);
     panel.add(manaLabel, gbc);
 }
+private void addSeleneSkills(JPanel panel, GridBagConstraints gbc) {
+    Selene selene = (Selene) character;
+    
+    
+    gbc.gridy++;
+    JLabel revealLabel = new JLabel("🔮 LUNAR REVEAL");
+    revealLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    revealLabel.setForeground(new Color(200, 150, 255));
+    panel.add(revealLabel, gbc);
+    
+    gbc.gridy++;
+    JButton revealBtn = new JButton("USE (60 mana)");
+    revealBtn.setBackground(new Color(200, 150, 255));
+    revealBtn.setForeground(Color.BLACK);
+    revealBtn.setToolTipText("Reveal all cells in a 3x3 area");
+    revealBtn.addActionListener(e -> {
+        showMessage("🔮 Lunar Reveal: Use this skill from the battle screen!");
+    });
+    panel.add(revealBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel revealDesc = new JLabel("Reveal 3x3 area on enemy board");
+    revealDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    revealDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(revealDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel strikeLabel = new JLabel("🌙 CRESCENT STRIKE");
+    strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    strikeLabel.setForeground(new Color(150, 100, 200));
+    panel.add(strikeLabel, gbc);
+    
+    gbc.gridy++;
+    JButton strikeBtn = new JButton("USE (120 mana)");
+    strikeBtn.setBackground(new Color(150, 100, 200));
+    strikeBtn.setForeground(Color.WHITE);
+    strikeBtn.setToolTipText("Destroy a cross pattern");
+    strikeBtn.addActionListener(e -> {
+        showMessage("🌙 Crescent Strike: Use this skill from the battle screen!");
+    });
+    panel.add(strikeBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel strikeDesc = new JLabel("Destroy cross pattern on enemy board");
+    strikeDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    strikeDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(strikeDesc, gbc);
+    
+    
+    gbc.gridy++;
+    JLabel starfallLabel = new JLabel("⭐ STARFALL LINK");
+    starfallLabel.setFont(new Font("Arial", Font.BOLD, 11));
+    starfallLabel.setForeground(new Color(255, 215, 0));
+    panel.add(starfallLabel, gbc);
+    
+    gbc.gridy++;
+    JButton starfallBtn = new JButton("USE (300 mana)");
+    starfallBtn.setBackground(new Color(255, 215, 0));
+    starfallBtn.setForeground(Color.BLACK);
+    starfallBtn.setToolTipText("ULTIMATE: Destroy 3 random cells + link 2 cells");
+    starfallBtn.addActionListener(e -> {
+        showMessage("⭐ Starfall Link: Use this skill from the battle screen!");
+    });
+    panel.add(starfallBtn, gbc);
+    
+    gbc.gridy++;
+    JLabel starfallDesc = new JLabel("Destroy 3 random cells + link 2 cells for 2 turns");
+    starfallDesc.setFont(new Font("Arial", Font.PLAIN, 8));
+    starfallDesc.setForeground(Color.LIGHT_GRAY);
+    panel.add(starfallDesc, gbc);
+    
+    
+    if (selene.isLinkActive()) {
+        gbc.gridy++;
+        JLabel linkLabel = new JLabel("🔗 STAR LINK ACTIVE", SwingConstants.CENTER);
+        linkLabel.setForeground(Color.CYAN);
+        linkLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(linkLabel, gbc);
+    }
+    
+    if (selene.isNightTime()) {
+        gbc.gridy++;
+        JLabel nightLabel = new JLabel("🌙 MOON'S BLESSING ACTIVE", SwingConstants.CENTER);
+        nightLabel.setForeground(Color.YELLOW);
+        nightLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(nightLabel, gbc);
+    } else {
+        gbc.gridy++;
+        JLabel nightCountdown = new JLabel("🌙 Night in " + selene.getTurnsUntilNight() + " turns", SwingConstants.CENTER);
+        nightCountdown.setForeground(Color.GRAY);
+        nightCountdown.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(nightCountdown, gbc);
+    }
+    
+    
+    gbc.gridy++;
+    JLabel manaLabel = new JLabel(selene.getManaBar(), SwingConstants.CENTER);
+    manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+    manaLabel.setForeground(Color.CYAN);
+    panel.add(manaLabel, gbc);
+}
     
     private void addGenericSkills(JPanel panel, GridBagConstraints gbc) {
         

@@ -154,6 +154,42 @@ private void healPlayerShips() {
     
     System.out.println("✅ Player ships healed!");
 }
+
+private void useSeleneEnemySkill() {
+    Selene enemySelene = (Selene) currentEnemy;
+    
+    int skillChoice = enemyRandom.nextInt(3);
+    
+    switch(skillChoice) {
+        case 0: 
+            if (enemySelene.hasEnoughMana(60)) {
+                System.out.println("🔮 Enemy Selene uses LUNAR REVEAL!");
+                int x = enemyRandom.nextInt(10);
+                int y = enemyRandom.nextInt(10);
+                enemySelene.useLunarReveal(playerBoard, x, y);
+                showEnemySkillMessage("Selene reveals a 3x3 area of your board!");
+            }
+            break;
+        case 1: 
+            if (enemySelene.hasEnoughMana(120)) {
+                System.out.println("🌙 Enemy Selene uses CRESCENT STRIKE!");
+                int x = enemyRandom.nextInt(10);
+                int y = enemyRandom.nextInt(10);
+                int destroyed = enemySelene.useCrescentStrike(playerBoard, x, y);
+                if (destroyed > 0) {
+                    showEnemySkillMessage("Selene's Crescent Strike destroyed " + destroyed + " cells!");
+                }
+            }
+            break;
+        case 2: 
+            if (enemySelene.hasEnoughMana(300)) {
+                System.out.println("⭐ Enemy Selene uses STARFALL LINK!");
+                enemySelene.useStarfallLink(playerBoard);
+                showEnemySkillMessage("Selene's Starfall Link destroys random cells and links your ships!");
+            }
+            break;
+    }
+}
 private void useJijiEnemySkill() {
     Jiji enemyJiji = (Jiji) currentEnemy;
     
@@ -898,84 +934,86 @@ private void addFlueSkills(JPanel panel, boolean isPlayer) {
     panel.add(manaLabel);
 }
 private void addSeleneSkills(JPanel panel, boolean isPlayer) {
-    Selene selene = (Selene) playerCharacter;  
+    Selene selene = (Selene) playerCharacter;
     
-    
-    JButton lunarBtn = new JButton("🔮 Lunar Vision (60)");
-    lunarBtn.setBackground(new Color(200, 150, 255));
-    lunarBtn.setForeground(Color.BLACK);
-    lunarBtn.setToolTipText("Reveals all ships in a 3x3 area");
-    
-    lunarBtn.addActionListener(e -> {
-        if (isPlayer && playerTurn) {
-            updateStatusLabel("🔮 Click on enemy board to reveal 3x3 area!", Color.YELLOW);
-            waitingForSeleneVision = true;
-            currentSeleneVisionCallback = (x, y) -> {
-                if (x < 0 || x > 9 || y < 0 || y > 9) {
-                    updateStatusLabel("❌ Invalid coordinates!", Color.RED);
-                    waitingForSeleneVision = false;
-                    return;
-                }
-                
-                
-                boolean used = selene.useLunarVision(enemyBoard, x, y);
-                if (used) {
-                    updateStatusLabel("🔮 Lunar Vision revealed area around (" + x + "," + y + ")!", Color.CYAN);
-                    refreshUI();
-                } else {
-                    updateStatusLabel("❌ Cannot use Lunar Vision!", Color.RED);
-                }
-                waitingForSeleneVision = false;
-            };
-        }
-    });
-    panel.add(lunarBtn);
-    
-    
-    JButton eclipseBtn = new JButton("🌑 Eclipse Binding (150)");
-eclipseBtn.setBackground(new Color(100, 50, 150));
-eclipseBtn.setForeground(Color.WHITE);
-eclipseBtn.setToolTipText("Grants 2 extra turns!");
-eclipseBtn.setFont(new Font("Arial", Font.BOLD, 11));
-eclipseBtn.setFocusPainted(false);
 
-String status2 = selene.getSkillStatus(2);
-if (!status2.equals("Ready!")) {
-    eclipseBtn.setEnabled(false);
-    eclipseBtn.setText("🌑 Eclipse Binding (" + status2 + ")");
+    
+    
+    JButton revealBtn = new JButton("🔮 Lunar Reveal (60)");
+    revealBtn.setBackground(new Color(200, 150, 255));
+    revealBtn.setForeground(Color.BLACK);
+    revealBtn.setToolTipText("Reveal all cells in a 3x3 area");
+    revealBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    revealBtn.setFocusPainted(false);
+    
+    String status1 = selene.getSkillStatus(1);
+
+    System.out.println("=== SKILL STATUS DEBUG ===");
+System.out.println("Skill 1 status: '" + status1 + "'");
+System.out.println("isNightTime: " + selene.isNightTime());
+System.out.println("=========================");
+
+if (!status1.equals("Ready!") && !status1.contains("Ready")) {
+    revealBtn.setEnabled(false);
+    revealBtn.setText("🔮 Lunar Reveal (" + status1 + ")");
+    System.out.println("❌ Button DISABLED because status = " + status1);
+} else {
+    System.out.println("✅ Button ENABLED");
 }
-
-eclipseBtn.addActionListener(e -> {
+    if (!status1.equals("Ready!")) {
+        revealBtn.setEnabled(false);
+        revealBtn.setText("🔮 Lunar Reveal (" + status1 + ")");
+    }
+    
+    revealBtn.addActionListener(e -> {
+ System.out.println("========================================");
+    System.out.println("🔘 LUNAR REVEAL BUTTON WAS CLICKED!");
+    System.out.println("   isPlayer = " + isPlayer);
+    System.out.println("   playerTurn = " + playerTurn);
+    System.out.println("   nightTime = " + selene.isNightTime());
+    System.out.println("   waitingForSeleneVision = " + waitingForSeleneVision);
+    System.out.println("========================================");
+    
     if (isPlayer && playerTurn) {
-        boolean used = selene.useEclipseBinding(enemyBoard);  
-        if (used) {
-            updateStatusLabel("🌑 Eclipse Binding! You gain 2 EXTRA TURNS!", Color.MAGENTA);
-            refreshUI();
-        } else {
-            updateStatusLabel("❌ Cannot use Eclipse Binding! " + selene.getSkillStatus(2), Color.RED);
-        }
+        System.out.println("✅ Conditions met, starting targeting mode...");
+        updateStatusLabel("🔮 Click on enemy board to reveal 3x3 area!", Color.YELLOW);
+        waitingForSeleneVision = true;
+        currentSeleneVisionCallback = (x, y) -> {
+            System.out.println("🎯 TARGET CALLBACK RECEIVED: (" + x + "," + y + ")");
+            boolean used = selene.useLunarReveal(enemyBoard, x, y);
+            System.out.println("   Skill result: " + used);
+            if (used) {
+                updateStatusLabel("🔮 Lunar Reveal revealed area around (" + x + "," + y + ")!", Color.CYAN);
+                refreshUI();
+            } else {
+                updateStatusLabel("❌ Cannot use Lunar Reveal!", Color.RED);
+            }
+            waitingForSeleneVision = false;
+        };
+    } else {
+        System.out.println("❌ Conditions NOT met!");
+        System.out.println("   isPlayer = " + isPlayer);
+        System.out.println("   playerTurn = " + playerTurn);
     }
 });
-panel.add(eclipseBtn);
-  
+    panel.add(revealBtn);
     
     
-    JButton crescentBtn = new JButton("🌙 Crescent Blade (400)");
-    crescentBtn.setBackground(new Color(150, 100, 200));
-    crescentBtn.setForeground(Color.WHITE);
-    crescentBtn.setToolTipText("Hits a cross pattern (center + up, down, left, right)");
-    crescentBtn.setFont(new Font("Arial", Font.BOLD, 11));
-    crescentBtn.setFocusPainted(false);
+    JButton strikeBtn = new JButton("🌙 Crescent Strike (120)");
+    strikeBtn.setBackground(new Color(150, 100, 200));
+    strikeBtn.setForeground(Color.WHITE);
+    strikeBtn.setToolTipText("Destroy a cross pattern (center + up, down, left, right)");
+    strikeBtn.setFont(new Font("Arial", Font.BOLD, 11));
+    strikeBtn.setFocusPainted(false);
     
-    String status3 = selene.getSkillStatus(3);
-    if (!status3.equals("Ready!")) {
-        crescentBtn.setEnabled(false);
-        crescentBtn.setText("🌙 Crescent Blade (" + status3 + ")");
+    String status2 = selene.getSkillStatus(2);
+    if (!status2.equals("Ready!")) {
+        strikeBtn.setEnabled(false);
+        strikeBtn.setText("🌙 Crescent Strike (" + status2 + ")");
     }
     
-    crescentBtn.addActionListener(e -> {
+    strikeBtn.addActionListener(e -> {
         if (isPlayer && playerTurn) {
-            
             updateStatusLabel("🌙 Click on enemy board to strike a cross pattern!", Color.YELLOW);
             waitingForSeleneCrescent = true;
             currentSeleneCrescentCallback = (x, y) -> {
@@ -985,25 +1023,69 @@ panel.add(eclipseBtn);
                     return;
                 }
                 
-                int damage = selene.useCrescentBlade(enemyBoard, x, y);
-                if (damage > 0) {
-                    updateStatusLabel("🌙 Crescent Blade dealt " + damage + " damage!", Color.ORANGE);
+                int destroyed = selene.useCrescentStrike(enemyBoard, x, y);
+                if (destroyed > 0) {
+                    updateStatusLabel("🌙 Crescent Strike destroyed " + destroyed + " cells!", Color.ORANGE);
                     refreshUI();
                 } else {
-                    updateStatusLabel("❌ Cannot use Crescent Blade!", Color.RED);
+                    updateStatusLabel("❌ Cannot use Crescent Strike!", Color.RED);
                 }
                 waitingForSeleneCrescent = false;
             };
         }
     });
-    panel.add(crescentBtn);
+    panel.add(strikeBtn);
     
     
-    if (selene.areEnemyShipsTrapped()) {
-        JLabel trappedLabel = new JLabel("🌑 Enemy Ships BOUND", SwingConstants.CENTER);
-        trappedLabel.setForeground(Color.MAGENTA);
-        trappedLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(trappedLabel);
+    JButton starfallBtn = new JButton("⭐ Starfall Link (300)");
+    starfallBtn.setBackground(new Color(255, 215, 0));
+    starfallBtn.setForeground(Color.BLACK);
+    starfallBtn.setToolTipText("ULTIMATE: Destroy 3 random cells + link 2 cells for 2 turns!");
+    starfallBtn.setFont(new Font("Arial", Font.BOLD, 12));
+    starfallBtn.setFocusPainted(false);
+    
+    String status3 = selene.getSkillStatus(3);
+    if (!status3.equals("ULTIMATE READY!") && !status3.contains("Ready")) {
+        starfallBtn.setEnabled(false);
+        starfallBtn.setText("⭐ Starfall Link (" + status3 + ")");
+    }
+    
+    starfallBtn.addActionListener(e -> {
+        if (isPlayer && playerTurn) {
+            if (!selene.hasEnoughMana(300)) {
+                updateStatusLabel("❌ Not enough mana! Need 300 mana.", Color.RED);
+                return;
+            }
+            if (selene.getSkillStatus(3).contains("Cooldown")) {
+                updateStatusLabel("❌ Starfall Link is on cooldown!", Color.RED);
+                return;
+            }
+            
+            boolean used = selene.useStarfallLink(enemyBoard);
+            if (used) {
+                updateStatusLabel("⭐ STARFALL LINK ACTIVATED! 3 random cells destroyed + cells linked!", Color.YELLOW);
+                refreshUI();
+            } else {
+                updateStatusLabel("❌ Cannot use Starfall Link!", Color.RED);
+            }
+        }
+    });
+    panel.add(starfallBtn);
+
+    if (selene.isNightTime()) {
+    JLabel nightLabel = new JLabel("🌙✨ NIGHT TIME ACTIVE! Skills are ENHANCED! ✨🌙", SwingConstants.CENTER);
+    nightLabel.setForeground(Color.YELLOW);
+    nightLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    nightLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+    panel.add(nightLabel);
+}
+    
+    
+    if (selene.isLinkActive()) {
+        JLabel linkLabel = new JLabel("🔗 STAR LINK ACTIVE", SwingConstants.CENTER);
+        linkLabel.setForeground(Color.CYAN);
+        linkLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        panel.add(linkLabel);
     }
     
     if (selene.isNightTime()) {
@@ -1016,13 +1098,6 @@ panel.add(eclipseBtn);
         nightCountdown.setForeground(Color.GRAY);
         nightCountdown.setFont(new Font("Arial", Font.BOLD, 10));
         panel.add(nightCountdown);
-    }
-    
-    if (selene.getTrappedCellsCount() > 0) {
-        JLabel boundLabel = new JLabel("🌑 " + selene.getTrappedCellsCount() + " cells bound", SwingConstants.CENTER);
-        boundLabel.setForeground(new Color(150, 100, 200));
-        boundLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        panel.add(boundLabel);
     }
     
     
@@ -1995,6 +2070,11 @@ private void handlePlayerAttack(int row, int col) {
     updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
     
     ShotResult result = ShotResult.MISS;
+
+     if (playerCharacter instanceof Selene) {
+        Selene selene = (Selene) playerCharacter;
+        selene.checkLinkedCells(enemyBoard, row, col);
+    }
     
     if (playerCharacter instanceof Kael) {
         Kael kael = (Kael) playerCharacter;
@@ -2014,6 +2094,10 @@ private void handlePlayerAttack(int row, int col) {
         updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
                           result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
     }
+ if (playerCharacter instanceof Selene) {
+        ((Selene) playerCharacter).endTurn();  // Night ends here
+    }
+
     
     enemyBoardPanel.updateCell(row, col, result);
 
@@ -2046,17 +2130,7 @@ private void handlePlayerAttack(int row, int col) {
     }
     
     
-    if (playerCharacter instanceof Selene) {
-        Selene selene = (Selene) playerCharacter;
-        if (selene.hasExtraTurn()) {
-            selene.consumeExtraTurn();
-            updateStatusLabel("🌑 Eclipse Binding grants you an EXTRA TURN!", Color.MAGENTA);
-            playerTurn = true;  
-            resetStatusLabel();
-            refreshUI();
-            return;  
-        }
-    }
+   
     
     playerTurn = false;
     
@@ -2077,6 +2151,9 @@ private void handlePlayerAttack(int row, int col) {
 private void enemyTurn() {
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
+   int x = random.nextInt(10);
+    int y = random.nextInt(10);
+    
     if (playerCharacter instanceof Skye) {
         Skye skye = (Skye) playerCharacter;
         if (skye.shouldSkipEnemyTurn()) {
@@ -2088,6 +2165,11 @@ private void enemyTurn() {
     }
     
     useEnemySkill();
+
+     if (currentEnemy instanceof Selene) {
+        Selene selene = (Selene) currentEnemy;
+        selene.checkLinkedCells(playerBoard, x, y);
+    }
     
     if (playerCharacter instanceof Jiji) {
         ((Jiji) playerCharacter).updateTurnCounter();
@@ -2107,8 +2189,7 @@ private void enemyTurn() {
         ((Flue) playerCharacter).updateTurnCounter();
     }
     
-    int x = random.nextInt(10);
-    int y = random.nextInt(10);
+
     
     updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
     
@@ -2380,6 +2461,11 @@ private void resetStatusLabel() {
         statusLabel.setText("🤖 ENEMY'S TURN - They're planning...");
         statusLabel.setForeground(Color.RED);
     } else {
+        // START OF PLAYER'S TURN - Check if night should be active
+        if (playerCharacter instanceof Selene) {
+            // Don't reset night - it should already be set from previous turn
+            System.out.println("🌙 Player turn starts, nightTime = " + ((Selene) playerCharacter).isNightTime());
+        }
         
         String turnMessage = getCharacterTurnMessage();
         statusLabel.setText(turnMessage);
