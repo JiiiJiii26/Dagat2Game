@@ -2095,7 +2095,7 @@ private void handlePlayerAttack(int row, int col) {
                           result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
     }
  if (playerCharacter instanceof Selene) {
-        ((Selene) playerCharacter).endTurn();  // Night ends here
+        ((Selene) playerCharacter).endTurn();  
     }
 
     
@@ -2461,9 +2461,9 @@ private void resetStatusLabel() {
         statusLabel.setText("🤖 ENEMY'S TURN - They're planning...");
         statusLabel.setForeground(Color.RED);
     } else {
-        // START OF PLAYER'S TURN - Check if night should be active
+        
         if (playerCharacter instanceof Selene) {
-            // Don't reset night - it should already be set from previous turn
+            
             System.out.println("🌙 Player turn starts, nightTime = " + ((Selene) playerCharacter).isNightTime());
         }
         

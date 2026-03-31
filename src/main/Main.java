@@ -4,6 +4,7 @@ import gui.*;
 import models.Board;
 import ai.AIPlayer;
 import characters.GameCharacter;
+import game.LocalMultiplayer;
 import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
@@ -40,14 +41,119 @@ public class Main {
                 showCharacterSelectForCampaign();  
             }
 
+        @Override
+public void on1v1Mode() {
+    startLocalMultiplayer();
+}
+
+private static void startLocalMultiplayer() {
+    // Create a new frame for 1v1 mode or reuse the existing one
+    frame.getContentPane().removeAll();
+    frame.setLayout(new BorderLayout());
+    
+    // First, let players place their ships
+    showMultiplayerPlacementScreen();
+}
+
+private static void showMultiplayerPlacementScreen() {
+    // We need a way to get both players' boards
+    // Let's create a simple flow
+    JPanel placementContainer = new JPanel(new CardLayout());
+    placementContainer.setBackground(new Color(25, 25, 112));
+    
+    // Player 1 placement
+    MultiplayerPlacementPanel player1Placement = new MultiplayerPlacementPanel(1, "PLAYER 1", 
+        new MultiplayerPlacementPanel.PlacementListener() {
             @Override
-            public void on1v1Mode() {
-                JOptionPane.showMessageDialog(frame,
-                        "🌊 Quick Battle vs AI\n\nFight a single match!",
-                        "Quick Battle",
-                        JOptionPane.INFORMATION_MESSAGE);
-                showCharacterSelectForQuickBattle();  
+            public void onPlacementComplete(int playerNumber, Board board) {
+                // Store Player 1's board
+                player1Board = board;
+                // Show Player 2 placement
+                CardLayout cl = (CardLayout) placementContainer.getLayout();
+                cl.next(placementContainer);
             }
+            
+            @Override
+            public void onAllPlayersReady() {
+                // Not used in this flow
+            }
+        });
+    
+    // Player 2 placement
+    MultiplayerPlacementPanel player2Placement = new MultiplayerPlacementPanel(2, "PLAYER 2",
+        new MultiplayerPlacementPanel.PlacementListener() {
+            @Override
+            public void onPlacementComplete(int playerNumber, Board board) {
+                // Store Player 2's board
+                player2Board = board;
+                startMultiplayerBattle();
+            }
+            
+            @Override
+            public void onAllPlayersReady() {
+                // Not used in this flow
+            }
+        });
+    
+    placementContainer.add(player1Placement, "player1");
+    placementContainer.add(player2Placement, "player2");
+    
+    frame.add(placementContainer, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+}
+
+private static Board player1Board;
+private static Board player2Board;
+private static LocalMultiplayer multiplayerGame;
+
+private static void startMultiplayerBattle() {
+    // Create multiplayer game with the boards
+    multiplayerGame = new LocalMultiplayer(new LocalMultiplayer.GameListener() {
+        @Override
+        public void onGameStart() {
+            System.out.println("1v1 Game Started!");
+        }
+        
+        @Override
+        public void onPlayerTurn(int playerNumber) {
+            System.out.println("Player " + playerNumber + "'s turn");
+        }
+        
+        @Override
+        public void onShotFired(int playerNumber, int x, int y, ShotResult result) {
+            System.out.println("Player " + playerNumber + " fired at (" + x + "," + y + "): " + result);
+        }
+        
+        @Override
+        public void onGameEnd(int winnerPlayerNumber) {
+            JOptionPane.showMessageDialog(frame,
+                "🏆 PLAYER " + winnerPlayerNumber + " WINS! 🏆\n\nPlay again?",
+                "Game Over",
+                JOptionPane.INFORMATION_MESSAGE);
+            showMainMenu();
+        }
+        
+        @Override
+        public void onBoardUpdate(Board board, boolean isPlayer1) {
+            // Update UI if needed
+        }
+    });
+    
+    // Set the boards
+    // Note: LocalMultiplayer creates its own boards, so we need to modify it
+    // For now, let's create a new method to set boards
+    multiplayerGame.setPlayerBoard(1, player1Board);
+    multiplayerGame.setPlayerBoard(2, player2Board);
+    
+    // Create battle screen
+    MultiplayerBattlePanel battlePanel = new MultiplayerBattlePanel(multiplayerGame);
+    
+    frame.getContentPane().removeAll();
+    frame.add(battlePanel, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+}
             
             @Override
             public void onOptions() {
