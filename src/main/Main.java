@@ -22,6 +22,14 @@ public class Main {
     private static String selectedDifficulty = "Medium";
     private static GameCharacter selectedCharacter;  
     private static SkillPanel skillPanel;
+    
+    
+    private static Board player1Board;
+    private static Board player2Board;
+    private static LocalMultiplayer multiplayerGame;
+    private static GameCharacter multiplayerPlayer1Character;
+    private static GameCharacter multiplayerPlayer2Character;
+    private static MultiplayerBattlePanel multiplayerBattlePanel;
  
     public static void main(String[] args) {
         frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
@@ -41,120 +49,11 @@ public class Main {
                 showCharacterSelectForCampaign();  
             }
 
-        @Override
-public void on1v1Mode() {
-    startLocalMultiplayer();
-}
-
-private static void startLocalMultiplayer() {
-    
-    frame.getContentPane().removeAll();
-    frame.setLayout(new BorderLayout());
-    
-    
-    showMultiplayerPlacementScreen();
-}
-
-private static void showMultiplayerPlacementScreen() {
-    
-    
-    JPanel placementContainer = new JPanel(new CardLayout());
-    placementContainer.setBackground(new Color(25, 25, 112));
-    
-    
-    MultiplayerPlacementPanel player1Placement = new MultiplayerPlacementPanel(1, "PLAYER 1", 
-        new MultiplayerPlacementPanel.PlacementListener() {
             @Override
-            public void onPlacementComplete(int playerNumber, Board board) {
-                
-                player1Board = board;
-                
-                CardLayout cl = (CardLayout) placementContainer.getLayout();
-                cl.next(placementContainer);
+            public void on1v1Mode() {
+                showMultiplayerCharacterSelect();
             }
-            
-            @Override
-            public void onAllPlayersReady() {
-                
-            }
-        });
-    
-    
-    MultiplayerPlacementPanel player2Placement = new MultiplayerPlacementPanel(2, "PLAYER 2",
-        new MultiplayerPlacementPanel.PlacementListener() {
-            @Override
-            public void onPlacementComplete(int playerNumber, Board board) {
-                
-                player2Board = board;
-                startMultiplayerBattle();
-            }
-            
-            @Override
-            public void onAllPlayersReady() {
-                
-            }
-        });
-    
-    placementContainer.add(player1Placement, "player1");
-    placementContainer.add(player2Placement, "player2");
-    
-    frame.add(placementContainer, BorderLayout.CENTER);
-    frame.revalidate();
-    frame.repaint();
-}
 
-private static Board player1Board;
-private static Board player2Board;
-private static LocalMultiplayer multiplayerGame;
-
-private static void startMultiplayerBattle() {
-    
-    multiplayerGame = new LocalMultiplayer(new LocalMultiplayer.GameListener() {
-        @Override
-        public void onGameStart() {
-            System.out.println("1v1 Game Started!");
-        }
-        
-        @Override
-        public void onPlayerTurn(int playerNumber) {
-            System.out.println("Player " + playerNumber + "'s turn");
-        }
-        
-        @Override
-        public void onShotFired(int playerNumber, int x, int y, ShotResult result) {
-            System.out.println("Player " + playerNumber + " fired at (" + x + "," + y + "): " + result);
-        }
-        
-        @Override
-        public void onGameEnd(int winnerPlayerNumber) {
-            JOptionPane.showMessageDialog(frame,
-                "🏆 PLAYER " + winnerPlayerNumber + " WINS! 🏆\n\nPlay again?",
-                "Game Over",
-                JOptionPane.INFORMATION_MESSAGE);
-            showMainMenu();
-        }
-        
-        @Override
-        public void onBoardUpdate(Board board, boolean isPlayer1) {
-            
-        }
-    });
-    
-    
-    
-    
-    multiplayerGame.setPlayerBoard(1, player1Board);
-    multiplayerGame.setPlayerBoard(2, player2Board);
-    
-    
-    MultiplayerBattlePanel battlePanel = new MultiplayerBattlePanel(multiplayerGame);
-    
-    frame.getContentPane().removeAll();
-    frame.add(battlePanel, BorderLayout.CENTER);
-    frame.revalidate();
-    frame.repaint();
-}
-            
             @Override
             public void onOptions() {
                 
@@ -180,11 +79,164 @@ private static void startMultiplayerBattle() {
     }
 
     
+    
+    private static void showMultiplayerCharacterSelect() {
+        MultiplayerCharacterSelectPanel charSelectPanel = new MultiplayerCharacterSelectPanel(
+            new MultiplayerCharacterSelectPanel.CharacterSelectListener() {
+                @Override
+                public void onCharactersSelected(GameCharacter player1Char, GameCharacter player2Char) {
+                    multiplayerPlayer1Character = player1Char;
+                    multiplayerPlayer2Character = player2Char;
+                    System.out.println("🎮 Player 1 selected: " + player1Char.getName());
+                    System.out.println("🎮 Player 2 selected: " + player2Char.getName());
+                    showMultiplayerPlacementScreen();
+                }
+            });
+        
+        frame.getContentPane().removeAll();
+        frame.add(charSelectPanel, BorderLayout.CENTER);
+        frame.revalidate();
+        frame.repaint();
+    }
+    
+    
+    
+    private static void showMultiplayerPlacementScreen() {
+        JPanel placementContainer = new JPanel(new CardLayout());
+        placementContainer.setBackground(new Color(25, 25, 112));
+        
+        MultiplayerPlacementPanel player1Placement = new MultiplayerPlacementPanel(1, "PLAYER 1", 
+            new MultiplayerPlacementPanel.PlacementListener() {
+                @Override
+                public void onPlacementComplete(int playerNumber, Board board) {
+                    player1Board = board;
+                    CardLayout cl = (CardLayout) placementContainer.getLayout();
+                    cl.next(placementContainer);
+                }
+                
+                @Override
+                public void onAllPlayersReady() {
+                    
+                }
+            });
+        
+        MultiplayerPlacementPanel player2Placement = new MultiplayerPlacementPanel(2, "PLAYER 2",
+            new MultiplayerPlacementPanel.PlacementListener() {
+                @Override
+                public void onPlacementComplete(int playerNumber, Board board) {
+                    player2Board = board;
+                    startMultiplayerBattle();
+                }
+                
+                @Override
+                public void onAllPlayersReady() {
+                    
+                }
+            });
+        
+        placementContainer.add(player1Placement, "player1");
+        placementContainer.add(player2Placement, "player2");
+        
+        frame.getContentPane().removeAll();
+        frame.add(placementContainer, BorderLayout.CENTER);
+        frame.revalidate();
+        frame.repaint();
+    }
+    
+    
+    
+    private static void startMultiplayerBattle() {
+        multiplayerGame = new LocalMultiplayer(
+            new LocalMultiplayer.GameListener() {
+                @Override
+                public void onGameStart() {
+                    System.out.println("1v1 Game Started with characters!");
+                    updateStatusLabel("Battle Started!");
+                }
+                
+                @Override
+                public void onPlayerTurn(int playerNumber) {
+                    System.out.println("Player " + playerNumber + "'s turn");
+                    updateStatusLabel("PLAYER " + playerNumber + "'s TURN");
+                    
+                    
+                    if (multiplayerBattlePanel != null) {
+                        multiplayerBattlePanel.updateTurnDisplay();
+                    }
+                }
+                
+                @Override
+                public void onShotFired(int playerNumber, int x, int y, ShotResult result) {
+                    System.out.println("Player " + playerNumber + " fired at (" + x + "," + y + "): " + result);
+                }
+                
+                @Override
+                public void onGameEnd(int winnerPlayerNumber) {
+                    SwingUtilities.invokeLater(() -> {
+                        int playAgain = JOptionPane.showConfirmDialog(frame,
+                            "🏆 PLAYER " + winnerPlayerNumber + " WINS! 🏆\n\nPlay again?",
+                            "Game Over",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE);
+                        if (playAgain == JOptionPane.YES_OPTION) {
+                            showMainMenu();
+                        } else {
+                            System.exit(0);
+                        }
+                    });
+                }
+                
+                @Override
+                public void onBoardUpdate(Board board, boolean isPlayer1) {
+                    
+                    if (multiplayerBattlePanel != null) {
+                        multiplayerBattlePanel.refreshBoards();
+                    }
+                }
+                
+                @Override
+                public void onCharacterSkillUsed(int playerNumber, String skillName, boolean success) {
+                    String message = success ? 
+                        "✨ Player " + playerNumber + " used " + skillName + "!" :
+                        "❌ Player " + playerNumber + " failed to use " + skillName;
+                    updateStatusLabel(message);
+                    
+                    if (success && multiplayerBattlePanel != null) {
+                        multiplayerBattlePanel.refreshBoards();
+                    }
+                }
+                
+                @Override
+                public void onCharacterUltimateUsed(int playerNumber, String ultimateName) {
+                    updateStatusLabel("💥 ULTIMATE! Player " + playerNumber + " used " + ultimateName + "!");
+                    if (multiplayerBattlePanel != null) {
+                        multiplayerBattlePanel.refreshBoards();
+                    }
+                }
+            },
+            multiplayerPlayer1Character,
+            multiplayerPlayer2Character
+        );
+        
+        
+        multiplayerGame.setPlayerBoard(1, player1Board);
+        multiplayerGame.setPlayerBoard(2, player2Board);
+        
+        
+        multiplayerBattlePanel = new MultiplayerBattlePanel(multiplayerGame);
+        
+        frame.getContentPane().removeAll();
+        frame.add(multiplayerBattlePanel, BorderLayout.CENTER);
+        frame.revalidate();
+        frame.repaint();
+    }
+    
+    
+    
     private static void showCharacterSelectForCampaign() {
         CharacterSelectPanel charPanel = new CharacterSelectPanel(character -> {
             selectedCharacter = character;
             System.out.println("🎮 Starting CAMPAIGN with: " + character.getName());
-            
             
             CampaignMode campaign = new CampaignMode(frame, selectedCharacter);
             campaign.start();
@@ -195,7 +247,8 @@ private static void startMultiplayerBattle() {
         frame.revalidate();
         frame.repaint();
     }
-
+    
+    
     
     private static void showCharacterSelectForQuickBattle() {
         CharacterSelectPanel charPanel = new CharacterSelectPanel(character -> {
@@ -209,7 +262,7 @@ private static void startMultiplayerBattle() {
         frame.revalidate();
         frame.repaint();
     }
-
+    
     private static void showPlacementScreen() {
         PlacementPanel placementPanel = new PlacementPanel(new PlacementPanel.PlacementListener() {
             @Override
@@ -224,7 +277,7 @@ private static void startMultiplayerBattle() {
         frame.revalidate();
         frame.repaint();
     }
-
+    
     private static void showDifficultyScreen() {
         DifficultyPanel difficultyPanel = new DifficultyPanel(new DifficultyPanel.DifficultyListener() {
             @Override
@@ -240,7 +293,7 @@ private static void startMultiplayerBattle() {
         frame.revalidate();
         frame.repaint();
     }
-
+    
     private static void showGameScreen(String difficulty) {
         System.out.println("🎮 Starting game with: " + 
             (selectedCharacter != null ? selectedCharacter.getName() : "NO CHARACTER"));
@@ -280,7 +333,7 @@ private static void startMultiplayerBattle() {
         playerLabel.setFont(new Font("Arial", Font.BOLD, 18));
         playerLabel.setForeground(Color.WHITE);
         playerPanel.add(playerLabel, BorderLayout.NORTH);
-        playerBoardPanel = new BoardPanel(true, playerBoard,true);
+        playerBoardPanel = new BoardPanel(true, playerBoard, true);
         playerPanel.add(playerBoardPanel, BorderLayout.CENTER);
 
         
@@ -341,7 +394,9 @@ private static void startMultiplayerBattle() {
 
         System.out.println("⚓ Battle started against " + difficulty + " AI!");
     }
-
+    
+    
+    
     private static void handlePlayerTurn(int row, int col) {
         ShotResult result = aiPlayer.getBoard().fire(row, col);
         enemyBoardPanel.updateCell(row, col, result);
@@ -373,7 +428,7 @@ private static void startMultiplayerBattle() {
         timer.setRepeats(false);
         timer.start();
     }
-
+    
     private static void aiTurn() {
         int[] move = aiPlayer.getNextMove();
         int x = move[0];
@@ -405,5 +460,29 @@ private static void startMultiplayerBattle() {
         playerTurn = true;
         statusLabel.setText("YOUR TURN - Click on enemy waters!");
         statusLabel.setForeground(Color.WHITE);
+    }
+    
+    private static void updateStatusLabel(String message) {
+        SwingUtilities.invokeLater(() -> {
+            if (statusLabel != null) {
+                statusLabel.setText(message);
+                statusLabel.setForeground(Color.YELLOW);
+                
+                
+                Timer timer = new Timer(2000, e -> {
+                    if (statusLabel != null) {
+                        if (playerTurn) {
+                            statusLabel.setText("YOUR TURN - Click on enemy waters!");
+                            statusLabel.setForeground(Color.WHITE);
+                        } else {
+                            statusLabel.setText("AI'S TURN - Thinking...");
+                            statusLabel.setForeground(Color.RED);
+                        }
+                    }
+                });
+                timer.setRepeats(false);
+                timer.start();
+            }
+        });
     }
 }
