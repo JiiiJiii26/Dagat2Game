@@ -23,7 +23,7 @@ public class BoardPanel extends JPanel {
         this.playerClickHandler = handler;
     }
     
-    // Backward compatible constructor for existing code
+    
     public BoardPanel(boolean isPlayerBoard, Board board) {
         this(isPlayerBoard, board, isPlayerBoard);
     }
@@ -81,10 +81,10 @@ public class BoardPanel extends JPanel {
     private void updateButtonAppearance(JButton button, Cell cell) {
         Color cellColor = cell.getColor();
         
-        // Check if it's a hit (red/purple) or miss (gray) based on color
+        
         if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
             button.setBackground(cellColor);
-            // Check if it's a sunk ship or just hit
+            
             if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
                 button.setText("💀");
             } else {
@@ -96,19 +96,19 @@ public class BoardPanel extends JPanel {
             button.setText("•");
         } 
         else {
-            // Not hit or miss - show water
+            
             button.setBackground(cellColor);
             button.setText("");
             
-            // Only show ships if showShips is true (player's own board)
+            
             if (showShips && cell.hasShip()) {
-                // Don't change background color, just add a ship icon or keep the ship color
+                
                 if (cell.getShip() != null && cell.getShip().isShielded()) {
-                    button.setText("🛡️"); // Shielded ship
+                    button.setText("🛡️"); 
                 } else if (cell.getShip() != null && cell.getShip().isInfected()) {
-                    button.setText("🦠"); // Infected ship
+                    button.setText("🦠"); 
                 } else {
-                    button.setText("⛵"); // Regular ship
+                    button.setText("⛵"); 
                 }
             }
         }

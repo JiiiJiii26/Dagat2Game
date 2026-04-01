@@ -37,7 +37,7 @@ public class LocalMultiplayer {
         this.player1Character = player1Char;
         this.player2Character = player2Char;
         
-        // Set board references for characters
+        
         if (player1Char != null) {
             player1Char.setBoard(player1Board);
             if (player1Char instanceof Aeris) {
@@ -100,53 +100,53 @@ public class LocalMultiplayer {
         GameCharacter attackingChar = (playerNumber == 1) ? player1Character : player2Character;
         GameCharacter defendingChar = (playerNumber == 1) ? player2Character : player1Character;
         
-        // Check if enemy skills are disabled by Valerius
+        
         if (defendingChar instanceof Valerius && ((Valerius) defendingChar).areEnemySkillsDisabled()) {
             System.out.println("🚫 Enemy skills are disabled!");
         }
         
-        // Apply Jiji's firewall if defending
+        
         if (defendingChar instanceof Jiji) {
             Jiji jiji = (Jiji) defendingChar;
             Cell targetCell = targetBoard.getCell(x, y);
             
-            // Check if shot would hit a shielded ship
+            
             if (targetCell.hasShip() && targetCell.getShip() != null && targetCell.getShip().isShielded()) {
                 System.out.println("🔵 Shield blocked the attack!");
                 return ShotResult.MISS;
             }
         }
         
-        // Apply Morgana's confusion if active
+        
         if (defendingChar instanceof Morgana && ((Morgana) defendingChar).isEnemyConfusedActive()) {
             System.out.println("🎵 Enemy is confused!");
-            // Confusion effect handled in UI
+            
         }
         
-        // Execute the shot
+        
         ShotResult result = targetBoard.fire(x, y);
         
         if (listener != null) {
             listener.onShotFired(playerNumber, x, y, result);
         }
         
-        // Update turn counters for characters
+        
         updateCharacterTurn(playerNumber);
         
-        // Check for game over
+        
         if (targetBoard.allShipsSunk()) {
             if (listener != null) {
                 listener.onGameEnd(playerNumber);
             }
         } else {
-            // Switch turns on miss
+            
             if (result == ShotResult.MISS) {
                 player1Turn = !player1Turn;
                 if (listener != null) {
                     listener.onPlayerTurn(getCurrentPlayer());
                 }
             } else {
-                // Check for extra turn abilities
+                
                 boolean extraTurn = false;
                 
                 if (attackingChar instanceof Jiji && ((Jiji) attackingChar).isOverclockActive()) {
@@ -349,7 +349,7 @@ public class LocalMultiplayer {
             listener.onCharacterSkillUsed(playerNumber, skillName, success);
         }
         
-        // Refresh boards after skill use
+        
         if (listener != null) {
             listener.onBoardUpdate(playerBoard, playerNumber == 1);
             listener.onBoardUpdate(targetBoard, playerNumber != 1);

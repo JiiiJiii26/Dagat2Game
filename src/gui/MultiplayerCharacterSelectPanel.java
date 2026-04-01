@@ -28,7 +28,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         this.listener = listener;
         this.characters = new ArrayList<>();
         
-        // Add all characters
+        
         characters.add(new Jiji());
         characters.add(new Kael());
         characters.add(new Valerius());
@@ -45,28 +45,28 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(25, 25, 112));
         
-        // Title
+        
         JLabel titleLabel = new JLabel("CHOOSE YOUR COMMANDERS", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
         titleLabel.setForeground(new Color(173, 216, 230));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         add(titleLabel, BorderLayout.NORTH);
         
-        // Center panel for character selection
+        
         JPanel centerPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         centerPanel.setBackground(new Color(25, 25, 112));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        // Player 1 selection area
+        
         JPanel player1Panel = createPlayerSelectionPanel("PLAYER 1", 1);
-        // Player 2 selection area
+        
         JPanel player2Panel = createPlayerSelectionPanel("PLAYER 2", 2);
         
         centerPanel.add(player1Panel);
         centerPanel.add(player2Panel);
         add(centerPanel, BorderLayout.CENTER);
         
-        // Bottom panel with confirm button
+        
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBackground(new Color(25, 25, 112));
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 30, 0));
@@ -92,14 +92,14 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         panel.setBorder(BorderFactory.createLineBorder(
             playerNumber == 1 ? Color.GREEN : Color.RED, 3));
         
-        // Player label
+        
         JLabel nameLabel = new JLabel(playerName, SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 24));
         nameLabel.setForeground(playerNumber == 1 ? Color.GREEN : Color.RED);
         nameLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         panel.add(nameLabel, BorderLayout.NORTH);
         
-        // Character cards grid
+        
         JPanel cardsPanel = new JPanel(new GridLayout(4, 2, 5, 5));
         cardsPanel.setBackground(new Color(25, 25, 112));
         cardsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -111,7 +111,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         
         panel.add(cardsPanel, BorderLayout.CENTER);
         
-        // Selected character label
+        
         JLabel selectedLabel = new JLabel("No character selected", SwingConstants.CENTER);
         selectedLabel.setFont(new Font("Arial", Font.BOLD, 12));
         selectedLabel.setForeground(Color.YELLOW);
@@ -135,18 +135,18 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         card.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
         card.setPreferredSize(new Dimension(150, 120));
         
-        // Character name
+        
         JLabel nameLabel = new JLabel(character.getName(), SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 10));
         nameLabel.setForeground(Color.WHITE);
         card.add(nameLabel, BorderLayout.NORTH);
         
-        // Character emoji
+        
         JLabel emojiLabel = new JLabel(getCharacterEmoji(character), SwingConstants.CENTER);
         emojiLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
         card.add(emojiLabel, BorderLayout.CENTER);
         
-        // Ability name
+        
         JLabel abilityLabel = new JLabel(character.getAbilityName(), SwingConstants.CENTER);
         abilityLabel.setFont(new Font("Arial", Font.PLAIN, 9));
         abilityLabel.setForeground(Color.LIGHT_GRAY);
@@ -157,7 +157,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 selectCharacter(character, playerNumber);
                 
-                // Highlight selected card
+                
                 for (Component comp : card.getParent().getComponents()) {
                     comp.setBackground(((GameCharacter)getCharacterFromCard(comp)).getCharacterColor().darker());
                 }
@@ -191,7 +191,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             player2SelectedLabel.setText("Selected: " + character.getName());
         }
         
-        // Enable confirm button when both players have selected
+        
         confirmButton.setEnabled(player1Character != null && player2Character != null);
     }
     
