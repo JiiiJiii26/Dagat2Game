@@ -191,87 +191,121 @@ public class MultiplayerBattlePanel extends JPanel {
     }
     
     private void handleOwnBoardClick(int playerNumber, int row, int col) {
+    
+    if (waitingForShadowStepSource && currentSkillPlayer == playerNumber) {
+        shadowStepSourceX = row;
+        shadowStepSourceY = col;
+        waitingForShadowStepSource = false;
+        updateStatusMessage("🌑 Now click on destination on YOUR board!", Color.YELLOW);
+        return;
+    }
+    
+    
+    if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
         
-        if (waitingForShadowStepSource && currentSkillPlayer == playerNumber) {
-            shadowStepSourceX = row;
-            shadowStepSourceY = col;
-            waitingForShadowStepSource = false;
-            updateStatusMessage("🌑 Now click on destination on YOUR board!", Color.YELLOW);
-            return;
-        }
-        
-        
-        if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
-            
-            if (currentSkillName.equals("Shadow Step")) {
-                if (shadowStepSourceX == -1) {
-                    
-                    shadowStepSourceX = row;
-                    shadowStepSourceY = col;
-                    updateStatusMessage("🌑 Click on destination on YOUR board!", Color.YELLOW);
-                    return;
-                } else {
-                    
-                    boolean success = game.useCharacterSkill(playerNumber, currentSkillNumber, 
-                        shadowStepSourceX, shadowStepSourceY, false);
-                    
-                    success = game.useCharacterSkill(playerNumber, currentSkillNumber, row, col, false);
-                    
-                    if (success) {
-                        updateStatusMessage(currentSkillName + " used successfully!", Color.GREEN);
-                        refreshBoards();
-                        if (currentSkillPanel != null) {
-                            currentSkillPanel.updateUI();
-                        }
-                        showPlayerSkills(playerNumber);
-                    } else {
-                        updateStatusMessage("Failed to use " + currentSkillName + "!", Color.RED);
-                    }
-                    
-                    
+        if (currentSkillName.equals("Shadow Step")) {
+            if (shadowStepSourceX == -1) {
+                
+                
+                Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
+                Cell cell = playerBoard.getCell(row, col);
+                
+                if (!cell.hasShip()) {
+                    updateStatusMessage("❌ No ship at this location! Click on a ship to teleport.", Color.RED);
+                    waitingForShadowStepSource = false;
                     waitingForSkillTarget = false;
                     shadowStepSourceX = -1;
                     shadowStepSourceY = -1;
                     currentSkillPlayer = 0;
                     currentSkillNumber = 0;
                     currentSkillName = "";
-                    skillTargetsOwnBoard = false;
                     return;
                 }
+                
+                shadowStepSourceX = row;
+                shadowStepSourceY = col;
+                waitingForShadowStepSource = false;
+                updateStatusMessage("🌑 Now click on destination on YOUR board!", Color.YELLOW);
+                return;
             } else {
                 
-                handleSkillTarget(row, col);
+                
+                Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
+                Cell destCell = playerBoard.getCell(row, col);
+                
+                if (destCell.hasShip()) {
+                    updateStatusMessage("❌ Destination already has a ship! Choose an empty cell.", Color.RED);
+                    
+                    waitingForSkillTarget = false;
+                    waitingForShadowStepSource = false;
+                    shadowStepSourceX = -1;
+                    shadowStepSourceY = -1;
+                    currentSkillPlayer = 0;
+                    currentSkillNumber = 0;
+                    currentSkillName = "";
+                    return;
+                }
+                
+                
+                boolean success = game.useCharacterSkill(playerNumber, currentSkillNumber, 
+                    shadowStepSourceX, shadowStepSourceY, false);
+                
+                success = game.useCharacterSkill(playerNumber, currentSkillNumber, row, col, false);
+                
+                if (success) {
+                    updateStatusMessage("🌑 Shadow Step successful! Ship teleported!", Color.GREEN);
+                    refreshBoards();
+                    if (currentSkillPanel != null) {
+                        currentSkillPanel.updateUI();
+                    }
+                    showPlayerSkills(playerNumber);
+                } else {
+                    updateStatusMessage("Failed to use Shadow Step! Check if ship is damaged or destination invalid.", Color.RED);
+                }
+                
+                
+                waitingForSkillTarget = false;
+                waitingForShadowStepSource = false;
+                shadowStepSourceX = -1;
+                shadowStepSourceY = -1;
+                currentSkillPlayer = 0;
+                currentSkillNumber = 0;
+                currentSkillName = "";
+                skillTargetsOwnBoard = false;
                 return;
             }
-        }
-        
-        
-        if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
-            updateStatusMessage("This skill targets ENEMY board! Click on enemy waters.", Color.RED);
+        } else {
+            
+            handleSkillTarget(row, col);
             return;
         }
-        
-        
-        
-        updateStatusMessage("⚠️ Cannot fire at your own ships! Click on ENEMY waters.", Color.ORANGE);
-        
-        
-        Timer flashTimer = new Timer(100, new ActionListener() {
-            int flashes = 0;
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (flashes >= 3) {
-                    statusLabel.setForeground(Color.WHITE);
-                    ((Timer)e.getSource()).stop();
-                } else {
-                    statusLabel.setForeground(flashes % 2 == 0 ? Color.RED : Color.ORANGE);
-                    flashes++;
-                }
-            }
-        });
-        flashTimer.start();
     }
     
+    
+    if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
+        updateStatusMessage("This skill targets ENEMY board! Click on enemy waters.", Color.RED);
+        return;
+    }
+    
+    
+    updateStatusMessage("⚠️ Cannot fire at your own ships! Click on ENEMY waters.", Color.ORANGE);
+    
+    
+    Timer flashTimer = new Timer(100, new ActionListener() {
+        int flashes = 0;
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (flashes >= 3) {
+                statusLabel.setForeground(Color.WHITE);
+                ((Timer)e.getSource()).stop();
+            } else {
+                statusLabel.setForeground(flashes % 2 == 0 ? Color.RED : Color.ORANGE);
+                flashes++;
+            }
+        }
+    });
+    flashTimer.start();
+}
     private void showPlayerSkills(int playerNumber) {
         skillsPanel.removeAll();
         
@@ -304,100 +338,111 @@ public class MultiplayerBattlePanel extends JPanel {
         skillsPanel.repaint();
     }
     
-    public void useSkill(int playerNumber, int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
-        
-        if ((playerNumber == 1 && !game.isPlayer1Turn()) || (playerNumber == 2 && game.isPlayer1Turn())) {
-            updateStatusMessage("Not your turn!", Color.RED);
-            return;
-        }
-        
-        
-        if (skillName.equals("Shadow Step") && requiresTarget && targetsOwnBoard) {
-            waitingForShadowStepSource = true;
-            currentSkillPlayer = playerNumber;
-            currentSkillNumber = skillNumber;
-            currentSkillName = skillName;
-            skillTargetsOwnBoard = true;
-            shadowStepSourceX = -1;
-            shadowStepSourceY = -1;
-            updateStatusMessage("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
-            return;
-        }
-        
-        if (requiresTarget) {
-            waitingForSkillTarget = true;
-            currentSkillPlayer = playerNumber;
-            currentSkillNumber = skillNumber;
-            currentSkillName = skillName;
-            skillTargetsOwnBoard = targetsOwnBoard;
-            skillRequiresTarget = true;
-            
-            if (requiresDirection) {
-                waitingForDirection = true;
-                
-                String[] options = {"Horizontal (→)", "Vertical (↓)"};
-                int choice = JOptionPane.showOptionDialog(this,
-                    skillName + "\n\nChoose direction:",
-                    "Skill Direction",
-                    JOptionPane.DEFAULT_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-                
-                if (choice >= 0) {
-                    skillDirectionHorizontal = (choice == 0);
-                    waitingForDirection = false;
-                    String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
-                    updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
-                } else {
-                    waitingForSkillTarget = false;
-                    waitingForDirection = false;
-                }
-            } else {
-                String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
-                updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
-            }
-        } else {
-            
-            boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
-            if (success) {
-                updateStatusMessage(skillName + " used successfully!", Color.GREEN);
-                refreshBoards();
-                showPlayerSkills(playerNumber);
-                if (currentSkillPanel != null) {
-                    currentSkillPanel.updateUI();
-                }
-            } else {
-                updateStatusMessage("Failed to use " + skillName + "! Check mana/cooldown.", Color.RED);
-            }
-        }
+ public void useSkill(int playerNumber, int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
+    
+    if ((playerNumber == 1 && !game.isPlayer1Turn()) || (playerNumber == 2 && game.isPlayer1Turn())) {
+        updateStatusMessage("Not your turn!", Color.RED);
+        return;
     }
     
-    private void handleSkillTarget(int row, int col) {
-        if (!waitingForSkillTarget) return;
+    
+    if (skillName.equals("Shadow Step") && requiresTarget && targetsOwnBoard) {
+        waitingForShadowStepSource = true;
+        waitingForSkillTarget = true;  
+        currentSkillPlayer = playerNumber;
+        currentSkillNumber = skillNumber;
+        currentSkillName = skillName;
+        skillTargetsOwnBoard = true;
+        shadowStepSourceX = -1;
+        shadowStepSourceY = -1;
+        updateStatusMessage("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
+        return;
+    }
+    
+    if (requiresTarget) {
+        waitingForSkillTarget = true;
+        currentSkillPlayer = playerNumber;
+        currentSkillNumber = skillNumber;
+        currentSkillName = skillName;
+        skillTargetsOwnBoard = targetsOwnBoard;
+        skillRequiresTarget = true;
         
-        boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
+        if (requiresDirection) {
+            waitingForDirection = true;
+            
+            String[] options = {"Horizontal (→)", "Vertical (↓)"};
+            int choice = JOptionPane.showOptionDialog(this,
+                skillName + "\n\nChoose direction:",
+                "Skill Direction",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+            
+            if (choice >= 0) {
+                skillDirectionHorizontal = (choice == 0);
+                waitingForDirection = false;
+                String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
+                updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
+            } else {
+                waitingForSkillTarget = false;
+                waitingForDirection = false;
+            }
+        } else {
+            String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
+            updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
+        }
+    } else {
         
+        boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
         if (success) {
-            updateStatusMessage(currentSkillName + " used successfully!", Color.GREEN);
+            updateStatusMessage(skillName + " used successfully!", Color.GREEN);
             refreshBoards();
+            showPlayerSkills(playerNumber);
             if (currentSkillPanel != null) {
                 currentSkillPanel.updateUI();
             }
-            showPlayerSkills(currentSkillPlayer);
         } else {
-            updateStatusMessage("Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
+            updateStatusMessage("Failed to use " + skillName + "! Check mana/cooldown.", Color.RED);
         }
-        
-        waitingForSkillTarget = false;
-        waitingForDirection = false;
-        currentSkillPlayer = 0;
-        currentSkillNumber = 0;
-        currentSkillName = "";
-        skillTargetsOwnBoard = false;
-        skillRequiresTarget = false;
     }
+}
+    
+   private void handleSkillTarget(int row, int col) {
+    if (!waitingForSkillTarget) return;
+    
+    
+    if (!currentSkillName.equals("Shadow Step")) {
+        shadowStepSourceX = -1;
+        shadowStepSourceY = -1;
+        waitingForShadowStepSource = false;
+    }
+    
+    boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
+    
+    if (success) {
+        updateStatusMessage(currentSkillName + " used successfully!", Color.GREEN);
+        refreshBoards();
+        if (currentSkillPanel != null) {
+            currentSkillPanel.updateUI();
+        }
+        showPlayerSkills(currentSkillPlayer);
+    } else {
+        updateStatusMessage("Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
+    }
+    
+    waitingForSkillTarget = false;
+    waitingForDirection = false;
+    waitingForShadowStepSource = false;
+    shadowStepSourceX = -1;
+    shadowStepSourceY = -1;
+    currentSkillPlayer = 0;
+    currentSkillNumber = 0;
+    currentSkillName = "";
+    skillTargetsOwnBoard = false;
+    skillRequiresTarget = false;
+}
     
   private JPanel createBoardPanel(String title, Board board, boolean showShips, boolean isPlayerBoard) {
     JPanel panel = new JPanel(new BorderLayout());
