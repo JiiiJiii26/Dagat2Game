@@ -23,19 +23,17 @@ public class MultiplayerBattlePanel extends JPanel {
     private JPanel boardsPanel;
     private JPanel skillsPanel;
     private SkillPanel currentSkillPanel;
-    private int currentPlayer = 1;
+    private JButton endTurnButton;  // New End Turn button
     
-    
+    // Skill targeting states
     private boolean waitingForSkillTarget = false;
     private int currentSkillPlayer = 0;
     private int currentSkillNumber = 0;
     private String currentSkillName = "";
-    private boolean waitingForDirection = false;
     private boolean skillDirectionHorizontal = true;
     private boolean skillTargetsOwnBoard = false;
-    private boolean skillRequiresTarget = false;
     
-    
+    // For Shadow Step - two step process
     private boolean waitingForShadowStepSource = false;
     private int shadowStepSourceX = -1;
     private int shadowStepSourceY = -1;
@@ -50,7 +48,6 @@ public class MultiplayerBattlePanel extends JPanel {
     }
     
     private void createGamePanels() {
-        
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(new Color(25, 25, 112));
         topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -60,16 +57,14 @@ public class MultiplayerBattlePanel extends JPanel {
         turnLabel.setForeground(new Color(173, 216, 230));
         topPanel.add(turnLabel, BorderLayout.CENTER);
         
-        
         JPanel mainContentPanel = new JPanel(new BorderLayout());
         mainContentPanel.setBackground(new Color(25, 25, 112));
-        
         
         boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         boardsPanel.setBackground(new Color(25, 25, 112));
         boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        
+        // Skills panel with End Turn button
         skillsPanel = new JPanel(new BorderLayout());
         skillsPanel.setBackground(new Color(25, 25, 112));
         skillsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -77,7 +72,6 @@ public class MultiplayerBattlePanel extends JPanel {
         
         mainContentPanel.add(boardsPanel, BorderLayout.CENTER);
         mainContentPanel.add(skillsPanel, BorderLayout.EAST);
-        
         
         JPanel counterPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         counterPanel.setBackground(new Color(25, 25, 112));
@@ -94,15 +88,30 @@ public class MultiplayerBattlePanel extends JPanel {
         counterPanel.add(player1ShipsLabel);
         counterPanel.add(player2ShipsLabel);
         
-        
-        JPanel statusPanel = new JPanel();
+        // Status panel with End Turn button
+        JPanel statusPanel = new JPanel(new BorderLayout());
         statusPanel.setBackground(new Color(25, 25, 112));
-        statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+        statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
         
         statusLabel = new JLabel("Click on enemy waters to fire!", SwingConstants.CENTER);
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         statusLabel.setForeground(Color.WHITE);
-        statusPanel.add(statusLabel);
+        
+        // Create End Turn button
+        endTurnButton = new JButton("END TURN");
+        endTurnButton.setFont(new Font("Arial", Font.BOLD, 16));
+        endTurnButton.setBackground(new Color(255, 100, 100));
+        endTurnButton.setForeground(Color.WHITE);
+        endTurnButton.setFocusPainted(false);
+        endTurnButton.setPreferredSize(new Dimension(120, 40));
+        endTurnButton.addActionListener(e -> endTurn());
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(new Color(25, 25, 112));
+        buttonPanel.add(endTurnButton);
+        
+        statusPanel.add(statusLabel, BorderLayout.CENTER);
+        statusPanel.add(buttonPanel, BorderLayout.EAST);
         
         add(topPanel, BorderLayout.NORTH);
         add(mainContentPanel, BorderLayout.CENTER);
@@ -110,202 +119,182 @@ public class MultiplayerBattlePanel extends JPanel {
         add(statusPanel, BorderLayout.SOUTH);
     }
     
-   private void updateBoardViews() {
-    boardsPanel.removeAll();
-    
-    if (game.isPlayer1Turn()) {
-        currentPlayer = 1;
+    private void endTurn() {
+        // Check if waiting for a skill target
+        if (waitingForSkillTarget || waitingForShadowStepSource) {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "You have an active skill targeting. End turn anyway?",
+                "Cancel Skill",
+                JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) {
+                return;
+            }
+            // Cancel the active skill
+            cancelCurrentSkill();
+        }
         
+        // Switch turns
+        boolean wasPlayer1Turn = game.isPlayer1Turn();
         
-        JPanel player1View = createBoardPanel("YOUR FLEET", game.getPlayer1Board(), true, true);
+        // Switch turn
+        if (wasPlayer1Turn) {
+            game.setPlayer1Turn(false);
+        } else {
+            game.setPlayer1Turn(true);
+        }
         
-        JPanel player2View = createBoardPanel("ENEMY WATERS", game.getPlayer2Board(), false, false);
-        boardsPanel.add(player1View);
-        boardsPanel.add(player2View);
+        // Notify listener
+        if (game.getListener() != null) {
+            game.getListener().onPlayerTurn(game.getCurrentPlayer());
+        }
         
-        player1BoardPanel = (BoardPanel) ((JPanel) player1View.getComponent(1));
-        player2BoardPanel = (BoardPanel) ((JPanel) player2View.getComponent(1));
-        
-        
-        player1BoardPanel.setPlayerClickHandler((row, col) -> {
-            handleOwnBoardClick(1, row, col);
-        });
-        
-        
-        player2BoardPanel.setEnemyClickHandler((row, col) -> {
-            handleEnemyBoardClick(1, row, col);
-        });
-        
-        
-        showPlayerSkills(1);
-        
-    } else {
-        currentPlayer = 2;
-        
-        
-        JPanel player2View = createBoardPanel("YOUR FLEET", game.getPlayer2Board(), true, true);
-        
-        JPanel player1View = createBoardPanel("ENEMY WATERS", game.getPlayer1Board(), false, false);
-        boardsPanel.add(player2View);
-        boardsPanel.add(player1View);
-        
-        player2BoardPanel = (BoardPanel) ((JPanel) player2View.getComponent(1));
-        player1BoardPanel = (BoardPanel) ((JPanel) player1View.getComponent(1));
-        
-        
-        player2BoardPanel.setPlayerClickHandler((row, col) -> {
-            handleOwnBoardClick(2, row, col);
-        });
-        
-        
-        player1BoardPanel.setEnemyClickHandler((row, col) -> {
-            handleEnemyBoardClick(2, row, col);
-        });
-        
-        
-        showPlayerSkills(2);
+        // Update the UI
+        updateBoardViews();
+        updateStatusMessage("Turn ended! Now it's " + (game.isPlayer1Turn() ? "PLAYER 1's" : "PLAYER 2's") + " turn!", Color.YELLOW);
     }
     
-    boardsPanel.revalidate();
-    boardsPanel.repaint();
-    
-    updateTurnDisplay();
-    updateShipCounts();
-}
+    private void updateBoardViews() {
+        boardsPanel.removeAll();
+        
+        if (game.isPlayer1Turn()) {
+            // Player 1's turn
+            JPanel player1View = createBoardPanel("YOUR FLEET", game.getPlayer1Board(), true, true);
+            JPanel player2View = createBoardPanel("ENEMY WATERS", game.getPlayer2Board(), false, false);
+            boardsPanel.add(player1View);
+            boardsPanel.add(player2View);
+            
+            player1BoardPanel = (BoardPanel) ((JPanel) player1View.getComponent(1));
+            player2BoardPanel = (BoardPanel) ((JPanel) player2View.getComponent(1));
+            
+            player1BoardPanel.setPlayerClickHandler((row, col) -> {
+                handleOwnBoardClick(1, row, col);
+            });
+            
+            player2BoardPanel.setEnemyClickHandler((row, col) -> {
+                handleEnemyBoardClick(1, row, col);
+            });
+            
+            showPlayerSkills(1);
+            
+        } else {
+            // Player 2's turn
+            JPanel player2View = createBoardPanel("YOUR FLEET", game.getPlayer2Board(), true, true);
+            JPanel player1View = createBoardPanel("ENEMY WATERS", game.getPlayer1Board(), false, false);
+            boardsPanel.add(player2View);
+            boardsPanel.add(player1View);
+            
+            player2BoardPanel = (BoardPanel) ((JPanel) player2View.getComponent(1));
+            player1BoardPanel = (BoardPanel) ((JPanel) player1View.getComponent(1));
+            
+            player2BoardPanel.setPlayerClickHandler((row, col) -> {
+                handleOwnBoardClick(2, row, col);
+            });
+            
+            player1BoardPanel.setEnemyClickHandler((row, col) -> {
+                handleEnemyBoardClick(2, row, col);
+            });
+            
+            showPlayerSkills(2);
+        }
+        
+        boardsPanel.revalidate();
+        boardsPanel.repaint();
+        
+        updateTurnDisplay();
+        updateShipCounts();
+    }
     
     private void handleEnemyBoardClick(int playerNumber, int row, int col) {
-        
+        // Check if waiting for skill target on enemy board
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
             handleSkillTarget(row, col);
             return;
         }
         
-        
+        // Check if waiting for skill target but it targets own board
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
             updateStatusMessage("This skill targets YOUR board! Click on your fleet.", Color.RED);
             return;
         }
         
-        
+        // Normal attack on enemy board
         handleShot(playerNumber, row, col);
     }
     
     private void handleOwnBoardClick(int playerNumber, int row, int col) {
-    
-    if (waitingForShadowStepSource && currentSkillPlayer == playerNumber) {
-        shadowStepSourceX = row;
-        shadowStepSourceY = col;
-        waitingForShadowStepSource = false;
-        updateStatusMessage("🌑 Now click on destination on YOUR board!", Color.YELLOW);
-        return;
-    }
-    
-    
-    if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
-        
-        if (currentSkillName.equals("Shadow Step")) {
-            if (shadowStepSourceX == -1) {
-                
-                
-                Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
-                Cell cell = playerBoard.getCell(row, col);
-                
-                if (!cell.hasShip()) {
-                    updateStatusMessage("❌ No ship at this location! Click on a ship to teleport.", Color.RED);
-                    waitingForShadowStepSource = false;
-                    waitingForSkillTarget = false;
-                    shadowStepSourceX = -1;
-                    shadowStepSourceY = -1;
-                    currentSkillPlayer = 0;
-                    currentSkillNumber = 0;
-                    currentSkillName = "";
-                    return;
-                }
-                
-                shadowStepSourceX = row;
-                shadowStepSourceY = col;
-                waitingForShadowStepSource = false;
-                updateStatusMessage("🌑 Now click on destination on YOUR board!", Color.YELLOW);
-                return;
-            } else {
-                
-                
-                Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
-                Cell destCell = playerBoard.getCell(row, col);
-                
-                if (destCell.hasShip()) {
-                    updateStatusMessage("❌ Destination already has a ship! Choose an empty cell.", Color.RED);
-                    
-                    waitingForSkillTarget = false;
-                    waitingForShadowStepSource = false;
-                    shadowStepSourceX = -1;
-                    shadowStepSourceY = -1;
-                    currentSkillPlayer = 0;
-                    currentSkillNumber = 0;
-                    currentSkillName = "";
-                    return;
-                }
-                
-                
-                boolean success = game.useCharacterSkill(playerNumber, currentSkillNumber, 
-                    shadowStepSourceX, shadowStepSourceY, false);
-                
-                success = game.useCharacterSkill(playerNumber, currentSkillNumber, row, col, false);
-                
-                if (success) {
-                    updateStatusMessage("🌑 Shadow Step successful! Ship teleported!", Color.GREEN);
-                    refreshBoards();
-                    if (currentSkillPanel != null) {
-                        currentSkillPanel.updateUI();
-                    }
-                    showPlayerSkills(playerNumber);
-                } else {
-                    updateStatusMessage("Failed to use Shadow Step! Check if ship is damaged or destination invalid.", Color.RED);
-                }
-                
-                
-                waitingForSkillTarget = false;
-                waitingForShadowStepSource = false;
-                shadowStepSourceX = -1;
-                shadowStepSourceY = -1;
-                currentSkillPlayer = 0;
-                currentSkillNumber = 0;
-                currentSkillName = "";
-                skillTargetsOwnBoard = false;
+        // Check for Shadow Step destination selection
+        if (waitingForShadowStepSource && currentSkillPlayer == playerNumber && shadowStepSourceX != -1) {
+            Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
+            Cell destCell = playerBoard.getCell(row, col);
+            
+            if (destCell.hasShip()) {
+                updateStatusMessage("❌ Destination already has a ship! Choose an empty cell.", Color.RED);
+                cancelCurrentSkill();
                 return;
             }
-        } else {
             
+            boolean success = game.useShadowStep(playerNumber, shadowStepSourceX, shadowStepSourceY, row, col);
+            
+            if (success) {
+                updateStatusMessage("🌑 Shadow Step successful! Ship teleported!", Color.GREEN);
+                refreshBoards();
+                if (currentSkillPanel != null) {
+                    currentSkillPanel.updateUI();
+                }
+                showPlayerSkills(playerNumber);
+            } else {
+                updateStatusMessage("Failed to use Shadow Step!", Color.RED);
+            }
+            
+            cancelCurrentSkill();
+            return;
+        }
+        
+        // Check for Shadow Step source selection
+        if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard && currentSkillName.equals("Shadow Step")) {
+            Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
+            Cell cell = playerBoard.getCell(row, col);
+            
+            if (!cell.hasShip()) {
+                updateStatusMessage("❌ No ship at this location! Click on a ship to teleport.", Color.RED);
+                cancelCurrentSkill();
+                return;
+            }
+            
+            shadowStepSourceX = row;
+            shadowStepSourceY = col;
+            waitingForShadowStepSource = true;
+            updateStatusMessage("🌑 Now click on destination on YOUR board!", Color.YELLOW);
+            return;
+        }
+        
+        // Check for other skills that target own board
+        if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
             handleSkillTarget(row, col);
             return;
         }
-    }
-    
-    
-    if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
-        updateStatusMessage("This skill targets ENEMY board! Click on enemy waters.", Color.RED);
-        return;
-    }
-    
-    
-    updateStatusMessage("⚠️ Cannot fire at your own ships! Click on ENEMY waters.", Color.ORANGE);
-    
-    
-    Timer flashTimer = new Timer(100, new ActionListener() {
-        int flashes = 0;
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (flashes >= 3) {
-                statusLabel.setForeground(Color.WHITE);
-                ((Timer)e.getSource()).stop();
-            } else {
-                statusLabel.setForeground(flashes % 2 == 0 ? Color.RED : Color.ORANGE);
-                flashes++;
-            }
+        
+        // If waiting for skill target on enemy board
+        if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
+            updateStatusMessage("This skill targets ENEMY board! Click on enemy waters.", Color.RED);
+            return;
         }
-    });
-    flashTimer.start();
-}
+        
+        // Click on own board without active skill
+        updateStatusMessage("⚠️ Cannot fire at your own ships! Click on ENEMY waters or press END TURN.", Color.ORANGE);
+    }
+    
+    private void cancelCurrentSkill() {
+        waitingForSkillTarget = false;
+        waitingForShadowStepSource = false;
+        shadowStepSourceX = -1;
+        shadowStepSourceY = -1;
+        currentSkillPlayer = 0;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        skillTargetsOwnBoard = false;
+    }
+    
     private void showPlayerSkills(int playerNumber) {
         skillsPanel.removeAll();
         
@@ -317,7 +306,6 @@ public class MultiplayerBattlePanel extends JPanel {
                 (playerNumber == 1) ? player1BoardPanel : player2BoardPanel,
                 (playerNumber == 1) ? player2BoardPanel : player1BoardPanel
             );
-            
             
             currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
                 @Override
@@ -338,127 +326,102 @@ public class MultiplayerBattlePanel extends JPanel {
         skillsPanel.repaint();
     }
     
- public void useSkill(int playerNumber, int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
-    
-    if ((playerNumber == 1 && !game.isPlayer1Turn()) || (playerNumber == 2 && game.isPlayer1Turn())) {
-        updateStatusMessage("Not your turn!", Color.RED);
-        return;
-    }
-    
-    
-    if (skillName.equals("Shadow Step") && requiresTarget && targetsOwnBoard) {
-        waitingForShadowStepSource = true;
-        waitingForSkillTarget = true;  
-        currentSkillPlayer = playerNumber;
-        currentSkillNumber = skillNumber;
-        currentSkillName = skillName;
-        skillTargetsOwnBoard = true;
-        shadowStepSourceX = -1;
-        shadowStepSourceY = -1;
-        updateStatusMessage("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
-        return;
-    }
-    
-    if (requiresTarget) {
-        waitingForSkillTarget = true;
-        currentSkillPlayer = playerNumber;
-        currentSkillNumber = skillNumber;
-        currentSkillName = skillName;
-        skillTargetsOwnBoard = targetsOwnBoard;
-        skillRequiresTarget = true;
+    public void useSkill(int playerNumber, int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
+        if ((playerNumber == 1 && !game.isPlayer1Turn()) || (playerNumber == 2 && game.isPlayer1Turn())) {
+            updateStatusMessage("Not your turn!", Color.RED);
+            return;
+        }
         
-        if (requiresDirection) {
-            waitingForDirection = true;
+        if (skillName.equals("Shadow Step") && requiresTarget && targetsOwnBoard) {
+            waitingForSkillTarget = true;
+            currentSkillPlayer = playerNumber;
+            currentSkillNumber = skillNumber;
+            currentSkillName = skillName;
+            skillTargetsOwnBoard = true;
+            waitingForShadowStepSource = false;
+            shadowStepSourceX = -1;
+            shadowStepSourceY = -1;
+            updateStatusMessage("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
+            return;
+        }
+        
+        if (requiresTarget) {
+            waitingForSkillTarget = true;
+            currentSkillPlayer = playerNumber;
+            currentSkillNumber = skillNumber;
+            currentSkillName = skillName;
+            skillTargetsOwnBoard = targetsOwnBoard;
             
-            String[] options = {"Horizontal (→)", "Vertical (↓)"};
-            int choice = JOptionPane.showOptionDialog(this,
-                skillName + "\n\nChoose direction:",
-                "Skill Direction",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]);
-            
-            if (choice >= 0) {
-                skillDirectionHorizontal = (choice == 0);
-                waitingForDirection = false;
+            if (requiresDirection) {
+                String[] options = {"Horizontal (→)", "Vertical (↓)"};
+                int choice = JOptionPane.showOptionDialog(this,
+                    skillName + "\n\nChoose direction:",
+                    "Skill Direction",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0]);
+                
+                if (choice >= 0) {
+                    skillDirectionHorizontal = (choice == 0);
+                    String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
+                    updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
+                } else {
+                    waitingForSkillTarget = false;
+                }
+            } else {
                 String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
                 updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
-            } else {
-                waitingForSkillTarget = false;
-                waitingForDirection = false;
             }
         } else {
-            String targetBoard = targetsOwnBoard ? "YOUR board" : "ENEMY board";
-            updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
+            boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
+            if (success) {
+                updateStatusMessage(skillName + " used successfully!", Color.GREEN);
+                refreshBoards();
+                showPlayerSkills(playerNumber);
+                if (currentSkillPanel != null) {
+                    currentSkillPanel.updateUI();
+                }
+            } else {
+                updateStatusMessage("Failed to use " + skillName + "! Check mana/cooldown.", Color.RED);
+            }
         }
-    } else {
+    }
+    
+    private void handleSkillTarget(int row, int col) {
+        if (!waitingForSkillTarget) return;
         
-        boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
+        boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
+        
         if (success) {
-            updateStatusMessage(skillName + " used successfully!", Color.GREEN);
+            updateStatusMessage(currentSkillName + " used successfully!", Color.GREEN);
             refreshBoards();
-            showPlayerSkills(playerNumber);
             if (currentSkillPanel != null) {
                 currentSkillPanel.updateUI();
             }
+            showPlayerSkills(currentSkillPlayer);
         } else {
-            updateStatusMessage("Failed to use " + skillName + "! Check mana/cooldown.", Color.RED);
+            updateStatusMessage("Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
         }
-    }
-}
-    
-   private void handleSkillTarget(int row, int col) {
-    if (!waitingForSkillTarget) return;
-    
-    
-    if (!currentSkillName.equals("Shadow Step")) {
-        shadowStepSourceX = -1;
-        shadowStepSourceY = -1;
-        waitingForShadowStepSource = false;
+        
+        cancelCurrentSkill();
     }
     
-    boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
-    
-    if (success) {
-        updateStatusMessage(currentSkillName + " used successfully!", Color.GREEN);
-        refreshBoards();
-        if (currentSkillPanel != null) {
-            currentSkillPanel.updateUI();
-        }
-        showPlayerSkills(currentSkillPlayer);
-    } else {
-        updateStatusMessage("Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
+    private JPanel createBoardPanel(String title, Board board, boolean showShips, boolean isPlayerBoard) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(25, 25, 112));
+        
+        JLabel label = new JLabel(title, SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 18));
+        label.setForeground(Color.WHITE);
+        panel.add(label, BorderLayout.NORTH);
+        
+        BoardPanel boardPanel = new BoardPanel(isPlayerBoard, board, showShips);
+        panel.add(boardPanel, BorderLayout.CENTER);
+        
+        return panel;
     }
-    
-    waitingForSkillTarget = false;
-    waitingForDirection = false;
-    waitingForShadowStepSource = false;
-    shadowStepSourceX = -1;
-    shadowStepSourceY = -1;
-    currentSkillPlayer = 0;
-    currentSkillNumber = 0;
-    currentSkillName = "";
-    skillTargetsOwnBoard = false;
-    skillRequiresTarget = false;
-}
-    
-  private JPanel createBoardPanel(String title, Board board, boolean showShips, boolean isPlayerBoard) {
-    JPanel panel = new JPanel(new BorderLayout());
-    panel.setBackground(new Color(25, 25, 112));
-    
-    JLabel label = new JLabel(title, SwingConstants.CENTER);
-    label.setFont(new Font("Arial", Font.BOLD, 18));
-    label.setForeground(Color.WHITE);
-    panel.add(label, BorderLayout.NORTH);
-    
-    
-    BoardPanel boardPanel = new BoardPanel(isPlayerBoard, board, showShips);
-    panel.add(boardPanel, BorderLayout.CENTER);
-    
-    return panel;
-}
     
     private void handleShot(int playerNumber, int row, int col) {
         boolean wasPlayer1Turn = game.isPlayer1Turn();
@@ -495,7 +458,6 @@ public class MultiplayerBattlePanel extends JPanel {
         updateShipCounts();
         
         if (wasPlayer1Turn != game.isPlayer1Turn()) {
-            
             updateBoardViews();
         } else {
             updateTurnDisplay();
@@ -517,19 +479,7 @@ public class MultiplayerBattlePanel extends JPanel {
                 player2BoardPanel.setPlayerClickHandler(null);
             }
             
-            Timer timer = new Timer(3000, e -> {
-                int playAgain = JOptionPane.showConfirmDialog(this,
-                    "🏆 " + winner + " WINS! 🏆\n\nPlay again?",
-                    "Game Over",
-                    JOptionPane.YES_NO_OPTION);
-                if (playAgain == JOptionPane.YES_OPTION) {
-                    
-                } else {
-                    System.exit(0);
-                }
-            });
-            timer.setRepeats(false);
-            timer.start();
+            endTurnButton.setEnabled(false);
         }
     }
     
@@ -537,9 +487,11 @@ public class MultiplayerBattlePanel extends JPanel {
         if (game.isPlayer1Turn()) {
             turnLabel.setText("PLAYER 1'S TURN");
             turnLabel.setForeground(new Color(100, 255, 100));
+            endTurnButton.setBackground(new Color(255, 100, 100));
         } else {
             turnLabel.setText("PLAYER 2'S TURN");
             turnLabel.setForeground(new Color(255, 100, 100));
+            endTurnButton.setBackground(new Color(100, 255, 100));
         }
     }
     

@@ -3,18 +3,18 @@ package game;
 import models.Board;
 import models.Ship;
 import models.Cell;
-import characters.GameCharacter;
 import characters.*;
 import java.util.ArrayList;
+import java.awt.Color;
 
 public class LocalMultiplayer {
     
     private Board player1Board;
     private Board player2Board;
     private boolean player1Turn = true;
+    private GameListener listener;
     private GameCharacter player1Character;
     private GameCharacter player2Character;
-    private GameListener listener;
     
     public interface GameListener {
         void onGameStart();
@@ -97,32 +97,6 @@ public class LocalMultiplayer {
         }
         
         Board targetBoard = (playerNumber == 1) ? player2Board : player1Board;
-        GameCharacter attackingChar = (playerNumber == 1) ? player1Character : player2Character;
-        GameCharacter defendingChar = (playerNumber == 1) ? player2Character : player1Character;
-        
-        
-        if (defendingChar instanceof Valerius && ((Valerius) defendingChar).areEnemySkillsDisabled()) {
-            System.out.println("🚫 Enemy skills are disabled!");
-        }
-        
-        
-        if (defendingChar instanceof Jiji) {
-            Jiji jiji = (Jiji) defendingChar;
-            Cell targetCell = targetBoard.getCell(x, y);
-            
-            
-            if (targetCell.hasShip() && targetCell.getShip() != null && targetCell.getShip().isShielded()) {
-                System.out.println("🔵 Shield blocked the attack!");
-                return ShotResult.MISS;
-            }
-        }
-        
-        
-        if (defendingChar instanceof Morgana && ((Morgana) defendingChar).isEnemyConfusedActive()) {
-            System.out.println("🎵 Enemy is confused!");
-            
-        }
-        
         
         ShotResult result = targetBoard.fire(x, y);
         
@@ -140,26 +114,24 @@ public class LocalMultiplayer {
             }
         } else {
             
-            if (result == ShotResult.MISS) {
+            boolean extraTurn = false;
+            
+            
+            GameCharacter attackingChar = (playerNumber == 1) ? player1Character : player2Character;
+            if (attackingChar instanceof Jiji && ((Jiji) attackingChar).isOverclockActive() && result == ShotResult.HIT) {
+                extraTurn = true;
+                System.out.println("⚡ Overclock grants an extra turn!");
+            }
+            
+            
+            if (!extraTurn) {
                 player1Turn = !player1Turn;
+                System.out.println("Turn switched to Player " + (player1Turn ? 1 : 2));
                 if (listener != null) {
                     listener.onPlayerTurn(getCurrentPlayer());
                 }
             } else {
-                
-                boolean extraTurn = false;
-                
-                if (attackingChar instanceof Jiji && ((Jiji) attackingChar).isOverclockActive()) {
-                    extraTurn = true;
-                    System.out.println("⚡ Overclock grants an extra turn!");
-                }
-                
-                if (!extraTurn) {
-                    player1Turn = !player1Turn;
-                    if (listener != null) {
-                        listener.onPlayerTurn(getCurrentPlayer());
-                    }
-                }
+                System.out.println("Extra turn! Player " + playerNumber + " goes again.");
             }
         }
         
@@ -196,7 +168,7 @@ public class LocalMultiplayer {
     
     public boolean useCharacterSkill(int playerNumber, int skillNumber, int x, int y, boolean horizontal) {
         if ((playerNumber == 1 && !player1Turn) || (playerNumber == 2 && player1Turn)) {
-            System.out.println("Not your turn!");
+            System.out.println("Not your turn for skill!");
             return false;
         }
         
@@ -204,158 +176,273 @@ public class LocalMultiplayer {
         Board targetBoard = (playerNumber == 1) ? player2Board : player1Board;
         Board playerBoard = (playerNumber == 1) ? player1Board : player2Board;
         
+        if (character == null) {
+            System.out.println("No character for player " + playerNumber);
+            return false;
+        }
+        
         boolean success = false;
-        String skillName = "";
+        boolean shouldSwitchTurn = true; 
+        
+        System.out.println("useCharacterSkill called - Player: " + playerNumber + 
+                           ", Skill: " + skillNumber + 
+                           ", Coordinates: (" + x + "," + y + 
+                           "), Horizontal: " + horizontal);
+        
         
         if (character instanceof Jiji) {
             Jiji jiji = (Jiji) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Data Leech";
+                case 1: 
                     success = jiji.useDataLeech(targetBoard);
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Overclock";
+                case 2: 
                     success = jiji.useOverclock();
+                    shouldSwitchTurn = false; 
                     break;
-                case 3:
-                    skillName = "System Overload";
+                case 3: 
                     success = jiji.useSystemOverload(targetBoard);
+                    shouldSwitchTurn = true;
                     break;
             }
         } else if (character instanceof Kael) {
             Kael kael = (Kael) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Shadow Step";
-                    success = kael.useShadowStep(playerBoard, x, y, x, y);
+                case 1: 
+                    
+                    success = false;
+                    shouldSwitchTurn = false;
                     break;
-                case 2:
-                    skillName = "Shadow Blade";
+                case 2: 
                     int destroyed = kael.useShadowBlade(targetBoard, x, y, horizontal);
                     success = destroyed > 0;
+                    shouldSwitchTurn = true;
+                    System.out.println("Shadow Blade destroyed " + destroyed + " cells");
                     break;
-                case 3:
-                    skillName = "Shadow Domain";
+                case 3: 
                     destroyed = kael.useShadowDomain(targetBoard, x, y);
                     success = destroyed > 0;
+                    shouldSwitchTurn = true;
+                    System.out.println("Shadow Domain destroyed " + destroyed + " cells");
                     break;
             }
         } else if (character instanceof Valerius) {
             Valerius valerius = (Valerius) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Radar Overload";
+                case 1: 
                     success = valerius.useRadarOverload();
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Precision Strike";
+                case 2: 
                     if (valerius.usePrecisionStrike()) {
                         int destroyed = valerius.applyPrecisionStrike(targetBoard, x, y, horizontal);
                         success = destroyed > 0;
+                        shouldSwitchTurn = true;
                     }
                     break;
-                case 3:
-                    skillName = "Fortress Mode";
+                case 3: 
                     success = valerius.useFortressMode();
+                    shouldSwitchTurn = true;
                     break;
             }
         } else if (character instanceof Skye) {
             Skye skye = (Skye) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Catnip Explosion";
+                case 1: 
                     int destroyed = skye.useCatnipExplosion(targetBoard, x, y);
                     success = destroyed > 0;
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Laser Pointer";
+                case 2: 
                     success = skye.useLaserPointer();
+                    shouldSwitchTurn = true;
                     break;
-                case 3:
-                    skillName = "Nine Lives";
+                case 3: 
                     success = skye.useNineLives(playerBoard, x, y);
+                    shouldSwitchTurn = true;
                     break;
             }
         } else if (character instanceof Morgana) {
             Morgana morgana = (Morgana) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Enchanting Melody";
+                case 1: 
                     success = morgana.useEnchantingMelody();
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Whirlpool Trap";
+                case 2: 
                     success = morgana.useWhirlpoolTrap(targetBoard, x, y);
+                    shouldSwitchTurn = true;
                     break;
-                case 3:
-                    skillName = "Storm Call";
-                    success = morgana.useStormCall(targetBoard) > 0;
+                case 3: 
+                    int flooded = morgana.useStormCall(targetBoard);
+                    success = flooded > 0;
+                    shouldSwitchTurn = true;
                     break;
             }
         } else if (character instanceof Aeris) {
             Aeris aeris = (Aeris) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Adaptive Instinct";
+                case 1: 
                     success = aeris.useAdaptiveInstinct(playerBoard, -1);
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Multitask Overdrive";
+                case 2: 
                     success = aeris.useMultitaskOverdrive();
+                    shouldSwitchTurn = false; 
                     break;
-                case 3:
-                    skillName = "Relentless Ascent";
+                case 3: 
                     int destroyed = aeris.useRelentlessAscent(targetBoard, y);
                     success = destroyed > 0;
+                    shouldSwitchTurn = true;
                     break;
             }
         } else if (character instanceof Selene) {
             Selene selene = (Selene) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Lunar Reveal";
+                case 1: 
                     success = selene.useLunarReveal(targetBoard, x, y);
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Crescent Strike";
+                case 2: 
                     int destroyed = selene.useCrescentStrike(targetBoard, x, y);
                     success = destroyed > 0;
+                    shouldSwitchTurn = true;
                     break;
-                case 3:
-                    skillName = "Starfall Link";
+                case 3: 
                     success = selene.useStarfallLink(targetBoard);
+                    shouldSwitchTurn = true;
                     break;
             }
         } else if (character instanceof Flue) {
             Flue flue = (Flue) character;
             switch(skillNumber) {
-                case 1:
-                    skillName = "Corruption.EXE";
+                case 1: 
                     success = flue.useCorruption(targetBoard, x, y);
+                    shouldSwitchTurn = true;
                     break;
-                case 2:
-                    skillName = "Fortification.GRID";
+                case 2: 
                     success = flue.useFortification(playerBoard, x, y);
+                    shouldSwitchTurn = true;
                     break;
-                case 3:
-                    skillName = "Kernel.Decimation.REQ";
+                case 3: 
                     success = flue.useKernelDecimation(targetBoard, x, y);
+                    shouldSwitchTurn = true;
                     break;
             }
         }
         
         if (listener != null) {
-            listener.onCharacterSkillUsed(playerNumber, skillName, success);
+            listener.onCharacterSkillUsed(playerNumber, getSkillName(character, skillNumber), success);
         }
         
         
-        if (listener != null) {
-            listener.onBoardUpdate(playerBoard, playerNumber == 1);
-            listener.onBoardUpdate(targetBoard, playerNumber != 1);
+        updateCharacter(character);
+        
+        
+        if (success && shouldSwitchTurn) {
+            player1Turn = !player1Turn;
+            System.out.println("Skill used - Turn switched to Player " + (player1Turn ? 1 : 2));
+            if (listener != null) {
+                listener.onPlayerTurn(getCurrentPlayer());
+            }
+        } else if (success && !shouldSwitchTurn) {
+            System.out.println("Skill used - Turn remains with Player " + playerNumber);
+        } else {
+            System.out.println("Skill failed - Turn remains with Player " + playerNumber);
         }
         
         return success;
+    }
+    
+    public boolean useShadowStep(int playerNumber, int sourceX, int sourceY, int destX, int destY) {
+        if ((playerNumber == 1 && !player1Turn) || (playerNumber == 2 && player1Turn)) {
+            System.out.println("Not your turn for Shadow Step!");
+            return false;
+        }
+        
+        GameCharacter character = (playerNumber == 1) ? player1Character : player2Character;
+        Board playerBoard = (playerNumber == 1) ? player1Board : player2Board;
+        
+        if (character instanceof Kael) {
+            Kael kael = (Kael) character;
+            boolean success = kael.useShadowStep(playerBoard, sourceX, sourceY, destX, destY);
+            
+            if (listener != null) {
+                listener.onCharacterSkillUsed(playerNumber, "Shadow Step", success);
+            }
+            
+            
+            updateCharacter(character);
+            
+            
+            if (success) {
+                player1Turn = !player1Turn;
+                System.out.println("Shadow Step - Turn switched to Player " + (player1Turn ? 1 : 2));
+                if (listener != null) {
+                    listener.onPlayerTurn(getCurrentPlayer());
+                }
+            } else {
+                System.out.println("Shadow Step failed - Turn remains with Player " + playerNumber);
+            }
+            
+            return success;
+        }
+        
+        return false;
+    }
+    
+    private String getSkillName(GameCharacter character, int skillNumber) {
+        if (character instanceof Jiji) {
+            switch(skillNumber) {
+                case 1: return "Data Leech";
+                case 2: return "Overclock";
+                case 3: return "System Overload";
+            }
+        } else if (character instanceof Kael) {
+            switch(skillNumber) {
+                case 1: return "Shadow Step";
+                case 2: return "Shadow Blade";
+                case 3: return "Shadow Domain";
+            }
+        } else if (character instanceof Valerius) {
+            switch(skillNumber) {
+                case 1: return "Radar Overload";
+                case 2: return "Precision Strike";
+                case 3: return "Fortress Mode";
+            }
+        } else if (character instanceof Skye) {
+            switch(skillNumber) {
+                case 1: return "Catnip Explosion";
+                case 2: return "Laser Pointer";
+                case 3: return "Nine Lives";
+            }
+        } else if (character instanceof Morgana) {
+            switch(skillNumber) {
+                case 1: return "Enchanting Melody";
+                case 2: return "Whirlpool Trap";
+                case 3: return "Storm Call";
+            }
+        } else if (character instanceof Aeris) {
+            switch(skillNumber) {
+                case 1: return "Adaptive Instinct";
+                case 2: return "Multitask Overdrive";
+                case 3: return "Relentless Ascent";
+            }
+        } else if (character instanceof Selene) {
+            switch(skillNumber) {
+                case 1: return "Lunar Reveal";
+                case 2: return "Crescent Strike";
+                case 3: return "Starfall Link";
+            }
+        } else if (character instanceof Flue) {
+            switch(skillNumber) {
+                case 1: return "Corruption.EXE";
+                case 2: return "Fortification.GRID";
+                case 3: return "Kernel.Decimation.REQ";
+            }
+        }
+        return "Unknown Skill";
     }
     
     public boolean isGameOver() {
@@ -384,4 +471,12 @@ public class LocalMultiplayer {
             this.player2Board = board;
         }
     }
+public void setPlayer1Turn(boolean turn) {
+    this.player1Turn = turn;
+}
+
+public GameListener getListener() {
+    return this.listener;
+}
+
 }
