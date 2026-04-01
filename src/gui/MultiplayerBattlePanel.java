@@ -23,9 +23,9 @@ public class MultiplayerBattlePanel extends JPanel {
     private JPanel boardsPanel;
     private JPanel skillsPanel;
     private SkillPanel currentSkillPanel;
-    private JButton endTurnButton;  // New End Turn button
+    private JButton endTurnButton;  
     
-    // Skill targeting states
+    
     private boolean waitingForSkillTarget = false;
     private int currentSkillPlayer = 0;
     private int currentSkillNumber = 0;
@@ -33,7 +33,7 @@ public class MultiplayerBattlePanel extends JPanel {
     private boolean skillDirectionHorizontal = true;
     private boolean skillTargetsOwnBoard = false;
     
-    // For Shadow Step - two step process
+    
     private boolean waitingForShadowStepSource = false;
     private int shadowStepSourceX = -1;
     private int shadowStepSourceY = -1;
@@ -64,7 +64,7 @@ public class MultiplayerBattlePanel extends JPanel {
         boardsPanel.setBackground(new Color(25, 25, 112));
         boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        // Skills panel with End Turn button
+        
         skillsPanel = new JPanel(new BorderLayout());
         skillsPanel.setBackground(new Color(25, 25, 112));
         skillsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -88,7 +88,7 @@ public class MultiplayerBattlePanel extends JPanel {
         counterPanel.add(player1ShipsLabel);
         counterPanel.add(player2ShipsLabel);
         
-        // Status panel with End Turn button
+        
         JPanel statusPanel = new JPanel(new BorderLayout());
         statusPanel.setBackground(new Color(25, 25, 112));
         statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
@@ -97,7 +97,7 @@ public class MultiplayerBattlePanel extends JPanel {
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         statusLabel.setForeground(Color.WHITE);
         
-        // Create End Turn button
+        
         endTurnButton = new JButton("END TURN");
         endTurnButton.setFont(new Font("Arial", Font.BOLD, 16));
         endTurnButton.setBackground(new Color(255, 100, 100));
@@ -120,7 +120,7 @@ public class MultiplayerBattlePanel extends JPanel {
     }
     
     private void endTurn() {
-        // Check if waiting for a skill target
+        
         if (waitingForSkillTarget || waitingForShadowStepSource) {
             int confirm = JOptionPane.showConfirmDialog(this,
                 "You have an active skill targeting. End turn anyway?",
@@ -129,26 +129,26 @@ public class MultiplayerBattlePanel extends JPanel {
             if (confirm != JOptionPane.YES_OPTION) {
                 return;
             }
-            // Cancel the active skill
+            
             cancelCurrentSkill();
         }
         
-        // Switch turns
+        
         boolean wasPlayer1Turn = game.isPlayer1Turn();
         
-        // Switch turn
+        
         if (wasPlayer1Turn) {
             game.setPlayer1Turn(false);
         } else {
             game.setPlayer1Turn(true);
         }
         
-        // Notify listener
+        
         if (game.getListener() != null) {
             game.getListener().onPlayerTurn(game.getCurrentPlayer());
         }
         
-        // Update the UI
+        
         updateBoardViews();
         updateStatusMessage("Turn ended! Now it's " + (game.isPlayer1Turn() ? "PLAYER 1's" : "PLAYER 2's") + " turn!", Color.YELLOW);
     }
@@ -157,7 +157,7 @@ public class MultiplayerBattlePanel extends JPanel {
         boardsPanel.removeAll();
         
         if (game.isPlayer1Turn()) {
-            // Player 1's turn
+            
             JPanel player1View = createBoardPanel("YOUR FLEET", game.getPlayer1Board(), true, true);
             JPanel player2View = createBoardPanel("ENEMY WATERS", game.getPlayer2Board(), false, false);
             boardsPanel.add(player1View);
@@ -177,7 +177,7 @@ public class MultiplayerBattlePanel extends JPanel {
             showPlayerSkills(1);
             
         } else {
-            // Player 2's turn
+            
             JPanel player2View = createBoardPanel("YOUR FLEET", game.getPlayer2Board(), true, true);
             JPanel player1View = createBoardPanel("ENEMY WATERS", game.getPlayer1Board(), false, false);
             boardsPanel.add(player2View);
@@ -205,24 +205,24 @@ public class MultiplayerBattlePanel extends JPanel {
     }
     
     private void handleEnemyBoardClick(int playerNumber, int row, int col) {
-        // Check if waiting for skill target on enemy board
+        
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
             handleSkillTarget(row, col);
             return;
         }
         
-        // Check if waiting for skill target but it targets own board
+        
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
             updateStatusMessage("This skill targets YOUR board! Click on your fleet.", Color.RED);
             return;
         }
         
-        // Normal attack on enemy board
+        
         handleShot(playerNumber, row, col);
     }
     
     private void handleOwnBoardClick(int playerNumber, int row, int col) {
-        // Check for Shadow Step destination selection
+        
         if (waitingForShadowStepSource && currentSkillPlayer == playerNumber && shadowStepSourceX != -1) {
             Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
             Cell destCell = playerBoard.getCell(row, col);
@@ -250,7 +250,7 @@ public class MultiplayerBattlePanel extends JPanel {
             return;
         }
         
-        // Check for Shadow Step source selection
+        
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard && currentSkillName.equals("Shadow Step")) {
             Board playerBoard = (playerNumber == 1) ? game.getPlayer1Board() : game.getPlayer2Board();
             Cell cell = playerBoard.getCell(row, col);
@@ -268,19 +268,19 @@ public class MultiplayerBattlePanel extends JPanel {
             return;
         }
         
-        // Check for other skills that target own board
+        
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && skillTargetsOwnBoard) {
             handleSkillTarget(row, col);
             return;
         }
         
-        // If waiting for skill target on enemy board
+        
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
             updateStatusMessage("This skill targets ENEMY board! Click on enemy waters.", Color.RED);
             return;
         }
         
-        // Click on own board without active skill
+        
         updateStatusMessage("⚠️ Cannot fire at your own ships! Click on ENEMY waters or press END TURN.", Color.ORANGE);
     }
     
