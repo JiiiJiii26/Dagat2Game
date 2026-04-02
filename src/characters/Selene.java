@@ -15,14 +15,12 @@ public class Selene extends GameCharacter {
     private static final int MAX_MANA = 500;
     
     
-    private int lunarRevealCooldown = 0;
-    private int crescentStrikeCooldown = 0;
-    private int starfallLinkCooldown = 0;
+    public int lunarRevealCooldown = 0;
+    public int crescentStrikeCooldown = 0;
+    public int starfallLinkCooldown = 0;
     
     
     private ArrayList<String> revealedCells = new ArrayList<>();
-    
-    
     private ArrayList<String> linkedCells = new ArrayList<>();
     private boolean linkActive = false;
     private int linkTurns = 0;
@@ -30,9 +28,30 @@ public class Selene extends GameCharacter {
     
     private int turnCounter = 0;
     private boolean nightTime = false;
-
-     private boolean nightTimeActive = false;
     private int nightTurnsRemaining = 0;
+    private static final int DAY_CYCLE_LENGTH = 3;
+    private static final int NIGHT_DURATION = 2;
+    
+    
+    private int moonPowerStacks = 0;
+    private static final int MAX_MOON_POWER = 5;
+    
+    
+    private boolean eclipseMode = false;
+    private int eclipseTurns = 0;
+    
+    
+    private boolean moonBlessingActive = false;
+    private int blessingTurns = 0;
+    
+    
+    private boolean skill1UsedThisTurn = false;
+    private boolean skill2UsedThisTurn = false;
+    private boolean skill3UsedThisTurn = false;
+    
+    
+    private boolean nightSkillsAvailable = false;
+    private boolean nightStartedThisTurn = false;
     
     public Selene() {
         super(
@@ -46,7 +65,6 @@ public class Selene extends GameCharacter {
         this.abilityName = "Lunar Prophecy";
         this.abilityDescription = "Uses mana to reveal cells, strike with moonlight, and link stars. Enhanced during NIGHT TIME!";
     }
-    
     
     
     public int getCurrentMana() { return currentMana; }
@@ -68,231 +86,347 @@ public class Selene extends GameCharacter {
         System.out.println("🌙 Selene mana: " + currentMana + "/" + MAX_MANA);
     }
     
+    public boolean consumeNightJustStarted() {
+        if (nightStartedThisTurn) {
+            nightStartedThisTurn = false;
+            return true;
+        }
+        return false;
+    }
+    
+    public void resetCooldowns() {
+        lunarRevealCooldown = 0;
+        crescentStrikeCooldown = 0;
+        starfallLinkCooldown = 0;
+        System.out.println("🌙 Selene cooldowns reset!");
+    }
+    
+   public void updateMoonPhase() {
+    boolean wasNight = nightTime;
+    
+    turnCounter++;
+    
+    if (!nightTime) {
+        
+        if (turnCounter >= DAY_CYCLE_LENGTH) {
+            enterNightTime();
+        }
+    } else {
+        
+        nightTurnsRemaining--;
+        if (nightTurnsRemaining <= 0) {
+            exitNightTime();
+        }
+        System.out.println("🌙 Night remaining: " + nightTurnsRemaining + " turns");
+    }
     
     
+    int regenAmount = nightTime ? 25 : 12;
+    regenerateMana(regenAmount);
+    
+    
+    if (nightTime && moonPowerStacks < MAX_MOON_POWER) {
+        moonPowerStacks++;
+        System.out.println("🌙 Moon power increased! Stack " + moonPowerStacks + "/" + MAX_MOON_POWER);
+    }
+    
+    
+    if (moonPowerStacks >= MAX_MOON_POWER && !eclipseMode && nightTime) {
+        enterEclipseMode();
+    }
+    
+    if (eclipseMode) {
+        eclipseTurns--;
+        if (eclipseTurns <= 0) {
+            exitEclipseMode();
+        }
+    }
+    
+    if (moonBlessingActive) {
+        blessingTurns--;
+        if (blessingTurns <= 0) {
+            moonBlessingActive = false;
+            System.out.println("🌙 Moon's blessing has faded.");
+        }
+    }
+    
+    skill1UsedThisTurn = false;
+    skill2UsedThisTurn = false;
+    skill3UsedThisTurn = false;
+    
+    System.out.println("🌙 Moon phase - Night: " + nightTime + ", Turns until change: " + 
+                       (nightTime ? nightTurnsRemaining : (DAY_CYCLE_LENGTH - turnCounter)));
+}
+    private void enterNightTime() {
+        nightTime = true;
+        nightTurnsRemaining = NIGHT_DURATION;
+        turnCounter = 0;
+        nightStartedThisTurn = true;
+        nightSkillsAvailable = true;
+        
+        
+        lunarRevealCooldown = 0;
+        crescentStrikeCooldown = 0;
+        starfallLinkCooldown = 0;
+        
+        
+        regenerateMana(100);
+        
+        System.out.println("🌙✨ NIGHT FALLS! All skills (including ultimate) reset!");
+        System.out.println("   Lunar Reveal ready!");
+        System.out.println("   Crescent Strike ready!");
+        System.out.println("   Starfall Link (ULTIMATE) ready!");
+        System.out.println("   +100 bonus mana!");
+    }
+    
+    private void exitNightTime() {
+        nightTime = false;
+        nightSkillsAvailable = false;
+        System.out.println("🌅 Night ends. Selene returns to normal.");
+        
+        if (moonPowerStacks > 0) {
+            moonPowerStacks = Math.max(0, moonPowerStacks - 2);
+            System.out.println("🌙 Moon power decays to " + moonPowerStacks);
+        }
+    }
+    
+    private void enterEclipseMode() {
+        eclipseMode = true;
+        eclipseTurns = 2;
+        moonPowerStacks = 0;
+        nightSkillsAvailable = true;
+        
+        lunarRevealCooldown = 0;
+        crescentStrikeCooldown = 0;
+        starfallLinkCooldown = 0;
+        
+        System.out.println("🌑🌑🌑 ECLIPSE MODE ACTIVATED! Selene's ultimate power unleashed!");
+        System.out.println("   • All skills are FREE during eclipse!");
+        System.out.println("   • Double damage and effects!");
+        System.out.println("   • Starfall Link becomes instant kill!");
+    }
+    
+    private void exitEclipseMode() {
+        eclipseMode = false;
+        System.out.println("🌑 Eclipse mode ends. The moon returns to normal.");
+    }
     
     
     public boolean useLunarReveal(Board enemyBoard, int centerX, int centerY) {
-    System.out.println("🔍 useLunarReveal called");
-    System.out.println("   nightTime = " + nightTime);
-    System.out.println("   lunarRevealCooldown = " + lunarRevealCooldown);
-    System.out.println("   currentMana = " + currentMana);
-    
-    if (lunarRevealCooldown > 0) {
-        System.out.println("❌ On cooldown: " + lunarRevealCooldown);
-        return false;
-    }
-    
-    if (!hasEnoughMana(60)) {
-        System.out.println("❌ Not enough mana: " + currentMana + "/60");
-        return false;
-    }
+        System.out.println("🔍 useLunarReveal called");
+        System.out.println("   nightTime = " + nightTime);
+        System.out.println("   eclipseMode = " + eclipseMode);
+        System.out.println("   lunarRevealCooldown = " + lunarRevealCooldown);
+        
+        if (skill1UsedThisTurn) {
+            System.out.println("❌ Lunar Reveal already used this turn!");
+            return false;
+        }
+        
+        if (lunarRevealCooldown > 0 && !nightTime && !eclipseMode) {
+            System.out.println("❌ On cooldown: " + lunarRevealCooldown);
+            return false;
+        }
+        
+        
+        if (nightTime || eclipseMode) {
+            System.out.println("🌙 Night/Eclipse mode - ignoring cooldown!");
+        }
+        
+        int manaCost = 60;
+        if (eclipseMode) {
+            manaCost = 0;
+        } else if (nightTime) {
+            manaCost = 30; 
+        }
+        
+        if (!eclipseMode && !hasEnoughMana(manaCost)) {
+            System.out.println("❌ Not enough mana! Need " + manaCost);
+            return false;
+        }
+        
+        if (!eclipseMode) spendMana(manaCost);
+        skill1UsedThisTurn = true;
+        
         
         int minX, maxX, minY, maxY;
-        String skillName;
         
-        if (nightTime) {
-            
+        if (eclipseMode) {
             minX = Math.max(0, centerX - 2);
             maxX = Math.min(9, centerX + 2);
             minY = Math.max(0, centerY - 2);
             maxY = Math.min(9, centerY + 2);
-            skillName = "LUNAR REVELATION (NIGHT)";
-            System.out.println("🌙✨ SELENE uses " + skillName + ": \"The full moon reveals and destroys!\"");
+            System.out.println("🌑🌑🌑 SELENE uses LUNAR ECLIPSE!");
+        } else if (nightTime) {
+            minX = Math.max(0, centerX - 1);
+            maxX = Math.min(9, centerX + 2);
+            minY = Math.max(0, centerY - 1);
+            maxY = Math.min(9, centerY + 2);
+            System.out.println("🌙✨ SELENE uses LUNAR REVELATION!");
         } else {
-            
             minX = Math.max(0, centerX - 1);
             maxX = Math.min(9, centerX + 1);
             minY = Math.max(0, centerY - 1);
             maxY = Math.min(9, centerY + 1);
-            skillName = "LUNAR REVEAL";
-            System.out.println("🔮 SELENE uses " + skillName + ": \"The moon reveals all...\"");
+            System.out.println("🔮 SELENE uses LUNAR REVEAL!");
         }
         
         int cellsAffected = 0;
-        int shipsFound = 0;
-        StringBuilder report = new StringBuilder("🔮 " + skillName + ":\n");
-        
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
-                String cellKey = x + "," + y;
                 Cell cell = enemyBoard.getCell(x, y);
-                
-                if (nightTime) {
-                    
-                    if (!cell.isFiredUpon()) {
-                        ShotResult result = enemyBoard.fire(x, y);
-                        cellsAffected++;
-                        if (cell.hasShip()) {
-                            shipsFound++;
-                            report.append("   • Ship at (" + x + "," + y + ") DESTROYED! " + result + "\n");
-                        } else {
-                            report.append("   • Cell (" + x + "," + y + ") destroyed\n");
-                        }
-                    } else {
-                        report.append("   • Cell (" + x + "," + y + ") already hit\n");
-                    }
-                } else {
-                    
-                    if (!revealedCells.contains(cellKey)) {
-                        revealedCells.add(cellKey);
-                        cell.setRevealed(true);
-                        if (cell.hasShip()) {
-                            shipsFound++;
-                            report.append("   • Cell (" + x + "," + y + ") contains a SHIP!\n");
-                        } else {
-                            report.append("   • Cell (" + x + "," + y + ") is empty.\n");
-                        }
-                    } else {
-                        report.append("   • Cell (" + x + "," + y + ") already revealed\n");
-                    }
+                if (!cell.isFiredUpon()) {
+                    enemyBoard.fire(x, y);
+                    cellsAffected++;
                 }
             }
         }
         
-        System.out.println(report.toString());
-        if (nightTime) {
-            System.out.println("🌙✨ Lunar Revelation destroyed " + cellsAffected + " cells!");
-            System.out.println("   Hit " + shipsFound + " enemy ships!");
-        } else {
-            System.out.println("🔮 Found " + shipsFound + " ship segments in the area!");
+        System.out.println("🔮 Lunar Reveal affected " + cellsAffected + " cells!");
+        
+        if (!nightTime && !eclipseMode) {
+            lunarRevealCooldown = 2;
         }
         
-        lunarRevealCooldown = 2;
         return true;
     }
     
     
-    
-    
-    
     public int useCrescentStrike(Board enemyBoard, int centerX, int centerY) {
-        if (crescentStrikeCooldown > 0) {
-            System.out.println("⏳ Crescent Strike is on cooldown for " + crescentStrikeCooldown + " more turns");
+        System.out.println("⚔️ useCrescentStrike called");
+        System.out.println("   nightTime = " + nightTime);
+        System.out.println("   eclipseMode = " + eclipseMode);
+        
+        if (skill2UsedThisTurn) {
+            System.out.println("❌ Crescent Strike already used this turn!");
             return 0;
         }
         
-        if (!hasEnoughMana(120)) {
-            System.out.println("⚠️ Not enough mana! Need 120 mana, have " + currentMana);
+        if (crescentStrikeCooldown > 0 && !nightTime && !eclipseMode) {
+            System.out.println("❌ On cooldown: " + crescentStrikeCooldown);
             return 0;
         }
         
-        spendMana(120);
+        int manaCost = 120;
+        if (eclipseMode) {
+            manaCost = 0;
+        } else if (nightTime) {
+            manaCost = 60; 
+        }
+        
+        if (!eclipseMode && !hasEnoughMana(manaCost)) {
+            System.out.println("❌ Not enough mana! Need " + manaCost);
+            return 0;
+        }
+        
+        if (!eclipseMode) spendMana(manaCost);
+        skill2UsedThisTurn = true;
         
         int totalDestroyed = 0;
-        int shipsHit = 0;
-        StringBuilder strikeReport = new StringBuilder();
         
-        if (nightTime) {
+        if (eclipseMode) {
             
-            System.out.println("🌙✨ SELENE uses CRESCENT STORM (NIGHT): \"The moon's wrath rains down!\"");
-            strikeReport.append("🌙✨ Crescent Storm hits:\n");
-            
-            int[][] directions = {
-                {-1,0}, {1,0}, {0,-1}, {0,1},  
-                {-1,-1}, {-1,1}, {1,-1}, {1,1}  
-            };
-            
-            
-            totalDestroyed += hitCell(enemyBoard, centerX, centerY, strikeReport);
-            if (enemyBoard.getCell(centerX, centerY).hasShip()) shipsHit++;
-            
-            
+            int[][] directions = {{-2,0}, {2,0}, {0,-2}, {0,2}, {-1,-1}, {-1,1}, {1,-1}, {1,1}, {-1,0}, {1,0}, {0,-1}, {0,1}};
+            totalDestroyed++;
             for (int[] dir : directions) {
                 int x = centerX + dir[0];
                 int y = centerY + dir[1];
-                if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                    totalDestroyed += hitCell(enemyBoard, x, y, strikeReport);
-                    if (enemyBoard.getCell(x, y).hasShip()) shipsHit++;
-                } else {
-                    strikeReport.append("   • Out of bounds: (" + x + "," + y + ")\n");
+                if (x >= 0 && x < 10 && y >= 0 && y < 10 && !enemyBoard.getCell(x, y).isFiredUpon()) {
+                    enemyBoard.fire(x, y);
+                    totalDestroyed++;
                 }
             }
+        } else if (nightTime) {
             
-            System.out.println(strikeReport.toString());
-            System.out.println("🌙✨ Crescent Storm destroyed " + totalDestroyed + " cells!");
-            System.out.println("   Hit " + shipsHit + " enemy ships!");
-            
+            int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
+            totalDestroyed++;
+            for (int[] dir : directions) {
+                int x = centerX + dir[0];
+                int y = centerY + dir[1];
+                if (x >= 0 && x < 10 && y >= 0 && y < 10 && !enemyBoard.getCell(x, y).isFiredUpon()) {
+                    enemyBoard.fire(x, y);
+                    totalDestroyed++;
+                }
+            }
         } else {
             
-            System.out.println("🌙 SELENE uses CRESCENT STRIKE: \"Witness the edge of the moon!\"");
-            strikeReport.append("🌙 Crescent Strike hits:\n");
-            
-            
-            totalDestroyed += hitCell(enemyBoard, centerX, centerY, strikeReport);
-            if (enemyBoard.getCell(centerX, centerY).hasShip()) shipsHit++;
-            
-            
             int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+            totalDestroyed++;
             for (int[] dir : directions) {
                 int x = centerX + dir[0];
                 int y = centerY + dir[1];
-                if (x >= 0 && x < 10 && y >= 0 && y < 10) {
-                    totalDestroyed += hitCell(enemyBoard, x, y, strikeReport);
-                    if (enemyBoard.getCell(x, y).hasShip()) shipsHit++;
-                } else {
-                    strikeReport.append("   • Out of bounds: (" + x + "," + y + ")\n");
+                if (x >= 0 && x < 10 && y >= 0 && y < 10 && !enemyBoard.getCell(x, y).isFiredUpon()) {
+                    enemyBoard.fire(x, y);
+                    totalDestroyed++;
                 }
             }
-            
-            System.out.println(strikeReport.toString());
-            System.out.println("🌙 Crescent Strike destroyed " + totalDestroyed + " cells!");
-            System.out.println("   Hit " + shipsHit + " enemy ships!");
         }
         
-        crescentStrikeCooldown = 3;
+        System.out.println("⚔️ Crescent Strike destroyed " + totalDestroyed + " cells!");
+        
+        if (!nightTime && !eclipseMode) {
+            crescentStrikeCooldown = 3;
+        }
+        
         return totalDestroyed;
     }
     
-    private int hitCell(Board board, int x, int y, StringBuilder report) {
-        Cell cell = board.getCell(x, y);
-        
-        if (!cell.isFiredUpon()) {
-            ShotResult result = board.fire(x, y);
-            if (cell.hasShip()) {
-                report.append("   • Ship at (" + x + "," + y + ") destroyed! " + result + "\n");
-            } else {
-                report.append("   • Cell (" + x + "," + y + ") sliced by moonlight\n");
-            }
-            return 1;
-        } else {
-            report.append("   • Cell (" + x + "," + y + ") already hit\n");
-            return 0;
-        }
-    }
-    
-    
-    
-    
     
     public boolean useStarfallLink(Board enemyBoard) {
-        if (starfallLinkCooldown > 0) {
-            System.out.println("⏳ Starfall Link is on cooldown for " + starfallLinkCooldown + " more turns");
+        System.out.println("⭐ useStarfallLink called");
+        System.out.println("   nightTime = " + nightTime);
+        System.out.println("   eclipseMode = " + eclipseMode);
+        System.out.println("   currentMana = " + currentMana);
+        
+        if (skill3UsedThisTurn) {
+            System.out.println("❌ Starfall Link already used this turn!");
             return false;
         }
         
-        if (!hasEnoughMana(300)) {
-            System.out.println("⚠️ Not enough mana! Need 300 mana, have " + currentMana);
+        if (starfallLinkCooldown > 0 && !nightTime && !eclipseMode) {
+            System.out.println("❌ On cooldown: " + starfallLinkCooldown);
             return false;
         }
         
-        spendMana(300);
+        
+        int actualManaCost = 300;
+        if (eclipseMode) {
+            actualManaCost = 0;
+            System.out.println("🌑 Eclipse mode - FREE!");
+        } else if (nightTime) {
+            actualManaCost = 150; 
+            System.out.println("🌙 Night time - 150 mana (half price!)");
+        }
+        
+        if (!eclipseMode && currentMana < actualManaCost) {
+            System.out.println("⚠️ Not enough mana! Need " + actualManaCost + ", have " + currentMana);
+            return false;
+        }
+        
+        if (!eclipseMode) spendMana(actualManaCost);
+        skill3UsedThisTurn = true;
         
         linkedCells.clear();
         
-        int starsToDrop = nightTime ? 5 : 3;
-        int linksToCreate = nightTime ? 2 : 1;  
+        int starsToDrop;
+        int linksToCreate;
         
-        if (nightTime) {
-            System.out.println("⭐🌙 SELENE uses STARFALL ECLIPSE (NIGHT): \"The stars align with the moon!\"");
+        if (eclipseMode) {
+            starsToDrop = 8;
+            linksToCreate = 4;
+            System.out.println("🌑🌑🌑 STARFALL ECLIPSE!");
+        } else if (nightTime) {
+            starsToDrop = 5;
+            linksToCreate = 2;
+            System.out.println("⭐🌙 STARFALL LINK (NIGHT)!");
         } else {
-            System.out.println("⭐ SELENE uses STARFALL LINK: \"Stars fall and fate intertwines!\"");
+            starsToDrop = 3;
+            linksToCreate = 1;
+            System.out.println("⭐ STARFALL LINK!");
         }
         
         
         int starsDestroyed = 0;
-        StringBuilder starReport = new StringBuilder("⭐ Stars fall:\n");
-        
         for (int i = 0; i < starsToDrop; i++) {
             int attempts = 0;
             boolean placed = false;
@@ -303,16 +437,14 @@ public class Selene extends GameCharacter {
                 Cell cell = enemyBoard.getCell(x, y);
                 
                 if (!cell.isFiredUpon()) {
-                    ShotResult result = enemyBoard.fire(x, y);
+                    enemyBoard.fire(x, y);
                     starsDestroyed++;
-                    starReport.append("   • Star at (" + x + "," + y + ") destroyed! " + result + "\n");
                     placed = true;
                 }
                 attempts++;
             }
         }
         
-        System.out.println(starReport.toString());
         System.out.println("⭐ " + starsDestroyed + " cells destroyed by falling stars!");
         
         
@@ -327,34 +459,30 @@ public class Selene extends GameCharacter {
         
         int linksCreated = 0;
         for (int l = 0; l < linksToCreate && undestroyedCells.size() >= 2; l++) {
-            
             int[] cell1 = undestroyedCells.remove(random.nextInt(undestroyedCells.size()));
             int[] cell2 = undestroyedCells.remove(random.nextInt(undestroyedCells.size()));
             
-            String linkKey1 = cell1[0] + "," + cell1[1];
-            String linkKey2 = cell2[0] + "," + cell2[1];
-            
-            linkedCells.add(linkKey1);
-            linkedCells.add(linkKey2);
-            
-            System.out.println("🔗 Cells (" + cell1[0] + "," + cell1[1] + 
-                             ") and (" + cell2[0] + "," + cell2[1] + ") are now LINKED!");
+            linkedCells.add(cell1[0] + "," + cell1[1]);
+            linkedCells.add(cell2[0] + "," + cell2[1]);
             linksCreated++;
         }
         
         if (linksCreated > 0) {
-            System.out.println("🔗 " + linksCreated + " link(s) created!");
-            if (nightTime) {
-                System.out.println("🌙 NIGHT BONUS: Double links activated!");
-            }
             linkActive = true;
-            linkTurns = 2;
-        } else {
-            System.out.println("⚠️ Not enough cells to create links!");
+            linkTurns = eclipseMode ? 4 : (nightTime ? 3 : 2);
         }
         
-        starfallLinkCooldown = 5;
+        if (!nightTime && !eclipseMode) {
+            starfallLinkCooldown = 5;
+        }
+        
         return true;
+    }
+    
+    private void activateMoonBlessing() {
+        moonBlessingActive = true;
+        blessingTurns = 2;
+        System.out.println("🌙 Moon's blessing activated!");
     }
     
     public void checkLinkedCells(Board enemyBoard, int hitX, int hitY) {
@@ -381,8 +509,8 @@ public class Selene extends GameCharacter {
                 
                 Cell linkedCell = enemyBoard.getCell(x, y);
                 if (!linkedCell.isFiredUpon()) {
-                    ShotResult result = enemyBoard.fire(x, y);
-                    System.out.println("🔗 LINKED CELL DAMAGE! (" + x + "," + y + ") also destroyed! " + result);
+                    enemyBoard.fire(x, y);
+                    System.out.println("🔗 LINKED CELL DAMAGE! (" + x + "," + y + ") destroyed!");
                 }
             }
         }
@@ -391,101 +519,91 @@ public class Selene extends GameCharacter {
         if (linkTurns <= 0) {
             linkActive = false;
             linkedCells.clear();
-            System.out.println("🔗 The star links have faded.");
         }
     }
     
-    public boolean isLinkActive() {
-        return linkActive;
-    }
-    
-    
-    
-    
-
- public void updateTurnCounter() {
-    
-    if (lunarRevealCooldown > 0) lunarRevealCooldown--;
-    if (crescentStrikeCooldown > 0) crescentStrikeCooldown--;
-    if (starfallLinkCooldown > 0) starfallLinkCooldown--;
-    
-    if (linkActive) {
-        linkTurns--;
-        if (linkTurns <= 0) {
-            linkActive = false;
-            linkedCells.clear();
-            System.out.println("🔗 The star links have faded.");
+    public void updateTurnCounter() {
+        if (!nightTime && !eclipseMode) {
+            if (lunarRevealCooldown > 0) lunarRevealCooldown--;
+            if (crescentStrikeCooldown > 0) crescentStrikeCooldown--;
+            if (starfallLinkCooldown > 0) starfallLinkCooldown--;
+        } else {
+            
+            lunarRevealCooldown = 0;
+            crescentStrikeCooldown = 0;
+            starfallLinkCooldown = 0;
         }
+        
+        if (linkActive) {
+            linkTurns--;
+            if (linkTurns <= 0) {
+                linkActive = false;
+                linkedCells.clear();
+            }
+        }
+        
+        updateMoonPhase();
     }
     
-    
-    
-    
-    
-    
-    turnCounter++;
-    
-    
-    if (turnCounter >= 3) {
-        turnCounter = 0;
-        nightTime = true;
-        System.out.println("🌙✨ MOON'S BLESSING! NIGHT FALLS! All abilities are ENHANCED!");
+    public void endTurn() {
+        System.out.println("🌙 Selene's turn ends.");
+        skill1UsedThisTurn = false;
+        skill2UsedThisTurn = false;
+        skill3UsedThisTurn = false;
     }
     
-    
-    
-    regenerateMana(12);
-}
-
-
-public void endTurn() {
-    
-    nightTime = false;
-    System.out.println("🌙 Night has ended.");
-}
     public int getTurnsUntilNight() {
-    
-    
-    if (nightTime) {
-        return 0;
+        if (nightTime) return 0;
+        return DAY_CYCLE_LENGTH - turnCounter;
     }
     
-    return 3 - turnCounter;
-}
-    public boolean isNightTime() {
-    return nightTime;
-}
+    public boolean isNightTime() { return nightTime; }
+    public boolean isEclipseMode() { return eclipseMode; }
+    public boolean isLinkActive() { return linkActive; }
+    public int getMoonPowerStacks() { return moonPowerStacks; }
+    public boolean hasMoonBlessing() { return moonBlessingActive; }
     
     public String getSkillStatus(int skillNum) {
         String nightBonus = nightTime ? " (🌙 ENHANCED!)" : "";
+        String eclipseBonus = eclipseMode ? " (🌑 ECLIPSE - FREE!)" : "";
         
         switch(skillNum) {
             case 1:
-                if (lunarRevealCooldown > 0) {
-                    return "Cooldown: " + lunarRevealCooldown + " turn" + (lunarRevealCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(60)) {
+                if (!nightTime && !eclipseMode && lunarRevealCooldown > 0) {
+                    return "Cooldown: " + lunarRevealCooldown;
+                } else if (!eclipseMode && !nightTime && !hasEnoughMana(60)) {
                     return "Need 60 mana";
                 } else {
-                    return "Ready!" + nightBonus;
+                    return "Ready!" + nightBonus + eclipseBonus;
                 }
             case 2:
-                if (crescentStrikeCooldown > 0) {
-                    return "Cooldown: " + crescentStrikeCooldown + " turn" + (crescentStrikeCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(120)) {
+                if (!nightTime && !eclipseMode && crescentStrikeCooldown > 0) {
+                    return "Cooldown: " + crescentStrikeCooldown;
+                } else if (!eclipseMode && !nightTime && !hasEnoughMana(120)) {
                     return "Need 120 mana";
                 } else {
-                    return "Ready!" + nightBonus;
+                    return "Ready!" + nightBonus + eclipseBonus;
                 }
             case 3:
-                if (starfallLinkCooldown > 0) {
-                    return "Cooldown: " + starfallLinkCooldown + " turn" + (starfallLinkCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(300)) {
-                    return "Need 300 mana";
+                if (!nightTime && !eclipseMode && starfallLinkCooldown > 0) {
+                    return "Cooldown: " + starfallLinkCooldown;
                 } else {
-                    if (nightTime) {
-                        return "ULTIMATE READY! (🌙 5 stars + 2 links!)";
+                    int requiredMana = 300;
+                    if (eclipseMode) {
+                        return "ECLIPSE READY! (FREE!)";
+                    } else if (nightTime) {
+                        if (currentMana >= 150) {
+                            return "ULTIMATE READY! (150 mana)";
+                        } else {
+                            return "Need 150 mana";
+                        }
+                    } else {
+                        if (currentMana >= 300) {
+                            return "ULTIMATE READY!";
+                        } else {
+                            return "Need 300 mana";
+                        }
                     }
-                    return "ULTIMATE READY!";
                 }
             default:
                 return "";
@@ -504,6 +622,13 @@ public void endTurn() {
             }
         }
         bar.append("] " + currentMana + "/" + MAX_MANA + " mana");
+        
+        if (eclipseMode) {
+            bar.append(" 🌑 ECLIPSE MODE!");
+        } else if (nightTime) {
+            bar.append(" 🌙 NIGHT TIME!");
+        }
+        
         return bar.toString();
     }
     

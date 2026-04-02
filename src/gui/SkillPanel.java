@@ -951,4 +951,43 @@ public class SkillPanel extends JPanel {
             }
         }
     }
+    public void forceRefreshUI() {
+    
+    updateUI();
+    
+    
+    if (skill1Button != null) {
+        String status = getSkillStatus(1);
+        boolean enabled = status.equals("Ready!") || status.contains("Ready") || status.contains("ENHANCED");
+        skill1Button.setEnabled(enabled);
+    }
+    if (skill2Button != null) {
+        String status = getSkillStatus(2);
+        boolean enabled = status.equals("Ready!") || status.contains("Ready") || status.contains("ENHANCED");
+        skill2Button.setEnabled(enabled);
+    }
+    if (skill3Button != null) {
+        String status = getSkillStatus(3);
+        boolean enabled = status.equals("Ready!") || status.contains("Ready") || status.contains("ENHANCED") || status.contains("ULTIMATE READY");
+        skill3Button.setEnabled(enabled);
+    }
+    
+    
+    if (resourceLabel != null) {
+        resourceLabel.setText(getResourceText());
+    }
+    if (passiveLabel != null) {
+        passiveLabel.setText(getPassiveText());
+    }
+    
+    repaint();
+}
+
+
+private String getSkillStatus(int skillNum) {
+    if (character instanceof Selene) {
+        return ((Selene) character).getSkillStatus(skillNum);
+    }
+    return "Ready!";
+}
 }
