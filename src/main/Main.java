@@ -349,12 +349,10 @@ public class Main {
             @Override
             public void onEnemyCellClicked(int row, int col) {
                 if (playerTurn) {
-                    if (skillPanel != null && skillPanel.getPendingTargetCallback() != null) {
-                        skillPanel.getPendingTargetCallback().onTargetSelected(row, col);
-                    } else {
+                   
                         handlePlayerTurn(row, col);
                     }
-                }
+                
             }
         });
 

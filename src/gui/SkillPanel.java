@@ -15,25 +15,16 @@ import game.ShotResult;
 public class SkillPanel extends JPanel {
     
     private GameCharacter character;
-    private JButton skill1Button;
-    private JButton skill2Button;
-    private JButton skill3Button;
-    private JButton ultimateButton; 
     private JLabel resourceLabel;
     private JLabel passiveLabel;
     private JLabel characterNameLabel;
     
-    private JPanel jijiPanel;
-    private JPanel kaelPanel;
-    private JPanel valeriusPanel;
-    private JPanel skyePanel;
-    
     private Timer updateTimer;
     
-    
+    // Skill listener for multiplayer/campaign mode
     private SkillButtonListener skillListener;
     
-    
+    // Interface for skill handling
     public interface SkillButtonListener {
         void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard);
     }
@@ -75,7 +66,7 @@ public class SkillPanel extends JPanel {
         gbc.gridy = 1;
         mainPanel.add(passiveLabel, gbc);
         
-        
+        // Add character-specific skills
         if (character instanceof Jiji) {
             addJijiSkills(mainPanel, gbc);
         } else if (character instanceof Kael) {
@@ -102,160 +93,9 @@ public class SkillPanel extends JPanel {
         updateTimer.start();
     }
     
-    private void addMorganaSkills(JPanel panel, GridBagConstraints gbc) {
-        Morgana morgana = (Morgana) character;
-        
-        
-        gbc.gridy++;
-        JLabel melodyLabel = new JLabel("🎵 ENCHANTING MELODY");
-        melodyLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        melodyLabel.setForeground(new Color(64, 224, 208));
-        panel.add(melodyLabel, gbc);
-        
-        gbc.gridy++;
-        JButton melodyBtn = new JButton("USE (40 mana)");
-        melodyBtn.setBackground(new Color(64, 224, 208));
-        melodyBtn.setForeground(Color.BLACK);
-        melodyBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(1, "Enchanting Melody", false, false, false);
-            } else {
-                boolean used = morgana.useEnchantingMelody();
-                if (used) {
-                    showMessage("🎵 Enchanting Melody! Enemy is confused!");
-                } else {
-                    showMessage("❌ Cannot use Enchanting Melody!\n" + morgana.getSkillStatus(1));
-                }
-            }
-        });
-        panel.add(melodyBtn, gbc);
-        
-        
-        gbc.gridy++;
-        JLabel whirlpoolLabel = new JLabel("🌊 WHIRLPOOL TRAP");
-        whirlpoolLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        whirlpoolLabel.setForeground(new Color(0, 150, 200));
-        panel.add(whirlpoolLabel, gbc);
-        
-        gbc.gridy++;
-        JButton whirlpoolBtn = new JButton("USE (80 mana)");
-        whirlpoolBtn.setBackground(new Color(0, 150, 200));
-        whirlpoolBtn.setForeground(Color.WHITE);
-        whirlpoolBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(2, "Whirlpool Trap", true, false, false);
-            } else {
-                showMessage("🌊 Whirlpool Trap: Click on enemy board!");
-            }
-        });
-        panel.add(whirlpoolBtn, gbc);
-        
-        
-        gbc.gridy++;
-        JLabel stormLabel = new JLabel("⛈️ STORM CALL");
-        stormLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        stormLabel.setForeground(new Color(70, 130, 200));
-        panel.add(stormLabel, gbc);
-        
-        gbc.gridy++;
-        JButton stormBtn = new JButton("USE (300 mana)");
-        stormBtn.setBackground(new Color(70, 130, 200));
-        stormBtn.setForeground(Color.WHITE);
-        stormBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(3, "Storm Call", false, false, false);
-            } else {
-                int flooded = morgana.useStormCall(getEnemyBoard());
-                if (flooded > 0) {
-                    showMessage("⛈️ Storm Call! " + flooded + " cells flooded!");
-                } else {
-                    showMessage("❌ Cannot use Storm Call!\n" + morgana.getSkillStatus(3));
-                }
-            }
-        });
-        panel.add(stormBtn, gbc);
-        
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(morgana.getManaBar(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
-    }
-    
-    private void addFlueSkills(JPanel panel, GridBagConstraints gbc) {
-        Flue flue = (Flue) character;
-        
-        
-        gbc.gridy++;
-        JLabel corruptionLabel = new JLabel("💻 CORRUPTION.EXE");
-        corruptionLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        corruptionLabel.setForeground(new Color(0, 255, 127));
-        panel.add(corruptionLabel, gbc);
-        
-        gbc.gridy++;
-        JButton corruptionBtn = new JButton("USE (100 mana)");
-        corruptionBtn.setBackground(new Color(0, 255, 127));
-        corruptionBtn.setForeground(Color.BLACK);
-        corruptionBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(1, "Corruption.EXE", true, false, false);
-            } else {
-                showMessage("💻 Corruption.EXE: Click on enemy board to infect a cell!");
-            }
-        });
-        panel.add(corruptionBtn, gbc);
-        
-        
-        gbc.gridy++;
-        JLabel fortificationLabel = new JLabel("🛡️ FORTIFICATION.GRID");
-        fortificationLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        fortificationLabel.setForeground(new Color(0, 200, 100));
-        panel.add(fortificationLabel, gbc);
-        
-        gbc.gridy++;
-        JButton fortificationBtn = new JButton("USE (200 mana)");
-        fortificationBtn.setBackground(new Color(0, 200, 100));
-        fortificationBtn.setForeground(Color.BLACK);
-        fortificationBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(2, "Fortification.GRID", true, false, true);
-            } else {
-                showMessage("🛡️ Fortification.GRID: Click on your board to repair!");
-            }
-        });
-        panel.add(fortificationBtn, gbc);
-        
-        
-        gbc.gridy++;
-        JLabel kernelLabel = new JLabel("💀 KERNEL.DECIMATION.REQ");
-        kernelLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        kernelLabel.setForeground(new Color(200, 0, 0));
-        panel.add(kernelLabel, gbc);
-        
-        gbc.gridy++;
-        JButton kernelBtn = new JButton("USE (300 mana)");
-        kernelBtn.setBackground(new Color(200, 0, 0));
-        kernelBtn.setForeground(Color.WHITE);
-        kernelBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(3, "Kernel.Decimation.REQ", true, false, false);
-            } else {
-                showMessage("💀 Kernel.Decimation.REQ: Click on enemy board to decimate!");
-            }
-        });
-        panel.add(kernelBtn, gbc);
-        
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(flue.getManaBar(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
-    }
-    
+    // ==================== JIJI SKILLS ====================
     private void addJijiSkills(JPanel panel, GridBagConstraints gbc) {
-        Jiji jiji = (Jiji) character;
-        
-        
+        // Data Leech
         gbc.gridy++;
         JLabel leechLabel = new JLabel("🔓 DATA LEECH");
         leechLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -269,17 +109,11 @@ public class SkillPanel extends JPanel {
         leechBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Data Leech", true, false, false);
-            } else {
-                if (jiji.useDataLeech(getEnemyBoard())) {
-                    showMessage("Data Leech used! Cells revealed!");
-                } else {
-                    showMessage("❌ Cannot use Data Leech!\n" + jiji.getSkillStatus(1));
-                }
             }
         });
         panel.add(leechBtn, gbc);
         
-        
+        // Overclock
         gbc.gridy++;
         JLabel overclockLabel = new JLabel("⚡ OVERCLOCK");
         overclockLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -293,17 +127,11 @@ public class SkillPanel extends JPanel {
         overclockBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Overclock", false, false, false);
-            } else {
-                if (jiji.useOverclock()) {
-                    showMessage("Overclock activated! Next shot fires twice!");
-                } else {
-                    showMessage("❌ Cannot use Overclock!\n" + jiji.getSkillStatus(2));
-                }
             }
         });
         panel.add(overclockBtn, gbc);
         
-        
+        // System Overload
         gbc.gridy++;
         JLabel overloadLabel = new JLabel("💻 SYSTEM OVERLOAD");
         overloadLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -317,27 +145,20 @@ public class SkillPanel extends JPanel {
         overloadBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "System Overload", true, false, false);
-            } else {
-                if (jiji.useSystemOverload(getEnemyBoard())) {
-                    showMessage("System Overload! Enemy skill disabled!");
-                } else {
-                    showMessage("❌ Cannot use System Overload!\n" + jiji.getSkillStatus(3));
-                }
             }
         });
         panel.add(overloadBtn, gbc);
         
         gbc.gridy++;
-        JLabel manaLabel = new JLabel(jiji.getManaBar(), SwingConstants.CENTER);
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
         manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
         manaLabel.setForeground(Color.CYAN);
         panel.add(manaLabel, gbc);
     }
     
+    // ==================== KAEL SKILLS ====================
     private void addKaelSkills(JPanel panel, GridBagConstraints gbc) {
-        Kael kael = (Kael) character;
-        
-        
+        // Shadow Step
         gbc.gridy++;
         JLabel stepLabel = new JLabel("🌑 SHADOW STEP");
         stepLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -351,13 +172,11 @@ public class SkillPanel extends JPanel {
         stepBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Shadow Step", true, false, true);
-            } else {
-                showMessage("🌑 Shadow Step: Click on your ship, then destination!");
             }
         });
         panel.add(stepBtn, gbc);
         
-        
+        // Shadow Blade - requires direction
         gbc.gridy++;
         JLabel bladeLabel = new JLabel("⚔️ SHADOW BLADE");
         bladeLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -371,13 +190,11 @@ public class SkillPanel extends JPanel {
         bladeBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Shadow Blade", true, true, false);
-            } else {
-                showMessage("⚔️ Shadow Blade: Choose direction, then click on enemy board!");
             }
         });
         panel.add(bladeBtn, gbc);
         
-        
+        // Shadow Domain
         gbc.gridy++;
         JLabel domainLabel = new JLabel("🌑🌑🌑 SHADOW DOMAIN");
         domainLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -391,23 +208,20 @@ public class SkillPanel extends JPanel {
         domainBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Shadow Domain", true, false, false);
-            } else {
-                showMessage("🌑🌑🌑 Shadow Domain: Click on enemy board to create explosion!");
             }
         });
         panel.add(domainBtn, gbc);
         
         gbc.gridy++;
-        JLabel energyLabel = new JLabel(kael.getEnergyBar(), SwingConstants.CENTER);
+        JLabel energyLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
         energyLabel.setFont(new Font("Arial", Font.BOLD, 10));
         energyLabel.setForeground(new Color(100, 200, 255));
         panel.add(energyLabel, gbc);
     }
     
+    // ==================== VALERIUS SKILLS ====================
     private void addValeriusSkills(JPanel panel, GridBagConstraints gbc) {
-        Valerius valerius = (Valerius) character;
-        
-        
+        // Radar Overload
         gbc.gridy++;
         JLabel radarLabel = new JLabel("📡 RADAR OVERLOAD");
         radarLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -421,17 +235,11 @@ public class SkillPanel extends JPanel {
         radarBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Radar Overload", false, false, false);
-            } else {
-                if (valerius.useRadarOverload()) {
-                    showMessage("📡 Radar Overload! Enemy skills disabled for 2 turns!");
-                } else {
-                    showMessage("❌ Cannot use Radar Overload!\n" + valerius.getSkillStatus(1));
-                }
             }
         });
         panel.add(radarBtn, gbc);
         
-        
+        // Precision Strike - requires direction
         gbc.gridy++;
         JLabel strikeLabel = new JLabel("🎯 PRECISION STRIKE");
         strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -445,13 +253,11 @@ public class SkillPanel extends JPanel {
         strikeBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Precision Strike", true, true, false);
-            } else {
-                showMessage("🎯 Precision Strike: Choose direction, then click on enemy board!");
             }
         });
         panel.add(strikeBtn, gbc);
         
-        
+        // Fortress Mode
         gbc.gridy++;
         JLabel fortressLabel = new JLabel("🏰 FORTRESS MODE");
         fortressLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -465,27 +271,20 @@ public class SkillPanel extends JPanel {
         fortressBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Fortress Mode", false, false, false);
-            } else {
-                if (valerius.useFortressMode()) {
-                    showMessage("🏰 Fortress Mode! All ships shielded!");
-                } else {
-                    showMessage("❌ Cannot use Fortress Mode!\n" + valerius.getSkillStatus(3));
-                }
             }
         });
         panel.add(fortressBtn, gbc);
         
         gbc.gridy++;
-        JLabel manaLabel = new JLabel(valerius.getManaBar(), SwingConstants.CENTER);
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
         manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
         manaLabel.setForeground(Color.CYAN);
         panel.add(manaLabel, gbc);
     }
     
+    // ==================== SKYE SKILLS ====================
     private void addSkyeSkills(JPanel panel, GridBagConstraints gbc) {
-        Skye skye = (Skye) character;
-        
-        
+        // Catnip Explosion
         gbc.gridy++;
         JLabel catnipLabel = new JLabel("🌿 CATNIP EXPLOSION");
         catnipLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -499,13 +298,11 @@ public class SkillPanel extends JPanel {
         catnipBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Catnip Explosion", true, false, false);
-            } else {
-                showMessage("🌿 Catnip Explosion: Click on enemy board!");
             }
         });
         panel.add(catnipBtn, gbc);
         
-        
+        // Laser Pointer
         gbc.gridy++;
         JLabel laserLabel = new JLabel("🔴 LASER POINTER");
         laserLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -519,17 +316,11 @@ public class SkillPanel extends JPanel {
         laserBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Laser Pointer", false, false, false);
-            } else {
-                if (skye.useLaserPointer()) {
-                    showMessage("🔴 Laser Pointer! Enemy will skip their next turn!");
-                } else {
-                    showMessage("❌ Cannot use Laser Pointer!\n" + skye.getSkillStatus(2));
-                }
             }
         });
         panel.add(laserBtn, gbc);
         
-        
+        // Nine Lives
         gbc.gridy++;
         JLabel reviveLabel = new JLabel("😺 NINE LIVES");
         reviveLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -543,23 +334,83 @@ public class SkillPanel extends JPanel {
         reviveBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Nine Lives", true, false, true);
-            } else {
-                showMessage("😺 Nine Lives: Click on your own board to revive a sunk ship!");
             }
         });
         panel.add(reviveBtn, gbc);
         
         gbc.gridy++;
-        JLabel manaLabel = new JLabel(skye.getManaBar(), SwingConstants.CENTER);
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
         manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
         manaLabel.setForeground(Color.CYAN);
         panel.add(manaLabel, gbc);
     }
     
+    // ==================== MORGANA SKILLS ====================
+    private void addMorganaSkills(JPanel panel, GridBagConstraints gbc) {
+        // Enchanting Melody
+        gbc.gridy++;
+        JLabel melodyLabel = new JLabel("🎵 ENCHANTING MELODY");
+        melodyLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        melodyLabel.setForeground(new Color(64, 224, 208));
+        panel.add(melodyLabel, gbc);
+        
+        gbc.gridy++;
+        JButton melodyBtn = new JButton("USE (40 mana)");
+        melodyBtn.setBackground(new Color(64, 224, 208));
+        melodyBtn.setForeground(Color.BLACK);
+        melodyBtn.addActionListener(e -> {
+            if (skillListener != null) {
+                skillListener.onSkillUsed(1, "Enchanting Melody", false, false, false);
+            }
+        });
+        panel.add(melodyBtn, gbc);
+        
+        // Whirlpool Trap
+        gbc.gridy++;
+        JLabel whirlpoolLabel = new JLabel("🌊 WHIRLPOOL TRAP");
+        whirlpoolLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        whirlpoolLabel.setForeground(new Color(0, 150, 200));
+        panel.add(whirlpoolLabel, gbc);
+        
+        gbc.gridy++;
+        JButton whirlpoolBtn = new JButton("USE (80 mana)");
+        whirlpoolBtn.setBackground(new Color(0, 150, 200));
+        whirlpoolBtn.setForeground(Color.WHITE);
+        whirlpoolBtn.addActionListener(e -> {
+            if (skillListener != null) {
+                skillListener.onSkillUsed(2, "Whirlpool Trap", true, false, false);
+            }
+        });
+        panel.add(whirlpoolBtn, gbc);
+        
+        // Storm Call
+        gbc.gridy++;
+        JLabel stormLabel = new JLabel("⛈️ STORM CALL");
+        stormLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        stormLabel.setForeground(new Color(70, 130, 200));
+        panel.add(stormLabel, gbc);
+        
+        gbc.gridy++;
+        JButton stormBtn = new JButton("USE (300 mana)");
+        stormBtn.setBackground(new Color(70, 130, 200));
+        stormBtn.setForeground(Color.WHITE);
+        stormBtn.addActionListener(e -> {
+            if (skillListener != null) {
+                skillListener.onSkillUsed(3, "Storm Call", false, false, false);
+            }
+        });
+        panel.add(stormBtn, gbc);
+        
+        gbc.gridy++;
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
+        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        manaLabel.setForeground(Color.CYAN);
+        panel.add(manaLabel, gbc);
+    }
+    
+    // ==================== AERIS SKILLS ====================
     private void addAerisSkills(JPanel panel, GridBagConstraints gbc) {
-        Aeris aeris = (Aeris) character;
-        
-        
+        // Adaptive Instinct
         gbc.gridy++;
         JLabel shieldLabel = new JLabel("🛡️ ADAPTIVE INSTINCT");
         shieldLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -573,13 +424,11 @@ public class SkillPanel extends JPanel {
         shieldBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Adaptive Instinct", true, false, true);
-            } else {
-                showShipSelectionDialog(aeris);
             }
         });
         panel.add(shieldBtn, gbc);
         
-        
+        // Multitask Overdrive
         gbc.gridy++;
         JLabel overdriveLabel = new JLabel("⚡ MULTITASK OVERDRIVE");
         overdriveLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -593,19 +442,11 @@ public class SkillPanel extends JPanel {
         overdriveBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Multitask Overdrive", false, false, false);
-            } else {
-                boolean used = aeris.useMultitaskOverdrive();
-                if (used) {
-                    showMessage("⚡ Multitask Overdrive! Restored 200 mana!");
-                    updateUI();
-                } else {
-                    showMessage("❌ Cannot use Multitask Overdrive!\n" + aeris.getSkillStatus(2));
-                }
             }
         });
         panel.add(overdriveBtn, gbc);
         
-        
+        // Relentless Ascent
         gbc.gridy++;
         JLabel ascentLabel = new JLabel("⚔️ RELENTLESS ASCENT");
         ascentLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -619,23 +460,20 @@ public class SkillPanel extends JPanel {
         ascentBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Relentless Ascent", true, false, false);
-            } else {
-                showMessage("⚔️ Relentless Ascent: Click on a column (0-9) on enemy board!");
             }
         });
         panel.add(ascentBtn, gbc);
         
         gbc.gridy++;
-        JLabel manaLabel = new JLabel(aeris.getManaBar(), SwingConstants.CENTER);
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
         manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
         manaLabel.setForeground(Color.CYAN);
         panel.add(manaLabel, gbc);
     }
     
+    // ==================== SELENE SKILLS ====================
     private void addSeleneSkills(JPanel panel, GridBagConstraints gbc) {
-        Selene selene = (Selene) character;
-        
-        
+        // Lunar Reveal
         gbc.gridy++;
         JLabel revealLabel = new JLabel("🔮 LUNAR REVEAL");
         revealLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -649,13 +487,11 @@ public class SkillPanel extends JPanel {
         revealBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Lunar Reveal", true, false, false);
-            } else {
-                showMessage("🔮 Lunar Reveal: Click on enemy board to reveal 3x3 area!");
             }
         });
         panel.add(revealBtn, gbc);
         
-        
+        // Crescent Strike
         gbc.gridy++;
         JLabel strikeLabel = new JLabel("🌙 CRESCENT STRIKE");
         strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -669,13 +505,11 @@ public class SkillPanel extends JPanel {
         strikeBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Crescent Strike", true, false, false);
-            } else {
-                showMessage("🌙 Crescent Strike: Click on enemy board to strike cross pattern!");
             }
         });
         panel.add(strikeBtn, gbc);
         
-        
+        // Starfall Link
         gbc.gridy++;
         JLabel starfallLabel = new JLabel("⭐ STARFALL LINK");
         starfallLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -689,19 +523,75 @@ public class SkillPanel extends JPanel {
         starfallBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Starfall Link", false, false, false);
-            } else {
-                boolean used = selene.useStarfallLink(getEnemyBoard());
-                if (used) {
-                    showMessage("⭐ Starfall Link activated!");
-                } else {
-                    showMessage("❌ Cannot use Starfall Link!\n" + selene.getSkillStatus(3));
-                }
             }
         });
         panel.add(starfallBtn, gbc);
         
         gbc.gridy++;
-        JLabel manaLabel = new JLabel(selene.getManaBar(), SwingConstants.CENTER);
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
+        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
+        manaLabel.setForeground(Color.CYAN);
+        panel.add(manaLabel, gbc);
+    }
+    
+    // ==================== FLUE SKILLS ====================
+    private void addFlueSkills(JPanel panel, GridBagConstraints gbc) {
+        // Corruption.EXE
+        gbc.gridy++;
+        JLabel corruptionLabel = new JLabel("💻 CORRUPTION.EXE");
+        corruptionLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        corruptionLabel.setForeground(new Color(0, 255, 127));
+        panel.add(corruptionLabel, gbc);
+        
+        gbc.gridy++;
+        JButton corruptionBtn = new JButton("USE (100 mana)");
+        corruptionBtn.setBackground(new Color(0, 255, 127));
+        corruptionBtn.setForeground(Color.BLACK);
+        corruptionBtn.addActionListener(e -> {
+            if (skillListener != null) {
+                skillListener.onSkillUsed(1, "Corruption.EXE", true, false, false);
+            }
+        });
+        panel.add(corruptionBtn, gbc);
+        
+        // Fortification.GRID
+        gbc.gridy++;
+        JLabel fortificationLabel = new JLabel("🛡️ FORTIFICATION.GRID");
+        fortificationLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        fortificationLabel.setForeground(new Color(0, 200, 100));
+        panel.add(fortificationLabel, gbc);
+        
+        gbc.gridy++;
+        JButton fortificationBtn = new JButton("USE (200 mana)");
+        fortificationBtn.setBackground(new Color(0, 200, 100));
+        fortificationBtn.setForeground(Color.BLACK);
+        fortificationBtn.addActionListener(e -> {
+            if (skillListener != null) {
+                skillListener.onSkillUsed(2, "Fortification.GRID", true, false, true);
+            }
+        });
+        panel.add(fortificationBtn, gbc);
+        
+        // Kernel.Decimation.REQ
+        gbc.gridy++;
+        JLabel kernelLabel = new JLabel("💀 KERNEL.DECIMATION.REQ");
+        kernelLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        kernelLabel.setForeground(new Color(200, 0, 0));
+        panel.add(kernelLabel, gbc);
+        
+        gbc.gridy++;
+        JButton kernelBtn = new JButton("USE (300 mana)");
+        kernelBtn.setBackground(new Color(200, 0, 0));
+        kernelBtn.setForeground(Color.WHITE);
+        kernelBtn.addActionListener(e -> {
+            if (skillListener != null) {
+                skillListener.onSkillUsed(3, "Kernel.Decimation.REQ", true, false, false);
+            }
+        });
+        panel.add(kernelBtn, gbc);
+        
+        gbc.gridy++;
+        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
         manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
         manaLabel.setForeground(Color.CYAN);
         panel.add(manaLabel, gbc);
@@ -712,7 +602,7 @@ public class SkillPanel extends JPanel {
             "⚔️ BASIC ATTACK",
             "No cost - Standard shot",
             Color.WHITE,
-            e -> showMessage("Click on enemy board to fire!"));
+            e -> {});
     }
     
     private void addSkillRow(JPanel panel, GridBagConstraints gbc, int yPos, 
@@ -750,6 +640,7 @@ public class SkillPanel extends JPanel {
         panel.add(descLabel, gbc);
     }
     
+    // ==================== HELPER METHODS ====================
     private Color getCharacterColor() {
         if (character instanceof Jiji) return new Color(100, 200, 255);
         if (character instanceof Kael) return new Color(75, 0, 130);
@@ -856,38 +747,6 @@ public class SkillPanel extends JPanel {
         this.enemyBoardPanel = enemy;
     }
     
-    private Board getEnemyBoard() {
-        return enemyBoardPanel != null ? enemyBoardPanel.getBoard() : null;
-    }
-    
-    private Board getPlayerBoard() {
-        return playerBoardPanel != null ? playerBoardPanel.getBoard() : null;
-    }
-    
-    private void promptForTarget(String skillName, TargetCallback callback) {
-        JOptionPane.showMessageDialog(this,
-            "Click on the enemy board to target " + skillName,
-            "Target Selection",
-            JOptionPane.INFORMATION_MESSAGE);
-        this.pendingTargetCallback = callback;
-    }
-    
-    private TargetCallback pendingTargetCallback;
-    
-    public TargetCallback getPendingTargetCallback() {
-        TargetCallback cb = pendingTargetCallback;
-        pendingTargetCallback = null;
-        return cb;
-    }
-    
-    public interface TargetCallback {
-        void onTargetSelected(int x, int y);
-    }
-    
-    private void showMessage(String msg) {
-        JOptionPane.showMessageDialog(this, msg, character.getName(), JOptionPane.INFORMATION_MESSAGE);
-    }
-    
     @Override
     public void updateUI() {
         super.updateUI();
@@ -906,88 +765,4 @@ public class SkillPanel extends JPanel {
             updateTimer.stop();
         }
     }
-    
-    private void showShipSelectionDialog(Aeris aeris) {
-        ArrayList<Ship> availableShips = new ArrayList<>();
-        for (Ship ship : getPlayerBoard().getShips()) {
-            if (!ship.isSunk() && !ship.isShielded()) {
-                availableShips.add(ship);
-            }
-        }
-        
-        if (availableShips.isEmpty()) {
-            showMessage("❌ No available ships to shield! All ships are either sunk or already shielded.");
-            return;
-        }
-        
-        String[] shipNames = new String[availableShips.size()];
-        for (int i = 0; i < availableShips.size(); i++) {
-            Ship ship = availableShips.get(i);
-            shipNames[i] = ship.getName() + " (HP: " + ship.getRemainingHealth() + "/" + ship.getSize() + ")";
-        }
-        
-        String selectedShip = (String) JOptionPane.showInputDialog(
-            this,
-            "Select a ship to shield for 2 turns:",
-            "Adaptive Instinct",
-            JOptionPane.QUESTION_MESSAGE,
-            null,
-            shipNames,
-            shipNames[0]
-        );
-        
-        if (selectedShip != null) {
-            for (int i = 0; i < availableShips.size(); i++) {
-                if (shipNames[i].equals(selectedShip)) {
-                    boolean used = aeris.useAdaptiveInstinct(getPlayerBoard(), i);
-                    if (used) {
-                        showMessage("🛡️ " + availableShips.get(i).getName() + " is now SHIELDED for 2 turns!");
-                        updateUI();
-                    } else {
-                        showMessage("❌ Failed to shield ship!");
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    public void forceRefreshUI() {
-    
-    updateUI();
-    
-    
-    if (skill1Button != null) {
-        String status = getSkillStatus(1);
-        boolean enabled = status.equals("Ready!") || status.contains("Ready") || status.contains("ENHANCED");
-        skill1Button.setEnabled(enabled);
-    }
-    if (skill2Button != null) {
-        String status = getSkillStatus(2);
-        boolean enabled = status.equals("Ready!") || status.contains("Ready") || status.contains("ENHANCED");
-        skill2Button.setEnabled(enabled);
-    }
-    if (skill3Button != null) {
-        String status = getSkillStatus(3);
-        boolean enabled = status.equals("Ready!") || status.contains("Ready") || status.contains("ENHANCED") || status.contains("ULTIMATE READY");
-        skill3Button.setEnabled(enabled);
-    }
-    
-    
-    if (resourceLabel != null) {
-        resourceLabel.setText(getResourceText());
-    }
-    if (passiveLabel != null) {
-        passiveLabel.setText(getPassiveText());
-    }
-    
-    repaint();
-}
-
-
-private String getSkillStatus(int skillNum) {
-    if (character instanceof Selene) {
-        return ((Selene) character).getSkillStatus(skillNum);
-    }
-    return "Ready!";
-}
 }

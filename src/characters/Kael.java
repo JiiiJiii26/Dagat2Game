@@ -93,6 +93,7 @@ public class Kael extends GameCharacter {
     }
     
     
+    
     Ship targetShip = null;
     for (Ship ship : playerBoard.getShips()) {
         if (ship.containsCell(fromX, fromY)) {
@@ -392,4 +393,17 @@ public class Kael extends GameCharacter {
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Kael's abilities are used through skill buttons!");
     }
+
+
+    public int getShadowStepCooldown() {
+    return shadowStepCooldown;
+}
+
+public int getShadowBladeCooldown() {
+    return shadowBladeCooldown;
+}
+
+public int getShadowDomainCooldown() {
+    return shadowDomainCooldown;
+}
 }
