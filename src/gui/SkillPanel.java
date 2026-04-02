@@ -21,10 +21,10 @@ public class SkillPanel extends JPanel {
     
     private Timer updateTimer;
     
-    // Skill listener for multiplayer/campaign mode
+    
     private SkillButtonListener skillListener;
     
-    // Interface for skill handling
+    
     public interface SkillButtonListener {
         void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard);
     }
@@ -66,7 +66,7 @@ public class SkillPanel extends JPanel {
         gbc.gridy = 1;
         mainPanel.add(passiveLabel, gbc);
         
-        // Add character-specific skills
+        
         if (character instanceof Jiji) {
             addJijiSkills(mainPanel, gbc);
         } else if (character instanceof Kael) {
@@ -93,9 +93,9 @@ public class SkillPanel extends JPanel {
         updateTimer.start();
     }
     
-    // ==================== JIJI SKILLS ====================
+    
     private void addJijiSkills(JPanel panel, GridBagConstraints gbc) {
-        // Data Leech
+        
         gbc.gridy++;
         JLabel leechLabel = new JLabel("🔓 DATA LEECH");
         leechLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -113,7 +113,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(leechBtn, gbc);
         
-        // Overclock
+        
         gbc.gridy++;
         JLabel overclockLabel = new JLabel("⚡ OVERCLOCK");
         overclockLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -131,7 +131,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(overclockBtn, gbc);
         
-        // System Overload
+        
         gbc.gridy++;
         JLabel overloadLabel = new JLabel("💻 SYSTEM OVERLOAD");
         overloadLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -156,9 +156,9 @@ public class SkillPanel extends JPanel {
         panel.add(manaLabel, gbc);
     }
     
-    // ==================== KAEL SKILLS ====================
+    
     private void addKaelSkills(JPanel panel, GridBagConstraints gbc) {
-        // Shadow Step
+        
         gbc.gridy++;
         JLabel stepLabel = new JLabel("🌑 SHADOW STEP");
         stepLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -176,7 +176,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(stepBtn, gbc);
         
-        // Shadow Blade - requires direction
+        
         gbc.gridy++;
         JLabel bladeLabel = new JLabel("⚔️ SHADOW BLADE");
         bladeLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -194,7 +194,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(bladeBtn, gbc);
         
-        // Shadow Domain
+        
         gbc.gridy++;
         JLabel domainLabel = new JLabel("🌑🌑🌑 SHADOW DOMAIN");
         domainLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -219,9 +219,9 @@ public class SkillPanel extends JPanel {
         panel.add(energyLabel, gbc);
     }
     
-    // ==================== VALERIUS SKILLS ====================
+    
     private void addValeriusSkills(JPanel panel, GridBagConstraints gbc) {
-        // Radar Overload
+        
         gbc.gridy++;
         JLabel radarLabel = new JLabel("📡 RADAR OVERLOAD");
         radarLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -239,7 +239,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(radarBtn, gbc);
         
-        // Precision Strike - requires direction
+        
         gbc.gridy++;
         JLabel strikeLabel = new JLabel("🎯 PRECISION STRIKE");
         strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -257,7 +257,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(strikeBtn, gbc);
         
-        // Fortress Mode
+        
         gbc.gridy++;
         JLabel fortressLabel = new JLabel("🏰 FORTRESS MODE");
         fortressLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -282,9 +282,9 @@ public class SkillPanel extends JPanel {
         panel.add(manaLabel, gbc);
     }
     
-    // ==================== SKYE SKILLS ====================
+    
     private void addSkyeSkills(JPanel panel, GridBagConstraints gbc) {
-        // Catnip Explosion
+        
         gbc.gridy++;
         JLabel catnipLabel = new JLabel("🌿 CATNIP EXPLOSION");
         catnipLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -302,7 +302,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(catnipBtn, gbc);
         
-        // Laser Pointer
+        
         gbc.gridy++;
         JLabel laserLabel = new JLabel("🔴 LASER POINTER");
         laserLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -320,7 +320,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(laserBtn, gbc);
         
-        // Nine Lives
+        
         gbc.gridy++;
         JLabel reviveLabel = new JLabel("😺 NINE LIVES");
         reviveLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -345,9 +345,9 @@ public class SkillPanel extends JPanel {
         panel.add(manaLabel, gbc);
     }
     
-    // ==================== MORGANA SKILLS ====================
+    
     private void addMorganaSkills(JPanel panel, GridBagConstraints gbc) {
-        // Enchanting Melody
+        
         gbc.gridy++;
         JLabel melodyLabel = new JLabel("🎵 ENCHANTING MELODY");
         melodyLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -365,7 +365,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(melodyBtn, gbc);
         
-        // Whirlpool Trap
+        
         gbc.gridy++;
         JLabel whirlpoolLabel = new JLabel("🌊 WHIRLPOOL TRAP");
         whirlpoolLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -383,7 +383,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(whirlpoolBtn, gbc);
         
-        // Storm Call
+        
         gbc.gridy++;
         JLabel stormLabel = new JLabel("⛈️ STORM CALL");
         stormLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -408,9 +408,9 @@ public class SkillPanel extends JPanel {
         panel.add(manaLabel, gbc);
     }
     
-    // ==================== AERIS SKILLS ====================
+    
     private void addAerisSkills(JPanel panel, GridBagConstraints gbc) {
-        // Adaptive Instinct
+        
         gbc.gridy++;
         JLabel shieldLabel = new JLabel("🛡️ ADAPTIVE INSTINCT");
         shieldLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -428,7 +428,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(shieldBtn, gbc);
         
-        // Multitask Overdrive
+        
         gbc.gridy++;
         JLabel overdriveLabel = new JLabel("⚡ MULTITASK OVERDRIVE");
         overdriveLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -446,7 +446,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(overdriveBtn, gbc);
         
-        // Relentless Ascent
+        
         gbc.gridy++;
         JLabel ascentLabel = new JLabel("⚔️ RELENTLESS ASCENT");
         ascentLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -471,9 +471,9 @@ public class SkillPanel extends JPanel {
         panel.add(manaLabel, gbc);
     }
     
-    // ==================== SELENE SKILLS ====================
+    
     private void addSeleneSkills(JPanel panel, GridBagConstraints gbc) {
-        // Lunar Reveal
+        
         gbc.gridy++;
         JLabel revealLabel = new JLabel("🔮 LUNAR REVEAL");
         revealLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -491,7 +491,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(revealBtn, gbc);
         
-        // Crescent Strike
+        
         gbc.gridy++;
         JLabel strikeLabel = new JLabel("🌙 CRESCENT STRIKE");
         strikeLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -509,7 +509,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(strikeBtn, gbc);
         
-        // Starfall Link
+        
         gbc.gridy++;
         JLabel starfallLabel = new JLabel("⭐ STARFALL LINK");
         starfallLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -534,9 +534,9 @@ public class SkillPanel extends JPanel {
         panel.add(manaLabel, gbc);
     }
     
-    // ==================== FLUE SKILLS ====================
+    
     private void addFlueSkills(JPanel panel, GridBagConstraints gbc) {
-        // Corruption.EXE
+        
         gbc.gridy++;
         JLabel corruptionLabel = new JLabel("💻 CORRUPTION.EXE");
         corruptionLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -554,7 +554,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(corruptionBtn, gbc);
         
-        // Fortification.GRID
+        
         gbc.gridy++;
         JLabel fortificationLabel = new JLabel("🛡️ FORTIFICATION.GRID");
         fortificationLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -572,7 +572,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(fortificationBtn, gbc);
         
-        // Kernel.Decimation.REQ
+        
         gbc.gridy++;
         JLabel kernelLabel = new JLabel("💀 KERNEL.DECIMATION.REQ");
         kernelLabel.setFont(new Font("Arial", Font.BOLD, 11));
@@ -640,7 +640,7 @@ public class SkillPanel extends JPanel {
         panel.add(descLabel, gbc);
     }
     
-    // ==================== HELPER METHODS ====================
+    
     private Color getCharacterColor() {
         if (character instanceof Jiji) return new Color(100, 200, 255);
         if (character instanceof Kael) return new Color(75, 0, 130);

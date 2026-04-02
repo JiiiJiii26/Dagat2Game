@@ -75,7 +75,7 @@ public class BoardPanel extends JPanel {
             button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
             button.setCursor(new Cursor(Cursor.HAND_CURSOR));
             
-            // Add hover effect
+            
             button.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
                     if (!cell.isFiredUpon()) {
@@ -181,13 +181,13 @@ public class BoardPanel extends JPanel {
         case HIT:
             button.setBackground(Cell.HIT_RED);
             button.setText("💥");
-            // Add explosion animation
+            
             animateExplosion(button);
             break;
         case MISS:
             button.setBackground(Cell.MISS_GRAY);
             button.setText("💧");
-            // Add splash animation
+            
             animateSplash(button);
             break;
         case SUNK:

@@ -690,14 +690,14 @@ private void startMoonPhaseTimer() {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
     
-    // FIRST, create the board panels
+    
     playerBoardPanel = new BoardPanel(true, playerBoard, true);
     enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
-    // Set up click handlers
+    
     setupClickHandlers();
     
-    // Simple ocean background
+    
     JPanel backgroundPanel = new JPanel() {
         @Override
         protected void paintComponent(Graphics g) {
@@ -712,7 +712,7 @@ private void startMoonPhaseTimer() {
     };
     backgroundPanel.setLayout(new BorderLayout());
     
-    // ===== TOP PANEL =====
+    
     JPanel topPanel = new JPanel();
     topPanel.setOpaque(false);
     topPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
@@ -724,16 +724,16 @@ private void startMoonPhaseTimer() {
     waveLabel.setHorizontalAlignment(SwingConstants.CENTER);
     topPanel.add(waveLabel);
     
-    // ===== MAIN CONTENT =====
+    
     JPanel mainContentPanel = new JPanel(new BorderLayout());
     mainContentPanel.setOpaque(false);
     mainContentPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     
-    // Boards panel (Left and Right)
+    
     JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
     boardsPanel.setOpaque(false);
     
-    // LEFT SIDE - Player Area
+    
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
     leftPanel.setBorder(BorderFactory.createTitledBorder(
@@ -760,7 +760,7 @@ private void startMoonPhaseTimer() {
     playerShipLabel.setForeground(Color.WHITE);
     leftPanel.add(playerShipLabel, BorderLayout.SOUTH);
     
-    // RIGHT SIDE - Enemy Area
+    
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
     rightPanel.setBorder(BorderFactory.createTitledBorder(
@@ -791,38 +791,38 @@ private void startMoonPhaseTimer() {
     boardsPanel.add(rightPanel);
     mainContentPanel.add(boardsPanel, BorderLayout.CENTER);
     
-    // ===== SKILLS PANEL - Using ONLY SkillPanel =====
+    
    JPanel skillsContainer = new JPanel(new BorderLayout());
 skillsContainer.setOpaque(false);
 skillsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
-// Create SkillPanel
+
 currentSkillPanel = new SkillPanel(playerCharacter);
 currentSkillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
 currentSkillPanel.setPreferredSize(new Dimension(350, 280));
 
-// ADD THE SKILL LISTENER HERE
+
 currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
     @Override
     public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
         System.out.println("Skill used: " + skillName + " (requiresTarget: " + requiresTarget + ", requiresDirection: " + requiresDirection + ", targetsOwnBoard: " + targetsOwnBoard + ")");
         
-        // SPECIAL HANDLING FOR SHADOW STEP
+        
         if (skillName.equals("Shadow Step")) {
             System.out.println("🌑 Shadow Step detected - using separate handler!");
             waitingForKaelStepSource = true;
             waitingForKaelStepDestination = false;
             updateStatusLabel("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
-            return;  // IMPORTANT: Exit here, don't proceed to normal skill handling
+            return;  
         }
         
-        // For all other skills
+        
         currentSkillNumber = skillNumber;
         currentSkillName = skillName;
         currentSkillTargetsOwnBoard = targetsOwnBoard;
         currentSkillRequiresDirection = requiresDirection;
         
-        // Handle direction choice if needed
+        
         if (requiresDirection) {
             String[] options = {"Horizontal (→)", "Vertical (↓)"};
             int choice = JOptionPane.showOptionDialog(frame,
@@ -835,17 +835,17 @@ currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
                 options[0]);
             
             if (choice < 0) {
-                return; // User cancelled
+                return; 
             }
             currentSkillDirectionHorizontal = (choice == 0);
         }
         
-        // Handle targeting if needed
+        
         if (requiresTarget) {
             waitingForSkillTarget = true;
             updateStatusLabel("Click on " + (targetsOwnBoard ? "YOUR" : "ENEMY") + " board to target " + skillName + "!", Color.YELLOW);
         } else {
-            // Execute skill immediately (no target needed)
+            
             executeSkill(-1, -1);
         }
     }
@@ -854,7 +854,7 @@ currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
 skillsContainer.add(currentSkillPanel, BorderLayout.CENTER);
 mainContentPanel.add(skillsContainer, BorderLayout.SOUTH);
     
-    // ===== BOTTOM STATUS PANEL (No End Turn button) =====
+    
     JPanel bottomPanel = new JPanel();
     bottomPanel.setOpaque(false);
     bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
@@ -868,7 +868,7 @@ mainContentPanel.add(skillsContainer, BorderLayout.SOUTH);
     
     bottomPanel.add(statusLabel);
     
-    // ===== ASSEMBLE EVERYTHING =====
+    
     backgroundPanel.add(topPanel, BorderLayout.NORTH);
     backgroundPanel.add(mainContentPanel, BorderLayout.CENTER);
     backgroundPanel.add(bottomPanel, BorderLayout.SOUTH);
@@ -877,7 +877,7 @@ mainContentPanel.add(skillsContainer, BorderLayout.SOUTH);
     frame.revalidate();
     frame.repaint();
     
-    // Start a timer to refresh the skill panel UI every second
+    
     if (skillPanelRefreshTimer != null) {
         skillPanelRefreshTimer.stop();
     }
@@ -894,7 +894,7 @@ private void executeSkill(int targetX, int targetY) {
     System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
     
-    // Execute the skill based on the character
+    
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
         switch(currentSkillNumber) {
@@ -915,7 +915,7 @@ private void executeSkill(int targetX, int targetY) {
         Kael kael = (Kael) playerCharacter;
         switch(currentSkillNumber) {
             case 1:
-                // Shadow Step - handled separately
+                
                 System.out.println("⚠️ Shadow Step should not be executed through executeSkill!");
                 updateStatusLabel("Shadow Step requires clicking on your ships - use the skill button then click on your ships!", Color.YELLOW);
                 waitingForSkillTarget = false;
@@ -1047,8 +1047,8 @@ private void executeSkill(int targetX, int targetY) {
         if (currentSkillPanel != null) {
             currentSkillPanel.updateUI();
         }
-        // After successful skill, end the turn (unless it's a buff skill)
-        if (currentSkillNumber != 2) { // Skill 2 for most characters are buffs that don't end turn
+        
+        if (currentSkillNumber != 2) { 
             playerTurn = false;
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
@@ -1058,7 +1058,7 @@ private void executeSkill(int targetX, int targetY) {
         updateStatusLabel("❌ Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
     }
     
-    // Reset skill state
+    
     waitingForSkillTarget = false;
     currentSkillNumber = 0;
     currentSkillName = "";
@@ -1079,15 +1079,15 @@ private String getShipCountText(Board board) {
 }
 
 private void setupClickHandlers() {
-    // Player board click handler
+    
     playerBoardPanel.setPlayerClickHandler((row, col) -> {
-        // Handle skill targeting on own board
+        
         if (waitingForSkillTarget && currentSkillTargetsOwnBoard) {
             executeSkill(row, col);
             return;
         }
         
-        // Handle Kael's Shadow Step
+        
         if (waitingForKaelStepSource) {
             System.out.println("🌑 Kael's SHADOW STEP source: (" + row + "," + col + ")");
             stepSourceCoordinates[0] = row;
@@ -1106,7 +1106,7 @@ private void setupClickHandlers() {
             if (used) {
                 updateStatusLabel("🌑 Shadow Step! Ship teleported successfully!", Color.CYAN);
                 refreshBoardsOnly();
-                // End turn after Shadow Step
+                
                 playerTurn = false;
                 Timer timer = new Timer(1200, e -> enemyTurn());
                 timer.setRepeats(false);
@@ -1125,17 +1125,17 @@ private void setupClickHandlers() {
         }
     });
     
-    // Enemy board click handler
+    
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
         System.out.println("Enemy board clicked at: " + row + "," + col);
         
-        // Handle skill targeting first
+        
         if (waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
             executeSkill(row, col);
             return;
         }
         
-        // Handle other skill callbacks
+        
         if (waitingForKaelBlade && currentKaelBladeCallback != null) {
             currentKaelBladeCallback.accept(row, col);
             waitingForKaelBlade = false;
@@ -1178,7 +1178,7 @@ private void setupClickHandlers() {
             return;
         }
         
-        // Normal attack
+        
         if (playerTurn) {
             handlePlayerAttack(row, col);
         }
@@ -1201,46 +1201,7 @@ private void setupClickHandlers() {
         portraitLabel.setForeground(Color.WHITE);
         panel.add(portraitLabel, BorderLayout.CENTER);
         
-     /*   JPanel skillsPanel = new JPanel(new GridLayout(0, 1, 5, 5));
-        skillsPanel.setBackground(new Color(0, 50, 0));
-        skillsPanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(Color.GREEN),
-            "ABILITIES",
-            TitledBorder.CENTER,
-            TitledBorder.TOP,
-            new Font("Arial", Font.BOLD, 10),
-            Color.GREEN
-        ));
-        
-        if (playerCharacter instanceof Aeris) {
-            ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
-        }
-        if (playerCharacter instanceof Kael) {
-            ((Kael) playerCharacter).setPlayerBoard(playerBoard);
-        }
-        if (playerCharacter instanceof Valerius) {
-            ((Valerius) playerCharacter).setPlayerBoard(playerBoard);
-        }
-
-        if (playerCharacter instanceof Jiji) {
-            addJijiSkills(skillsPanel, true);
-        } else if (playerCharacter instanceof Kael) {
-            addKaelSkills(skillsPanel, true);  
-        } else if (playerCharacter instanceof Valerius) {
-            addValeriusSkills(skillsPanel, true);
-        } else if (playerCharacter instanceof Skye) {
-            addSkyeSkills(skillsPanel, true);
-        } else if (playerCharacter instanceof Morgana) {
-            addMorganaSkills(skillsPanel, true);  
-        } else if (playerCharacter instanceof Aeris) {
-            addAerisSkills(skillsPanel, true); 
-        } else if (playerCharacter instanceof Selene) {
-            addSeleneSkills(skillsPanel, true); 
-        } else if (playerCharacter instanceof Flue) {
-            addFlueSkills(skillsPanel, true); 
-        }
-        
-        panel.add(skillsPanel, BorderLayout.WEST);*/
+    
         
         JPanel shipCounterPanel = createShipCounterPanel(true);
         panel.add(shipCounterPanel, BorderLayout.SOUTH);
@@ -1469,7 +1430,7 @@ private void setupClickHandlers() {
         
         Kael kael = (Kael) playerCharacter;
         
-        // Debug: Print current energy and cooldown
+        
         System.out.println("Current energy: " + kael.getCurrentEnergy() + "/" + kael.getMaxEnergy());
         System.out.println("ShadowStepCooldown: " + kael.getShadowStepCooldown());
         
@@ -1479,7 +1440,7 @@ private void setupClickHandlers() {
         if (used) {
             updateStatusLabel("🌑 Shadow Step! Ship teleported successfully!", Color.CYAN);
             refreshBoardsOnly();
-            // End turn after Shadow Step
+            
             playerTurn = false;
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
@@ -1491,7 +1452,7 @@ private void setupClickHandlers() {
         return;
     }
     
-    // Handle skill targeting on own board (for other skills)
+    
     if (waitingForSkillTarget && currentSkillTargetsOwnBoard) {
         executeSkill(row, col);
         return;
