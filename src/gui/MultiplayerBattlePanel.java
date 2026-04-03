@@ -2,6 +2,7 @@ package gui;
 
 import game.LocalMultiplayer;
 import game.ShotResult;
+import main.Main;
 import models.Board;
 import models.Cell;
 import models.Ship;
@@ -47,77 +48,75 @@ public class MultiplayerBattlePanel extends JPanel {
         updateBoardViews();
     }
     
-    private void createGamePanels() {
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(25, 25, 112));
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        turnLabel = new JLabel("", SwingConstants.CENTER);
-        turnLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        turnLabel.setForeground(new Color(173, 216, 230));
-        topPanel.add(turnLabel, BorderLayout.CENTER);
-        
-        JPanel mainContentPanel = new JPanel(new BorderLayout());
-        mainContentPanel.setBackground(new Color(25, 25, 112));
-        
-        boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        boardsPanel.setBackground(new Color(25, 25, 112));
-        boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        
-        skillsPanel = new JPanel(new BorderLayout());
-        skillsPanel.setBackground(new Color(25, 25, 112));
-        skillsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        skillsPanel.setPreferredSize(new Dimension(320, 500));
-        
-        mainContentPanel.add(boardsPanel, BorderLayout.CENTER);
-        mainContentPanel.add(skillsPanel, BorderLayout.EAST);
-        
-        JPanel counterPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        counterPanel.setBackground(new Color(25, 25, 112));
-        counterPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
-        
-        player1ShipsLabel = new JLabel("", SwingConstants.CENTER);
-        player1ShipsLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        player1ShipsLabel.setForeground(Color.GREEN);
-        
-        player2ShipsLabel = new JLabel("", SwingConstants.CENTER);
-        player2ShipsLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        player2ShipsLabel.setForeground(Color.RED);
-        
-        counterPanel.add(player1ShipsLabel);
-        counterPanel.add(player2ShipsLabel);
-        
-        
-        JPanel statusPanel = new JPanel(new BorderLayout());
-        statusPanel.setBackground(new Color(25, 25, 112));
-        statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
-        
-        statusLabel = new JLabel("Click on enemy waters to fire!", SwingConstants.CENTER);
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        statusLabel.setForeground(Color.WHITE);
-        
-        
-        endTurnButton = new JButton("END TURN");
-        endTurnButton.setFont(new Font("Arial", Font.BOLD, 16));
-        endTurnButton.setBackground(new Color(255, 100, 100));
-        endTurnButton.setForeground(Color.WHITE);
-        endTurnButton.setFocusPainted(false);
-        endTurnButton.setPreferredSize(new Dimension(120, 40));
-        endTurnButton.addActionListener(e -> endTurn());
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setBackground(new Color(25, 25, 112));
-        buttonPanel.add(endTurnButton);
-        
-        statusPanel.add(statusLabel, BorderLayout.CENTER);
-        statusPanel.add(buttonPanel, BorderLayout.EAST);
-        
-        add(topPanel, BorderLayout.NORTH);
-        add(mainContentPanel, BorderLayout.CENTER);
-        add(counterPanel, BorderLayout.SOUTH);
-        add(statusPanel, BorderLayout.SOUTH);
-    }
+   private void createGamePanels() {
+    
+    JPanel topPanel = new JPanel(new BorderLayout());
+    topPanel.setBackground(new Color(25, 25, 112));
+    topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    
+    
+    JButton backButton = new JButton("← BACK TO MENU");
+    backButton.setFont(new Font("Arial", Font.BOLD, 14));
+    backButton.setBackground(new Color(80, 80, 100));
+    backButton.setForeground(Color.WHITE);
+    backButton.setFocusPainted(false);
+    backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    backButton.addActionListener(e -> {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Are you sure you want to return to the main menu?\nThe current game will be lost.",
+            "Return to Menu",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            Main.showMainMenu();
+        }
+    });
+    topPanel.add(backButton, BorderLayout.WEST);
+    
+    turnLabel = new JLabel("", SwingConstants.CENTER);
+    turnLabel.setFont(new Font("Arial", Font.BOLD, 24));
+    turnLabel.setForeground(new Color(173, 216, 230));
+    topPanel.add(turnLabel, BorderLayout.CENTER);
+    
+    
+    topPanel.add(new JPanel(), BorderLayout.EAST);
+    
+    
+    boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+    boardsPanel.setBackground(new Color(25, 25, 112));
+    boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    
+    
+    JPanel counterPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+    counterPanel.setBackground(new Color(25, 25, 112));
+    counterPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
+    
+    player1ShipsLabel = new JLabel("", SwingConstants.CENTER);
+    player1ShipsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+    player1ShipsLabel.setForeground(Color.GREEN);
+    
+    player2ShipsLabel = new JLabel("", SwingConstants.CENTER);
+    player2ShipsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+    player2ShipsLabel.setForeground(Color.RED);
+    
+    counterPanel.add(player1ShipsLabel);
+    counterPanel.add(player2ShipsLabel);
+    
+    
+    JPanel statusPanel = new JPanel();
+    statusPanel.setBackground(new Color(25, 25, 112));
+    statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+    
+    statusLabel = new JLabel("Click on enemy waters to fire!", SwingConstants.CENTER);
+    statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    statusLabel.setForeground(Color.WHITE);
+    statusPanel.add(statusLabel);
+    
+    add(topPanel, BorderLayout.NORTH);
+    add(boardsPanel, BorderLayout.CENTER);
+    add(counterPanel, BorderLayout.SOUTH);
+    add(statusPanel, BorderLayout.SOUTH);
+}
     
     private void endTurn() {
         

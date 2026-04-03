@@ -713,16 +713,49 @@ private void startMoonPhaseTimer() {
     backgroundPanel.setLayout(new BorderLayout());
     
     
-    JPanel topPanel = new JPanel();
+    JPanel topPanel = new JPanel(new BorderLayout());
     topPanel.setOpaque(false);
-    topPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+    topPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+    
+    
+    JButton backButton = new JButton("← BACK TO MENU");
+    backButton.setFont(new Font("Arial", Font.BOLD, 14));
+    backButton.setBackground(new Color(80, 80, 100));
+    backButton.setForeground(Color.WHITE);
+    backButton.setFocusPainted(false);
+    backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    backButton.addActionListener(e -> {
+        int confirm = JOptionPane.showConfirmDialog(frame,
+            "Are you sure you want to return to the main menu?",
+            "Return to Menu",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            
+            if (skillPanelRefreshTimer != null) {
+                skillPanelRefreshTimer.stop();
+            }
+            if (moonPhaseTimer != null) {
+                moonPhaseTimer.stop();
+            }
+            if (currentSkillPanel != null) {
+                currentSkillPanel.stopTimers();
+            }
+            Main.showMainMenu();
+        }
+    });
+    topPanel.add(backButton, BorderLayout.WEST);
+    
     
     waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
     waveLabel.setFont(new Font("Arial", Font.BOLD, 24));
     waveLabel.setForeground(Color.YELLOW);
     waveLabel.setHorizontalAlignment(SwingConstants.CENTER);
-    topPanel.add(waveLabel);
+    topPanel.add(waveLabel, BorderLayout.CENTER);
+    
+    
+    topPanel.add(new JPanel(), BorderLayout.EAST);
     
     
     JPanel mainContentPanel = new JPanel(new BorderLayout());
@@ -792,67 +825,65 @@ private void startMoonPhaseTimer() {
     mainContentPanel.add(boardsPanel, BorderLayout.CENTER);
     
     
-   JPanel skillsContainer = new JPanel(new BorderLayout());
-skillsContainer.setOpaque(false);
-skillsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-
-
-currentSkillPanel = new SkillPanel(playerCharacter);
-currentSkillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
-currentSkillPanel.setPreferredSize(new Dimension(350, 280));
-
-
-currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
-    @Override
-    public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
-        System.out.println("Skill used: " + skillName + " (requiresTarget: " + requiresTarget + ", requiresDirection: " + requiresDirection + ", targetsOwnBoard: " + targetsOwnBoard + ")");
-        
-        
-        if (skillName.equals("Shadow Step")) {
-            System.out.println("🌑 Shadow Step detected - using separate handler!");
-            waitingForKaelStepSource = true;
-            waitingForKaelStepDestination = false;
-            updateStatusLabel("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
-            return;  
-        }
-        
-        
-        currentSkillNumber = skillNumber;
-        currentSkillName = skillName;
-        currentSkillTargetsOwnBoard = targetsOwnBoard;
-        currentSkillRequiresDirection = requiresDirection;
-        
-        
-        if (requiresDirection) {
-            String[] options = {"Horizontal (→)", "Vertical (↓)"};
-            int choice = JOptionPane.showOptionDialog(frame,
-                skillName + "\n\nChoose direction:",
-                "Skill Direction",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]);
+    JPanel skillsContainer = new JPanel(new BorderLayout());
+    skillsContainer.setOpaque(false);
+    skillsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+    
+    currentSkillPanel = new SkillPanel(playerCharacter);
+    currentSkillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
+    currentSkillPanel.setPreferredSize(new Dimension(350, 280));
+    
+    currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
+        @Override
+        public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
+            System.out.println("Skill used: " + skillName + " (requiresTarget: " + requiresTarget + ", requiresDirection: " + requiresDirection + ", targetsOwnBoard: " + targetsOwnBoard + ")");
             
-            if (choice < 0) {
-                return; 
+            
+            if (skillName.equals("Shadow Step")) {
+                System.out.println("🌑 Shadow Step detected - using separate handler!");
+                waitingForKaelStepSource = true;
+                waitingForKaelStepDestination = false;
+                updateStatusLabel("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
+                return;  
             }
-            currentSkillDirectionHorizontal = (choice == 0);
-        }
-        
-        
-        if (requiresTarget) {
-            waitingForSkillTarget = true;
-            updateStatusLabel("Click on " + (targetsOwnBoard ? "YOUR" : "ENEMY") + " board to target " + skillName + "!", Color.YELLOW);
-        } else {
             
-            executeSkill(-1, -1);
+            
+            currentSkillNumber = skillNumber;
+            currentSkillName = skillName;
+            currentSkillTargetsOwnBoard = targetsOwnBoard;
+            currentSkillRequiresDirection = requiresDirection;
+            
+            
+            if (requiresDirection) {
+                String[] options = {"Horizontal (→)", "Vertical (↓)"};
+                int choice = JOptionPane.showOptionDialog(frame,
+                    skillName + "\n\nChoose direction:",
+                    "Skill Direction",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0]);
+                
+                if (choice < 0) {
+                    return; 
+                }
+                currentSkillDirectionHorizontal = (choice == 0);
+            }
+            
+            
+            if (requiresTarget) {
+                waitingForSkillTarget = true;
+                updateStatusLabel("Click on " + (targetsOwnBoard ? "YOUR" : "ENEMY") + " board to target " + skillName + "!", Color.YELLOW);
+            } else {
+                
+                executeSkill(-1, -1);
+            }
         }
-    }
-});
-
-skillsContainer.add(currentSkillPanel, BorderLayout.CENTER);
-mainContentPanel.add(skillsContainer, BorderLayout.SOUTH);
+    });
+    
+    skillsContainer.add(currentSkillPanel, BorderLayout.CENTER);
+    mainContentPanel.add(skillsContainer, BorderLayout.SOUTH);
     
     
     JPanel bottomPanel = new JPanel();
