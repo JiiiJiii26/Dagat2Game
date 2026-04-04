@@ -22,12 +22,12 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     
     public interface CharacterSelectListener {
         void onCharactersSelected(GameCharacter player1, GameCharacter player2);
+        void onBackToMenu();
     }
     
     public MultiplayerCharacterSelectPanel(CharacterSelectListener listener) {
         this.listener = listener;
         this.characters = new ArrayList<>();
-        
         
         characters.add(new Jiji());
         characters.add(new Kael());
@@ -46,11 +46,38 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         setBackground(new Color(25, 25, 112));
         
         
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(new Color(25, 25, 112));
+        topPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        
+        
+        JButton backButton = new JButton("← BACK ");
+        backButton.setFont(new Font("Arial", Font.BOLD, 16));
+        backButton.setBackground(new Color(200, 60, 60));
+        backButton.setForeground(Color.WHITE);
+        backButton.setFocusPainted(false);
+        backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        backButton.setPreferredSize(new Dimension(160, 40));
+        backButton.addActionListener(e -> {
+            if (listener != null) {
+                listener.onBackToMenu();
+            }
+        });
+        topPanel.add(backButton, BorderLayout.WEST);
+        
+        
         JLabel titleLabel = new JLabel("CHOOSE YOUR COMMANDERS", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 32));
         titleLabel.setForeground(new Color(173, 216, 230));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
-        add(titleLabel, BorderLayout.NORTH);
+        topPanel.add(titleLabel, BorderLayout.CENTER);
+        
+        
+        JPanel rightPlaceholder = new JPanel();
+        rightPlaceholder.setOpaque(false);
+        rightPlaceholder.setPreferredSize(new Dimension(160, 40));
+        topPanel.add(rightPlaceholder, BorderLayout.EAST);
+        
+        add(topPanel, BorderLayout.NORTH);
         
         
         JPanel centerPanel = new JPanel(new GridLayout(1, 2, 20, 0));
@@ -59,7 +86,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         
         
         JPanel player1Panel = createPlayerSelectionPanel("PLAYER 1", 1);
-        
         JPanel player2Panel = createPlayerSelectionPanel("PLAYER 2", 2);
         
         centerPanel.add(player1Panel);
@@ -69,13 +95,15 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBackground(new Color(25, 25, 112));
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 30, 0));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 25, 0));
         
         confirmButton = new JButton("START BATTLE!");
-        confirmButton.setFont(new Font("Arial", Font.BOLD, 24));
+        confirmButton.setFont(new Font("Arial", Font.BOLD, 22));
         confirmButton.setBackground(new Color(70, 130, 180));
         confirmButton.setForeground(Color.WHITE);
         confirmButton.setEnabled(false);
+        confirmButton.setFocusPainted(false);
+        confirmButton.setPreferredSize(new Dimension(220, 50));
         confirmButton.addActionListener(e -> {
             if (player1Character != null && player2Character != null) {
                 listener.onCharactersSelected(player1Character, player2Character);
@@ -94,13 +122,13 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         
         
         JLabel nameLabel = new JLabel(playerName, SwingConstants.CENTER);
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
         nameLabel.setForeground(playerNumber == 1 ? Color.GREEN : Color.RED);
         nameLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         panel.add(nameLabel, BorderLayout.NORTH);
         
         
-        JPanel cardsPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        JPanel cardsPanel = new JPanel(new GridLayout(4, 2, 8, 8));
         cardsPanel.setBackground(new Color(25, 25, 112));
         cardsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
@@ -109,7 +137,12 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             cardsPanel.add(card);
         }
         
-        panel.add(cardsPanel, BorderLayout.CENTER);
+        
+        JScrollPane scrollPane = new JScrollPane(cardsPanel);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setBorder(null);
+        panel.add(scrollPane, BorderLayout.CENTER);
         
         
         JLabel selectedLabel = new JLabel("No character selected", SwingConstants.CENTER);
@@ -133,23 +166,25 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         card.setLayout(new BorderLayout());
         card.setBackground(character.getCharacterColor().darker());
         card.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
-        card.setPreferredSize(new Dimension(150, 120));
+        card.setPreferredSize(new Dimension(160, 130));
         
         
-        JLabel nameLabel = new JLabel(character.getName(), SwingConstants.CENTER);
+        JLabel nameLabel = new JLabel("<html><center>" + character.getName() + "</center></html>", SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 10));
         nameLabel.setForeground(Color.WHITE);
+        nameLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
         card.add(nameLabel, BorderLayout.NORTH);
         
         
         JLabel emojiLabel = new JLabel(getCharacterEmoji(character), SwingConstants.CENTER);
-        emojiLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
+        emojiLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
         card.add(emojiLabel, BorderLayout.CENTER);
         
         
-        JLabel abilityLabel = new JLabel(character.getAbilityName(), SwingConstants.CENTER);
+        JLabel abilityLabel = new JLabel("<html><center>" + character.getAbilityName() + "</center></html>", SwingConstants.CENTER);
         abilityLabel.setFont(new Font("Arial", Font.PLAIN, 9));
         abilityLabel.setForeground(Color.LIGHT_GRAY);
+        abilityLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
         card.add(abilityLabel, BorderLayout.SOUTH);
         
         card.addMouseListener(new MouseAdapter() {
@@ -159,15 +194,21 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
                 
                 
                 for (Component comp : card.getParent().getComponents()) {
-                    comp.setBackground(((GameCharacter)getCharacterFromCard(comp)).getCharacterColor().darker());
+                    if (comp instanceof JPanel) {
+                        JPanel otherCard = (JPanel) comp;
+                        otherCard.setBackground(((GameCharacter)getCharacterFromCard(otherCard)).getCharacterColor().darker());
+                        otherCard.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+                    }
                 }
                 card.setBackground(character.getCharacterColor().brighter());
+                card.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 2));
             }
             
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (!isCharacterSelected(character, playerNumber)) {
                     card.setBackground(character.getCharacterColor());
+                    card.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1));
                 }
             }
             
@@ -175,6 +216,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             public void mouseExited(MouseEvent e) {
                 if (!isCharacterSelected(character, playerNumber)) {
                     card.setBackground(character.getCharacterColor().darker());
+                    card.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
                 }
             }
         });
@@ -185,14 +227,23 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     private void selectCharacter(GameCharacter character, int playerNumber) {
         if (playerNumber == 1) {
             player1Character = character;
-            player1SelectedLabel.setText("Selected: " + character.getName());
+            if (player1SelectedLabel != null) {
+                player1SelectedLabel.setText("Selected: " + character.getName());
+                player1SelectedLabel.setForeground(Color.GREEN);
+            }
         } else {
             player2Character = character;
-            player2SelectedLabel.setText("Selected: " + character.getName());
+            if (player2SelectedLabel != null) {
+                player2SelectedLabel.setText("Selected: " + character.getName());
+                player2SelectedLabel.setForeground(Color.GREEN);
+            }
         }
         
         
         confirmButton.setEnabled(player1Character != null && player2Character != null);
+        if (confirmButton.isEnabled()) {
+            confirmButton.setBackground(new Color(50, 180, 80));
+        }
     }
     
     private boolean isCharacterSelected(GameCharacter character, int playerNumber) {
@@ -204,13 +255,21 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     }
     
     private GameCharacter getCharacterFromCard(Component card) {
-        JPanel panel = (JPanel) card;
-        JLabel nameLabel = (JLabel) panel.getComponent(0);
-        String name = nameLabel.getText();
-        
-        for (GameCharacter character : characters) {
-            if (character.getName().equals(name)) {
-                return character;
+        if (card instanceof JPanel) {
+            JPanel panel = (JPanel) card;
+            Component[] components = panel.getComponents();
+            for (Component comp : components) {
+                if (comp instanceof JLabel) {
+                    JLabel label = (JLabel) comp;
+                    String text = label.getText();
+                    if (text != null && !text.isEmpty() && !text.contains("<html>")) {
+                        for (GameCharacter character : characters) {
+                            if (character.getName().equals(text)) {
+                                return character;
+                            }
+                        }
+                    }
+                }
             }
         }
         return null;

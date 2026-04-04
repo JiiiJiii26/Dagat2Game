@@ -80,24 +80,29 @@ public class Main {
 
     
     
-    private static void showMultiplayerCharacterSelect() {
-        MultiplayerCharacterSelectPanel charSelectPanel = new MultiplayerCharacterSelectPanel(
-            new MultiplayerCharacterSelectPanel.CharacterSelectListener() {
-                @Override
-                public void onCharactersSelected(GameCharacter player1Char, GameCharacter player2Char) {
-                    multiplayerPlayer1Character = player1Char;
-                    multiplayerPlayer2Character = player2Char;
-                    System.out.println("🎮 Player 1 selected: " + player1Char.getName());
-                    System.out.println("🎮 Player 2 selected: " + player2Char.getName());
-                    showMultiplayerPlacementScreen();
-                }
-            });
-        
-        frame.getContentPane().removeAll();
-        frame.add(charSelectPanel, BorderLayout.CENTER);
-        frame.revalidate();
-        frame.repaint();
-    }
+   private static void showMultiplayerCharacterSelect() {
+    MultiplayerCharacterSelectPanel charSelectPanel = new MultiplayerCharacterSelectPanel(
+        new MultiplayerCharacterSelectPanel.CharacterSelectListener() {
+            @Override
+            public void onCharactersSelected(GameCharacter player1Char, GameCharacter player2Char) {
+                multiplayerPlayer1Character = player1Char;
+                multiplayerPlayer2Character = player2Char;
+                System.out.println("🎮 Player 1 selected: " + player1Char.getName());
+                System.out.println("🎮 Player 2 selected: " + player2Char.getName());
+                showMultiplayerPlacementScreen();
+            }
+            
+            @Override
+            public void onBackToMenu() {
+                showMainMenu();
+            }
+        });
+    
+    frame.getContentPane().removeAll();
+    frame.add(charSelectPanel, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+}
     
     
     
@@ -233,35 +238,49 @@ public class Main {
     
     
     
-    private static void showCharacterSelectForCampaign() {
-        CharacterSelectPanel charPanel = new CharacterSelectPanel(character -> {
+   private static void showCharacterSelectForCampaign() {
+    CharacterSelectPanel charPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
+        @Override
+        public void onCharacterSelected(GameCharacter character) {
             selectedCharacter = character;
             System.out.println("🎮 Starting CAMPAIGN with: " + character.getName());
-            
             CampaignMode campaign = new CampaignMode(frame, selectedCharacter);
             campaign.start();
-        });
+        }
         
-        frame.getContentPane().removeAll();
-        frame.add(charPanel, BorderLayout.CENTER);
-        frame.revalidate();
-        frame.repaint();
-    }
+        @Override
+        public void onBackToMenu() {
+            showMainMenu();
+        }
+    });
+    
+    frame.getContentPane().removeAll();
+    frame.add(charPanel, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+}
     
     
-    
-    private static void showCharacterSelectForQuickBattle() {
-        CharacterSelectPanel charPanel = new CharacterSelectPanel(character -> {
+  private static void showCharacterSelectForQuickBattle() {
+    CharacterSelectPanel charPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
+        @Override
+        public void onCharacterSelected(GameCharacter character) {
             selectedCharacter = character;
             System.out.println("⚡ Starting QUICK BATTLE with: " + character.getName());
             showPlacementScreen();
-        });
+        }
         
-        frame.getContentPane().removeAll();
-        frame.add(charPanel, BorderLayout.CENTER);
-        frame.revalidate();
-        frame.repaint();
-    }
+        @Override
+        public void onBackToMenu() {
+            showMainMenu();
+        }
+    });
+    
+    frame.getContentPane().removeAll();
+    frame.add(charPanel, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+}
     
     private static void showPlacementScreen() {
         PlacementPanel placementPanel = new PlacementPanel(new PlacementPanel.PlacementListener() {
