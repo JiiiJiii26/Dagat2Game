@@ -240,7 +240,7 @@ private void startMoonPhaseTimer() {
                 break;
             case 2:
                 if (morgana.hasEnoughMana(300)) {
-                    morgana.useStormCall(playerBoard);
+                     morgana.useTidalWave(playerBoard);
                     showEnemySkillMessage("Morgana summons a storm!");
                 }
                 break;
@@ -1045,8 +1045,8 @@ private void executeSkill(int targetX, int targetY) {
                 shouldEndTurn = true;
                 break;
             case 3:
-                System.out.println("Using Storm Call");
-                int flooded = morgana.useStormCall(enemyBoard);
+                System.out.println("Using Tidal Wave");
+                int flooded = morgana.useTidalWave(enemyBoard);
                 success = flooded > 0;
                 shouldEndTurn = true;
                 break;

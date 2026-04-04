@@ -275,7 +275,7 @@ public class LocalMultiplayer {
                     shouldSwitchTurn = true;
                     break;
                 case 3: 
-                    int flooded = morgana.useStormCall(targetBoard);
+                    int flooded = morgana.useTidalWave(targetBoard);
                     success = flooded > 0;
                     shouldSwitchTurn = true;
                     break;

@@ -385,24 +385,24 @@ public class SkillPanel extends JPanel {
         });
         panel.add(whirlpoolBtn, gbc);
         
+         gbc.gridy++;
+        JLabel tidalWaveLabel = new JLabel("🌊 TIDAL WAVE");
+        tidalWaveLabel.setFont(new Font("Arial", Font.BOLD, 11));
+        tidalWaveLabel.setForeground(new Color(70, 130, 200));
+        panel.add(tidalWaveLabel, gbc);
+        
         
         gbc.gridy++;
-        JLabel stormLabel = new JLabel("⛈️ STORM CALL");
-        stormLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        stormLabel.setForeground(new Color(70, 130, 200));
-        panel.add(stormLabel, gbc);
-        
-        gbc.gridy++;
-        JButton stormBtn = new JButton("USE (300 mana)");
-        stormBtn.setBackground(new Color(70, 130, 200));
-        stormBtn.setForeground(Color.WHITE);
-        stormBtn.setToolTipText("<html>Summons a tempest!<br>Floods 4 random cells, damaging ships.</html>");
-        stormBtn.addActionListener(e -> {
-            if (skillListener != null) {
-                skillListener.onSkillUsed(3, "Storm Call", false, false, false);
-            }
-        });
-        panel.add(stormBtn, gbc);
+        JButton tidalWaveBtn = new JButton("USE (300 mana)");
+tidalWaveBtn.setBackground(new Color(70, 130, 200));
+tidalWaveBtn.setForeground(Color.WHITE);
+tidalWaveBtn.setToolTipText("<html>🌊 TIDAL WAVE: Summons a devastating wave!<br>Hits 6 random cells for massive damage!<br>30% chance to activate Siren's Call (disables enemy skills)<br>Always activates Ocean's Blessing (next skill half cost)</html>");
+tidalWaveBtn.addActionListener(e -> {
+    if (skillListener != null) {
+        skillListener.onSkillUsed(3, "Tidal Wave", false, false, false);
+    }
+});
+        panel.add(tidalWaveBtn, gbc);
         
       
     }

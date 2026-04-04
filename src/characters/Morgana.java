@@ -14,12 +14,12 @@ public class Morgana extends GameCharacter {
     
     private Random random = new Random();
     private int currentMana;
-    private static final int MAX_MANA = 380;
+    private static final int MAX_MANA = 450;
     
     
     private int enchantingMelodyCooldown = 0;
     private int whirlpoolTrapCooldown = 0;
-    private int stormCallCooldown = 0;
+    private int tidalWaveCooldown = 0;
     
     
     private boolean enemyConfused = false;
@@ -30,38 +30,41 @@ public class Morgana extends GameCharacter {
     private int whirlpoolActiveTurns = 0;
     
     
-    private ArrayList<String> floodedCells = new ArrayList<>();
-    private int floodedTurns = 0;
+    private boolean tidalWaveActive = false;
+    private int tidalWaveTurns = 0;
+    
+    
+    private boolean oceanBlessingActive = false;
+    private int blessingTurns = 0;
+    
+    
+    private boolean sirenCallActive = false;
+    private int sirenCallTurns = 0;
+    
+    
+    private boolean seaMistActive = false;
+    private int seaMistTurns = 0;
     
     
     private boolean firstHitDodged = false;
     
     public Morgana() {
         super(
-            "Morgana — The Siren",
+            "Morgana — The Siren Queen",
             "A mystical siren who commands the sea itself. Her songs confuse enemies and summon storms.",
-            2100, 
-            100,  
-            new Color(64, 224, 208)  
+            2200,
+            100,
+            new Color(64, 224, 208)
         );
         this.currentMana = MAX_MANA;
         this.abilityName = "Ocean's Command";
-        this.abilityDescription = "Uses mana to confuse enemies, trap ships, and summon storms.";
+        this.abilityDescription = "Uses mana to confuse enemies, trap ships, and summon devastating tidal waves.";
     }
     
     
-    
-    public int getCurrentMana() {
-        return currentMana;
-    }
-    
-    public int getMaxMana() {
-        return MAX_MANA;
-    }
-    
-    public boolean hasEnoughMana(int cost) {
-        return currentMana >= cost;
-    }
+    public int getCurrentMana() { return currentMana; }
+    public int getMaxMana() { return MAX_MANA; }
+    public boolean hasEnoughMana(int cost) { return currentMana >= cost; }
     
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {
@@ -75,20 +78,22 @@ public class Morgana extends GameCharacter {
         if (currentMana > MAX_MANA) {
             currentMana = MAX_MANA;
         }
+        System.out.println("🌊 Morgana mana: " + currentMana + "/" + MAX_MANA);
     }
     
     
-    
-    public boolean tryDodgeHit(int x, int y, ShotResult incomingShot) {
-        if (!firstHitDodged && (incomingShot == ShotResult.HIT || incomingShot == ShotResult.SUNK)) {
-            firstHitDodged = true;
-            System.out.println("🌊 OCEAN'S EMBRACE! Morgana's mist shields her from the first hit!");
-            return true; 
+    public void stealMana(int amount) {
+        currentMana += amount;
+        if (currentMana > MAX_MANA) {
+            currentMana = MAX_MANA;
         }
-        return false; 
+        System.out.println("🌊 Morgana stole " + amount + " mana! Total: " + currentMana);
     }
     
     
+    private void statusMessage(String message) {
+        System.out.println(message);
+    }
     
     
     public boolean useEnchantingMelody() {
@@ -107,10 +112,16 @@ public class Morgana extends GameCharacter {
         
         
         enemyConfused = true;
-        confusionTurns = 2;
-        System.out.println("🎵 Enemy is CONFUSED for 2 turns! They will see fake hit/miss indicators!");
+        confusionTurns = 3;
+        System.out.println("🎵 Enemy is CONFUSED for 3 turns! They will see fake hit/miss indicators!");
         
-        enchantingMelodyCooldown = 2; 
+        
+        if (random.nextInt(100) < 20) {
+            System.out.println("🎵 The melody is so powerful it deals 10 damage to the enemy!");
+            statusMessage("The melody damages the enemy commander!");
+        }
+        
+        enchantingMelodyCooldown = 3;
         return true;
     }
     
@@ -124,15 +135,11 @@ public class Morgana extends GameCharacter {
         }
         
         
-        if (realResult == ShotResult.HIT || realResult == ShotResult.SUNK) {
-            
-            if (random.nextBoolean()) {
+        if (random.nextInt(100) < 40) {
+            if (realResult == ShotResult.HIT || realResult == ShotResult.SUNK) {
                 System.out.println("🎵 Confusion: Enemy thought they missed!");
                 return ShotResult.MISS;
-            }
-        } else if (realResult == ShotResult.MISS) {
-            
-            if (random.nextBoolean()) {
+            } else if (realResult == ShotResult.MISS) {
                 System.out.println("🎵 Confusion: Enemy thought they hit!");
                 return ShotResult.HIT;
             }
@@ -141,176 +148,205 @@ public class Morgana extends GameCharacter {
     }
     
     
-    
-    
-
-
-
-
-
-
-
-
-public boolean useWhirlpoolTrap(Board enemyBoard, int centerX, int centerY) {
-    if (whirlpoolTrapCooldown > 0) {
-        System.out.println("⏳ Whirlpool Trap is on cooldown for " + whirlpoolTrapCooldown + " more turns");
-        return false;
-    }
-    
-    if (!hasEnoughMana(80)) {
-        System.out.println("⚠️ Not enough mana! Need 80 mana, have " + currentMana);
-        return false;
-    }
-    
-    System.out.println("🌊 MORGANA uses WHIRLPOOL TRAP at column " + centerY + "!");
-    spendMana(80);
-    
-    
-    whirlpoolCells.clear();
-    
-    
-    int column = centerY;
-    int startRow = Math.max(0, centerX - 1);
-    int endRow = Math.min(9, centerX + 1);
-    
-    int trappedShips = 0;
-    int totalDamage = 0;
-    StringBuilder hitReport = new StringBuilder("🌊 Whirlpool Trap hits column " + column + ":\n");
-    
-    
-    for (int row = startRow; row <= endRow; row++) {
-        String cellKey = row + "," + column;
-        whirlpoolCells.add(cellKey);
-        
-        Cell cell = enemyBoard.getCell(row, column);
-        
-        
-        if (!cell.isFiredUpon()) {
-            
-            ShotResult result = enemyBoard.fire(row, column);
-            
-            if (cell.hasShip()) {
-                int damage = random.nextInt(51) + 50; 
-                totalDamage += damage;
-                trappedShips++;
-                hitReport.append("   • Ship at (").append(row).append(",").append(column)
-                         .append(") takes ").append(damage).append(" damage! (").append(result).append(")\n");
-            } else {
-                hitReport.append("   • Cell (").append(row).append(",").append(column)
-                         .append(") churns violently (Miss)\n");
-            }
-        } else {
-            hitReport.append("   • Cell (").append(row).append(",").append(column)
-                     .append(") already hit\n");
+    public boolean useWhirlpoolTrap(Board enemyBoard, int centerX, int centerY) {
+        if (whirlpoolTrapCooldown > 0) {
+            System.out.println("⏳ Whirlpool Trap is on cooldown for " + whirlpoolTrapCooldown + " more turns");
+            return false;
         }
-    }
-    
-    System.out.println(hitReport.toString());
-    System.out.println("💧 Whirlpool trap dealt " + totalDamage + " damage to " + 
-                       trappedShips + " ship(s)!");
-    
-    whirlpoolActiveTurns = 1;
-    whirlpoolTrapCooldown = 3;
-    
-    return true;
-}
-public String getWhirlpoolAreaString(int x, int y) {
-    return "Column " + y + " - hits rows " + Math.max(0, x-1) + " to " + Math.min(9, x+1);
-}
-    
-    
-    
-    
-    
-
-
-public int useStormCall(Board enemyBoard) {
-    if (stormCallCooldown > 0) {
-        System.out.println("⏳ Storm Call is on cooldown for " + stormCallCooldown + " more turns");
-        return 0;
-    }
-    
-    if (!hasEnoughMana(300)) {
-        System.out.println("⚠️ Not enough mana! Need 300 mana, have " + currentMana);
-        return 0;
-    }
-    
-    System.out.println("⛈️ MORGANA uses STORM CALL: \"Feel the wrath of the sea!\"");
-    spendMana(300);
-    
-    
-    floodedCells.clear();
-    
-    
-    int flooded = 0;
-    int attempts = 0;
-    int totalDamage = 0;
-    int shipsHit = 0;
-    StringBuilder hitReport = new StringBuilder("⛈️ Storm Call hits:\n");
-    
-    while (flooded < 4 && attempts < 100) {
-        int x = random.nextInt(10);
-        int y = random.nextInt(10);
-        String cellKey = x + "," + y;
         
-        if (!floodedCells.contains(cellKey)) {
-            floodedCells.add(cellKey);
-            flooded++;
-            
-            Cell cell = enemyBoard.getCell(x, y);
-            
-            
-            if (!cell.isFiredUpon()) {
-                ShotResult result = enemyBoard.fire(x, y);
+        if (!hasEnoughMana(80)) {
+            System.out.println("⚠️ Not enough mana! Need 80 mana, have " + currentMana);
+            return false;
+        }
+        
+        System.out.println("🌊 MORGANA uses WHIRLPOOL TRAP at (" + centerX + "," + centerY + ")!");
+        spendMana(80);
+        
+        whirlpoolCells.clear();
+        
+        
+        int minX = Math.max(0, centerX - 1);
+        int maxX = Math.min(9, centerX + 1);
+        int minY = Math.max(0, centerY - 1);
+        int maxY = Math.min(9, centerY + 1);
+        
+        int trappedShips = 0;
+        int totalDamage = 0;
+        StringBuilder hitReport = new StringBuilder("🌊 Whirlpool Trap hits area:\n");
+        
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                String cellKey = x + "," + y;
+                whirlpoolCells.add(cellKey);
                 
-                if (cell.hasShip()) {
-                    int damage = random.nextInt(151) + 200; 
-                    totalDamage += damage;
-                    shipsHit++;
-                    hitReport.append("   • Ship at (").append(x).append(",").append(y)
-                             .append(") struck by lightning! ").append(damage).append(" damage! (").append(result).append(")\n");
+                Cell cell = enemyBoard.getCell(x, y);
+                
+                if (!cell.isFiredUpon()) {
+                    ShotResult result = enemyBoard.fire(x, y);
+                    
+                    if (cell.hasShip()) {
+                        int damage = random.nextInt(41) + 60; 
+                        totalDamage += damage;
+                        trappedShips++;
+                        hitReport.append("   • Ship at (").append(x).append(",").append(y)
+                                 .append(") takes ").append(damage).append(" damage! (").append(result).append(")\n");
+                    } else {
+                        hitReport.append("   • Cell (").append(x).append(",").append(y)
+                                 .append(") churns violently (Miss)\n");
+                    }
                 } else {
                     hitReport.append("   • Cell (").append(x).append(",").append(y)
-                             .append(") flooded by the tempest (Miss)\n");
+                             .append(") already hit\n");
                 }
-            } else {
-                hitReport.append("   • Cell (").append(x).append(",").append(y)
-                         .append(") already hit\n");
             }
         }
-        attempts++;
+        
+        System.out.println(hitReport.toString());
+        System.out.println("💧 Whirlpool trap dealt " + totalDamage + " damage to " + 
+                           trappedShips + " ship(s)!");
+        
+        
+        whirlpoolActiveTurns = 2;
+        whirlpoolTrapCooldown = 3;
+        
+        
+        if (random.nextBoolean()) {
+            activateSeaMist();
+        }
+        
+        return true;
     }
     
-    System.out.println(hitReport.toString());
-    System.out.println("⛈️ Storm Call flooded " + flooded + " cells!");
-    System.out.println("💥 " + shipsHit + " ships hit for " + totalDamage + " total damage!");
-    
-    floodedTurns = 1; 
-    stormCallCooldown = 4; 
-    
-    return flooded;
-}
-    
-    public boolean isCellFlooded(int x, int y) {
-        return floodedCells.contains(x + "," + y) && floodedTurns > 0;
+    public boolean isCellInWhirlpool(int x, int y) {
+        return whirlpoolCells.contains(x + "," + y) && whirlpoolActiveTurns > 0;
     }
     
+    
+    private void activateSeaMist() {
+        seaMistActive = true;
+        seaMistTurns = 2;
+        System.out.println("🌫️ SEA MIST ACTIVATED! Your ships have 30% chance to evade attacks!");
+    }
+    
+    public boolean tryEvade() {
+        if (seaMistActive && random.nextInt(100) < 30) {
+            System.out.println("🌫️ Sea Mist caused the enemy to miss!");
+            return true;
+        }
+        return false;
+    }
+    
+    
+    public int useTidalWave(Board enemyBoard) {
+        if (tidalWaveCooldown > 0) {
+            System.out.println("⏳ Tidal Wave is on cooldown for " + tidalWaveCooldown + " more turns");
+            return 0;
+        }
+        
+        if (!hasEnoughMana(300)) {
+            System.out.println("⚠️ Not enough mana! Need 300 mana, have " + currentMana);
+            return 0;
+        }
+        
+        System.out.println("🌊🌊🌊 MORGANA uses TIDAL WAVE: \"Feel the wrath of the sea!\"");
+        spendMana(300);
+        
+        int cellsDestroyed = 0;
+        int shipsHit = 0;
+        int totalDamage = 0;
+        
+        
+        for (int i = 0; i < 6; i++) {
+            int attempts = 0;
+            boolean placed = false;
+            
+            while (!placed && attempts < 50) {
+                int x = random.nextInt(10);
+                int y = random.nextInt(10);
+                Cell cell = enemyBoard.getCell(x, y);
+                
+                if (!cell.isFiredUpon()) {
+                    ShotResult result = enemyBoard.fire(x, y);
+                    cellsDestroyed++;
+                    
+                    if (cell.hasShip()) {
+                        int damage = random.nextInt(101) + 150; 
+                        totalDamage += damage;
+                        shipsHit++;
+                        System.out.println("   • Ship at (" + x + "," + y + ") takes " + damage + " damage! " + result);
+                    } else {
+                        System.out.println("   • Cell (" + x + "," + y + ") flooded by the tidal wave");
+                    }
+                    placed = true;
+                }
+                attempts++;
+            }
+        }
+        
+        System.out.println("🌊 Tidal Wave destroyed " + cellsDestroyed + " cells!");
+        System.out.println("💥 " + shipsHit + " ships hit for " + totalDamage + " total damage!");
+        
+        
+        if (random.nextInt(100) < 30) {
+            activateSirenCall();
+        }
+        
+        
+        activateOceanBlessing();
+        
+        tidalWaveCooldown = 4;
+        return cellsDestroyed;
+    }
+    
+    
+    private void activateOceanBlessing() {
+        oceanBlessingActive = true;
+        blessingTurns = 2;
+        System.out.println("🌊 OCEAN'S BLESSING ACTIVATED! Next skill costs 50% less mana!");
+    }
+    
+    
+    private void activateSirenCall() {
+        sirenCallActive = true;
+        sirenCallTurns = 2;
+        System.out.println("🎵🎵🎵 SIREN'S CALL ACTIVATED! Enemy skills are disabled for 2 turns!");
+    }
+    
+    public boolean isSirenCallActive() {
+        return sirenCallActive;
+    }
+    
+    public boolean hasOceanBlessing() {
+        return oceanBlessingActive;
+    }
+    
+    public int getReducedManaCost(int originalCost) {
+        if (oceanBlessingActive) {
+            return originalCost / 2;
+        }
+        return originalCost;
+    }
+    
+    
+    public boolean tryDodgeHit(int x, int y, ShotResult incomingShot) {
+        if (!firstHitDodged && (incomingShot == ShotResult.HIT || incomingShot == ShotResult.SUNK)) {
+            firstHitDodged = true;
+            System.out.println("🌊 OCEAN'S EMBRACE! Morgana's mist shields her from the first hit!");
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean isOceanEmbraceUsed() {
+        return firstHitDodged;
+    }
     
     
     public void updateTurnCounter() {
         
-        if (enchantingMelodyCooldown > 0) {
-            enchantingMelodyCooldown--;
-        }
-        if (whirlpoolTrapCooldown > 0) {
-            whirlpoolTrapCooldown--;
-        }
-        if (stormCallCooldown > 0) {
-            stormCallCooldown--;
-        }
-        
-        
-        regenerateMana(12);
+        if (enchantingMelodyCooldown > 0) enchantingMelodyCooldown--;
+        if (whirlpoolTrapCooldown > 0) whirlpoolTrapCooldown--;
+        if (tidalWaveCooldown > 0) tidalWaveCooldown--;
         
         
         if (enemyConfused) {
@@ -331,42 +367,67 @@ public int useStormCall(Board enemyBoard) {
         }
         
         
-        if (floodedTurns > 0) {
-            floodedTurns--;
-            if (floodedTurns <= 0) {
-                floodedCells.clear();
-                System.out.println("⛈️ The storm has passed.");
+        if (oceanBlessingActive) {
+            blessingTurns--;
+            if (blessingTurns <= 0) {
+                oceanBlessingActive = false;
+                System.out.println("🌊 Ocean's Blessing has faded.");
             }
         }
+        
+        
+        if (sirenCallActive) {
+            sirenCallTurns--;
+            if (sirenCallTurns <= 0) {
+                sirenCallActive = false;
+                System.out.println("🎵 Siren's Call has ended.");
+            }
+        }
+        
+        
+        if (seaMistActive) {
+            seaMistTurns--;
+            if (seaMistTurns <= 0) {
+                seaMistActive = false;
+                System.out.println("🌫️ Sea Mist has faded.");
+            }
+        }
+        
+        
+        regenerateMana(15);
     }
     
     
-    
     public String getSkillStatus(int skillNum) {
+        String blessingBonus = oceanBlessingActive ? " (🌟 50% OFF!)" : "";
+        
         switch(skillNum) {
-            case 1: 
+            case 1:
                 if (enchantingMelodyCooldown > 0) {
                     return "Cooldown: " + enchantingMelodyCooldown + " turn" + (enchantingMelodyCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(40)) {
                     return "Need 40 mana";
                 } else {
-                    return "Ready!";
+                    return "Ready!" + blessingBonus;
                 }
-            case 2: 
+            case 2:
                 if (whirlpoolTrapCooldown > 0) {
                     return "Cooldown: " + whirlpoolTrapCooldown + " turn" + (whirlpoolTrapCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(80)) {
                     return "Need 80 mana";
                 } else {
-                    return "Ready!";
+                    return "Ready!" + blessingBonus;
                 }
-            case 3: 
-                if (stormCallCooldown > 0) {
-                    return "Cooldown: " + stormCallCooldown + " turn" + (stormCallCooldown > 1 ? "s" : "");
+            case 3:
+                if (tidalWaveCooldown > 0) {
+                    return "Cooldown: " + tidalWaveCooldown + " turn" + (tidalWaveCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(300)) {
                     return "Need 300 mana";
                 } else {
-                    return "Ready!";
+                    if (sirenCallActive) {
+                        return "SIREN'S CALL ACTIVE! (Ultimate enhanced!)";
+                    }
+                    return "ULTIMATE READY!" + blessingBonus;
                 }
             default:
                 return "";
@@ -385,28 +446,34 @@ public int useStormCall(Board enemyBoard) {
             }
         }
         bar.append("] " + currentMana + "/" + MAX_MANA + " mana");
+        
+        if (oceanBlessingActive) {
+            bar.append(" 🌊 BLESSED!");
+        }
+        if (sirenCallActive) {
+            bar.append(" 🎵 SIREN'S CALL!");
+        }
+        if (seaMistActive) {
+            bar.append(" 🌫️ MIST!");
+        }
+        
         return bar.toString();
-    }
-    
-    public boolean isOceanEmbraceUsed() {
-        return firstHitDodged;
-    }
-    
-    public boolean isEnemyConfusedActive() {
-        return enemyConfused;
     }
     
     public int getWhirlpoolCount() {
         return whirlpoolCells.size();
     }
     
-    public int getFloodedCount() {
-        return floodedCells.size();
+    public boolean isEnemyConfusedActive() {
+        return enemyConfused;
+    }
+    
+    public boolean isSeaMistActive() {
+        return seaMistActive;
     }
     
     @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
-        
         System.out.println("Morgana's abilities are used through skill buttons!");
     }
 }
