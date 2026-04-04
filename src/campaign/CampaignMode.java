@@ -707,6 +707,9 @@ private void startMoonPhaseTimer() {
     playerBoardPanel = new BoardPanel(true, playerBoard, true);
     enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
+    if(playerCharacter instanceof Flue) {
+        ((Flue) playerCharacter).setEnemyBoard(enemyBoard);
+    }
     
     setupClickHandlers();
     
@@ -1649,6 +1652,13 @@ private void setupClickHandlers() {
     
     private void enemyTurn() {
         updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
+
+
+         if (playerCharacter instanceof Flue) {
+        Flue flue = (Flue) playerCharacter;
+        flue.updateVirusSpread(enemyBoard);
+    }
+
               if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
         selene.updateMoonPhase();
@@ -1921,6 +1931,13 @@ private void setupClickHandlers() {
     
   private void onPlayerTurnStart() {
     System.out.println("🔄 Player turn started! Checking conditions...");
+
+
+     if (playerCharacter instanceof Flue) {
+        Flue flue = (Flue) playerCharacter;
+        flue.updateVirusSpread(enemyBoard);
+        System.out.println("🦠 Infected cells count: " + flue.getInfectedCellsCount());
+    }
     
     if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
