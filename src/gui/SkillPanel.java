@@ -106,6 +106,7 @@ public class SkillPanel extends JPanel {
         JButton leechBtn = new JButton("USE (50 mana)");
         leechBtn.setBackground(new Color(100, 200, 255));
         leechBtn.setForeground(Color.BLACK);
+        leechBtn.setToolTipText("<html>Reveals 2 random enemy cells.<br>Marks them for potential chain reactions.</html>");
         leechBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Data Leech", true, false, false);
@@ -124,6 +125,7 @@ public class SkillPanel extends JPanel {
         JButton overclockBtn = new JButton("USE (120 mana)");
         overclockBtn.setBackground(new Color(200, 150, 50));
         overclockBtn.setForeground(Color.BLACK);
+        overclockBtn.setToolTipText("<html>Next shot fires twice.<br>Grants extra turn on hit.</html>");
         overclockBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Overclock", false, false, false);
@@ -142,6 +144,7 @@ public class SkillPanel extends JPanel {
         JButton overloadBtn = new JButton("USE (400 mana)");
         overloadBtn.setBackground(new Color(200, 50, 50));
         overloadBtn.setForeground(Color.WHITE);
+        overloadBtn.setToolTipText("<html>Reveals a full enemy ship.<br>If Overclock is active, destroys the ship instead!</html>");
         overloadBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "System Overload", true, false, false);
@@ -149,11 +152,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(overloadBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+      
     }
     
     
@@ -169,6 +168,7 @@ public class SkillPanel extends JPanel {
         JButton stepBtn = new JButton("USE (100 energy)");
         stepBtn.setBackground(new Color(75, 0, 130));
         stepBtn.setForeground(Color.WHITE);
+        stepBtn.setToolTipText("<html>Teleport one of your ships to an empty cell.<br>Damaged cells become wreckage.</html>");
         stepBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Shadow Step", true, false, true);
@@ -187,6 +187,7 @@ public class SkillPanel extends JPanel {
         JButton bladeBtn = new JButton("USE (150 energy)");
         bladeBtn.setBackground(new Color(100, 150, 255));
         bladeBtn.setForeground(Color.BLACK);
+        bladeBtn.setToolTipText("<html>Destroy every other cell in a row or column.<br>Choose horizontal or vertical.</html>");
         bladeBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Shadow Blade", true, true, false);
@@ -205,6 +206,7 @@ public class SkillPanel extends JPanel {
         JButton domainBtn = new JButton("USE (200 energy)");
         domainBtn.setBackground(new Color(50, 0, 100));
         domainBtn.setForeground(Color.WHITE);
+        domainBtn.setToolTipText("<html>Creates a 3x3 shadow explosion.<br>Destroys all cells in the area!</html>");
         domainBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Shadow Domain", true, false, false);
@@ -232,6 +234,7 @@ public class SkillPanel extends JPanel {
         JButton radarBtn = new JButton("USE (50 mana)");
         radarBtn.setBackground(new Color(169, 169, 169));
         radarBtn.setForeground(Color.WHITE);
+        radarBtn.setToolTipText("<html>Disables enemy skills for 2 turns.<br>Perfect for setting up combos!</html>");
         radarBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Radar Overload", false, false, false);
@@ -250,6 +253,7 @@ public class SkillPanel extends JPanel {
         JButton strikeBtn = new JButton("USE (120 mana)");
         strikeBtn.setBackground(new Color(200, 100, 0));
         strikeBtn.setForeground(Color.WHITE);
+        strikeBtn.setToolTipText("<html>Next attack destroys 2 cells in a line.<br>Choose horizontal or vertical.</html>");
         strikeBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Precision Strike", true, true, false);
@@ -268,6 +272,7 @@ public class SkillPanel extends JPanel {
         JButton fortressBtn = new JButton("USE (300 mana)");
         fortressBtn.setBackground(new Color(100, 50, 0));
         fortressBtn.setForeground(Color.WHITE);
+        fortressBtn.setToolTipText("<html>Shields ALL your ships for 2 turns.<br>Each shield blocks 1 hit!</html>");
         fortressBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Fortress Mode", false, false, false);
@@ -275,11 +280,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(fortressBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+       
     }
     
     
@@ -295,6 +296,7 @@ public class SkillPanel extends JPanel {
         JButton catnipBtn = new JButton("USE (70 mana)");
         catnipBtn.setBackground(new Color(50, 205, 50));
         catnipBtn.setForeground(Color.BLACK);
+        catnipBtn.setToolTipText("<html>Destroys a 2x2 area on enemy board.<br>Distracts enemy ships!</html>");
         catnipBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Catnip Explosion", true, false, false);
@@ -313,6 +315,7 @@ public class SkillPanel extends JPanel {
         JButton laserBtn = new JButton("USE (50 mana)");
         laserBtn.setBackground(new Color(255, 100, 100));
         laserBtn.setForeground(Color.BLACK);
+        laserBtn.setToolTipText("<html>Enemy skips their next turn!<br>Perfect for stalling.</html>");
         laserBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Laser Pointer", false, false, false);
@@ -331,6 +334,7 @@ public class SkillPanel extends JPanel {
         JButton reviveBtn = new JButton("USE (200 mana)");
         reviveBtn.setBackground(new Color(255, 165, 0));
         reviveBtn.setForeground(Color.BLACK);
+        reviveBtn.setToolTipText("<html>Revives a fallen ship on YOUR board!<br>Cats always land on their feet!</html>");
         reviveBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Nine Lives", true, false, true);
@@ -338,11 +342,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(reviveBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+      
     }
     
     
@@ -358,6 +358,7 @@ public class SkillPanel extends JPanel {
         JButton melodyBtn = new JButton("USE (40 mana)");
         melodyBtn.setBackground(new Color(64, 224, 208));
         melodyBtn.setForeground(Color.BLACK);
+        melodyBtn.setToolTipText("<html>Confuses enemy for 2 turns.<br>They see fake hit/miss results!</html>");
         melodyBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Enchanting Melody", false, false, false);
@@ -376,6 +377,7 @@ public class SkillPanel extends JPanel {
         JButton whirlpoolBtn = new JButton("USE (80 mana)");
         whirlpoolBtn.setBackground(new Color(0, 150, 200));
         whirlpoolBtn.setForeground(Color.WHITE);
+        whirlpoolBtn.setToolTipText("<html>Hits 3 cells in a vertical column!<br>Damages ships in that area.</html>");
         whirlpoolBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Whirlpool Trap", true, false, false);
@@ -394,6 +396,7 @@ public class SkillPanel extends JPanel {
         JButton stormBtn = new JButton("USE (300 mana)");
         stormBtn.setBackground(new Color(70, 130, 200));
         stormBtn.setForeground(Color.WHITE);
+        stormBtn.setToolTipText("<html>Summons a tempest!<br>Floods 4 random cells, damaging ships.</html>");
         stormBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Storm Call", false, false, false);
@@ -401,11 +404,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(stormBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+      
     }
     
     
@@ -421,6 +420,7 @@ public class SkillPanel extends JPanel {
         JButton shieldBtn = new JButton("USE (120 mana)");
         shieldBtn.setBackground(new Color(100, 200, 255));
         shieldBtn.setForeground(Color.BLACK);
+        shieldBtn.setToolTipText("<html>Shields a ship for 2 turns.<br>Blocked hits don't damage the ship!</html>");
         shieldBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Adaptive Instinct", true, false, true);
@@ -439,6 +439,7 @@ public class SkillPanel extends JPanel {
         JButton overdriveBtn = new JButton("USE (Restores 200 mana)");
         overdriveBtn.setBackground(new Color(255, 215, 0));
         overdriveBtn.setForeground(Color.BLACK);
+        overdriveBtn.setToolTipText("<html>Restores 200 mana instantly.<br>3 turn cooldown.</html>");
         overdriveBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Multitask Overdrive", false, false, false);
@@ -457,6 +458,7 @@ public class SkillPanel extends JPanel {
         JButton ascentBtn = new JButton("USE (500 mana)");
         ascentBtn.setBackground(new Color(200, 50, 50));
         ascentBtn.setForeground(Color.WHITE);
+        ascentBtn.setToolTipText("<html>Destroys an entire column!<br>More damage when low on HP.</html>");
         ascentBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Relentless Ascent", true, false, false);
@@ -464,11 +466,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(ascentBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+       
     }
     
     
@@ -484,6 +482,7 @@ public class SkillPanel extends JPanel {
         JButton revealBtn = new JButton("USE (60 mana)");
         revealBtn.setBackground(new Color(200, 150, 255));
         revealBtn.setForeground(Color.BLACK);
+        revealBtn.setToolTipText("<html>Reveals a 3x3 area on enemy board.<br>During night: reveals 4x4 and damages!</html>");
         revealBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Lunar Reveal", true, false, false);
@@ -502,6 +501,7 @@ public class SkillPanel extends JPanel {
         JButton strikeBtn = new JButton("USE (120 mana)");
         strikeBtn.setBackground(new Color(150, 100, 200));
         strikeBtn.setForeground(Color.WHITE);
+        strikeBtn.setToolTipText("<html>Destroys a cross pattern (5 cells).<br>During night: destroys 9 cells!</html>");
         strikeBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Crescent Strike", true, false, false);
@@ -520,6 +520,7 @@ public class SkillPanel extends JPanel {
         JButton starfallBtn = new JButton("USE (300 mana)");
         starfallBtn.setBackground(new Color(255, 215, 0));
         starfallBtn.setForeground(Color.BLACK);
+        starfallBtn.setToolTipText("<html>ULTIMATE: Destroys 3 random cells and links 2 cells for 2 turns!<br>During night: 5 stars + 2 links!</html>");
         starfallBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Starfall Link", false, false, false);
@@ -527,11 +528,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(starfallBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+       
     }
     
     
@@ -547,6 +544,7 @@ public class SkillPanel extends JPanel {
         JButton corruptionBtn = new JButton("USE (100 mana)");
         corruptionBtn.setBackground(new Color(0, 255, 127));
         corruptionBtn.setForeground(Color.BLACK);
+        corruptionBtn.setToolTipText("<html>Infects a cell with a virus.<br>Spread to adjacent cells every 4 turns!</html>");
         corruptionBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(1, "Corruption.EXE", true, false, false);
@@ -565,6 +563,7 @@ public class SkillPanel extends JPanel {
         JButton fortificationBtn = new JButton("USE (200 mana)");
         fortificationBtn.setBackground(new Color(0, 200, 100));
         fortificationBtn.setForeground(Color.BLACK);
+        fortificationBtn.setToolTipText("<html>Repairs a damaged ship segment.<br>Restores 1 health to the ship!</html>");
         fortificationBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(2, "Fortification.GRID", true, false, true);
@@ -583,6 +582,7 @@ public class SkillPanel extends JPanel {
         JButton kernelBtn = new JButton("USE (300 mana)");
         kernelBtn.setBackground(new Color(200, 0, 0));
         kernelBtn.setForeground(Color.WHITE);
+        kernelBtn.setToolTipText("<html>Massive damage to target cell.<br>If target is infected, destroys 3x3 area!</html>");
         kernelBtn.addActionListener(e -> {
             if (skillListener != null) {
                 skillListener.onSkillUsed(3, "Kernel.Decimation.REQ", true, false, false);
@@ -590,11 +590,7 @@ public class SkillPanel extends JPanel {
         });
         panel.add(kernelBtn, gbc);
         
-        gbc.gridy++;
-        JLabel manaLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        manaLabel.setFont(new Font("Arial", Font.BOLD, 10));
-        manaLabel.setForeground(Color.CYAN);
-        panel.add(manaLabel, gbc);
+     
     }
     
     private void addGenericSkills(JPanel panel, GridBagConstraints gbc) {
@@ -627,6 +623,7 @@ public class SkillPanel extends JPanel {
         useButton.setForeground(Color.WHITE);
         useButton.addActionListener(listener);
         useButton.setPreferredSize(new Dimension(60, 25));
+        useButton.setToolTipText(desc);
         panel.add(useButton, gbc);
         
         gbc.gridy = yPos + 1;
