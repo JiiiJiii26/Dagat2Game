@@ -620,6 +620,19 @@ private void startMoonPhaseTimer() {
     CampaignWave wave = waves.get(index);
     currentEnemy = wave.enemy;
     enemyBoard = new Board();
+
+    if (playerCharacter instanceof Aeris) {
+        ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
+    }
+    if (playerCharacter instanceof Kael) {
+        ((Kael) playerCharacter).setPlayerBoard(playerBoard);
+    }
+    if (playerCharacter instanceof Valerius) {
+        ((Valerius) playerCharacter).setPlayerBoard(playerBoard);
+    }
+    if (playerCharacter instanceof Skye) {
+        ((Skye) playerCharacter).setPlayerBoard(playerBoard);
+    }
     
     String waveMessage = String.format("🌊 WAVE %d/%d - VS %s", 
         index + 1, waves.size(), currentEnemy.getName());
@@ -1232,6 +1245,18 @@ private void setupClickHandlers() {
         portraitLabel.setForeground(Color.WHITE);
         panel.add(portraitLabel, BorderLayout.CENTER);
         
+      if (playerCharacter instanceof Aeris) {
+        ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
+    }
+    if (playerCharacter instanceof Kael) {
+        ((Kael) playerCharacter).setPlayerBoard(playerBoard);
+    }
+    if (playerCharacter instanceof Valerius) {
+        ((Valerius) playerCharacter).setPlayerBoard(playerBoard);
+    }
+    if (playerCharacter instanceof Skye) {
+        ((Skye) playerCharacter).setPlayerBoard(playerBoard);
+    }
     
         
         JPanel shipCounterPanel = createShipCounterPanel(true);

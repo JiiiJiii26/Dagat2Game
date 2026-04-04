@@ -270,7 +270,9 @@ public class Valerius extends GameCharacter {
     public boolean isScrapperResolveActive() {
         return scrapperResolveActive;
     }
-    
+    private void updateStatusMessage(String message, Color color) {
+    System.out.println(message);
+}
     
     
     public void updateTurnCounter() {
