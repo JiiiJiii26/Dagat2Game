@@ -940,6 +940,7 @@ private void startMoonPhaseTimer() {
 private void executeSkill(int targetX, int targetY) {
     System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
+    boolean shouldEndTurn = true;
     
     
     if (playerCharacter instanceof Jiji) {
@@ -948,14 +949,17 @@ private void executeSkill(int targetX, int targetY) {
             case 1:
                 System.out.println("Using Data Leech");
                 success = jiji.useDataLeech(enemyBoard);
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Overclock");
                 success = jiji.useOverclock();
+                shouldEndTurn = false; 
                 break;
             case 3:
                 System.out.println("Using System Overload");
                 success = jiji.useSystemOverload(enemyBoard);
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Kael) {
@@ -970,16 +974,16 @@ private void executeSkill(int targetX, int targetY) {
                 currentSkillName = "";
                 return;
             case 2:
-                System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ") direction: " + (currentSkillDirectionHorizontal ? "Horizontal" : "Vertical"));
+                System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ")");
                 int destroyed = kael.useShadowBlade(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
                 success = destroyed > 0;
-                System.out.println("Shadow Blade destroyed " + destroyed + " cells");
+                shouldEndTurn = true;
                 break;
             case 3:
                 System.out.println("Using Shadow Domain at (" + targetX + "," + targetY + ")");
                 destroyed = kael.useShadowDomain(enemyBoard, targetX, targetY);
                 success = destroyed > 0;
-                System.out.println("Shadow Domain destroyed " + destroyed + " cells");
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Valerius) {
@@ -988,18 +992,20 @@ private void executeSkill(int targetX, int targetY) {
             case 1:
                 System.out.println("Using Radar Overload");
                 success = valerius.useRadarOverload();
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Precision Strike");
                 if (valerius.usePrecisionStrike()) {
                     int destroyed = valerius.applyPrecisionStrike(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
                     success = destroyed > 0;
-                    System.out.println("Precision Strike destroyed " + destroyed + " cells");
+                    shouldEndTurn = true;
                 }
                 break;
             case 3:
                 System.out.println("Using Fortress Mode");
                 success = valerius.useFortressMode();
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Skye) {
@@ -1009,14 +1015,20 @@ private void executeSkill(int targetX, int targetY) {
                 System.out.println("Using Catnip Explosion at (" + targetX + "," + targetY + ")");
                 int destroyed = skye.useCatnipExplosion(enemyBoard, targetX, targetY);
                 success = destroyed > 0;
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Laser Pointer");
                 success = skye.useLaserPointer();
+                shouldEndTurn = false; 
+                if (success) {
+                    System.out.println("🔴 Laser Pointer used - Enemy will skip their next turn!");
+                }
                 break;
             case 3:
                 System.out.println("Using Nine Lives at (" + targetX + "," + targetY + ")");
                 success = skye.useNineLives(playerBoard, targetX, targetY);
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Morgana) {
@@ -1025,15 +1037,18 @@ private void executeSkill(int targetX, int targetY) {
             case 1:
                 System.out.println("Using Enchanting Melody");
                 success = morgana.useEnchantingMelody();
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Whirlpool Trap at (" + targetX + "," + targetY + ")");
                 success = morgana.useWhirlpoolTrap(enemyBoard, targetX, targetY);
+                shouldEndTurn = true;
                 break;
             case 3:
                 System.out.println("Using Storm Call");
                 int flooded = morgana.useStormCall(enemyBoard);
                 success = flooded > 0;
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Aeris) {
@@ -1042,15 +1057,18 @@ private void executeSkill(int targetX, int targetY) {
             case 1:
                 System.out.println("Using Adaptive Instinct");
                 success = aeris.useAdaptiveInstinct(playerBoard, -1);
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Multitask Overdrive");
                 success = aeris.useMultitaskOverdrive();
+                shouldEndTurn = false; 
                 break;
             case 3:
                 System.out.println("Using Relentless Ascent at column " + targetY);
                 int destroyed = aeris.useRelentlessAscent(enemyBoard, targetY);
                 success = destroyed > 0;
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Selene) {
@@ -1059,15 +1077,18 @@ private void executeSkill(int targetX, int targetY) {
             case 1:
                 System.out.println("Using Lunar Reveal at (" + targetX + "," + targetY + ")");
                 success = selene.useLunarReveal(enemyBoard, targetX, targetY);
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Crescent Strike at (" + targetX + "," + targetY + ")");
                 int destroyed = selene.useCrescentStrike(enemyBoard, targetX, targetY);
                 success = destroyed > 0;
+                shouldEndTurn = true;
                 break;
             case 3:
                 System.out.println("Using Starfall Link");
                 success = selene.useStarfallLink(enemyBoard);
+                shouldEndTurn = true;
                 break;
         }
     } else if (playerCharacter instanceof Flue) {
@@ -1076,14 +1097,17 @@ private void executeSkill(int targetX, int targetY) {
             case 1:
                 System.out.println("Using Corruption.EXE at (" + targetX + "," + targetY + ")");
                 success = flue.useCorruption(enemyBoard, targetX, targetY);
+                shouldEndTurn = true;
                 break;
             case 2:
                 System.out.println("Using Fortification.GRID at (" + targetX + "," + targetY + ")");
                 success = flue.useFortification(playerBoard, targetX, targetY);
+                shouldEndTurn = true;
                 break;
             case 3:
                 System.out.println("Using Kernel.Decimation.REQ at (" + targetX + "," + targetY + ")");
                 success = flue.useKernelDecimation(enemyBoard, targetX, targetY);
+                shouldEndTurn = true;
                 break;
         }
     }
@@ -1095,11 +1119,21 @@ private void executeSkill(int targetX, int targetY) {
             currentSkillPanel.updateUI();
         }
         
-        if (currentSkillNumber != 2) { 
+        
+        if (currentSkillName.equals("Laser Pointer")) {
+            updateStatusLabel("🔴 Enemy will skip their next turn! You get another turn!", Color.GREEN);
+        }
+        
+        
+        if (shouldEndTurn) {
             playerTurn = false;
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
+        } else {
+            
+            refreshUI();
+            updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
         }
     } else {
         updateStatusLabel("❌ Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
@@ -1650,107 +1684,107 @@ private void setupClickHandlers() {
         timer.start();
     }
     
-    private void enemyTurn() {
-        updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
+   private void enemyTurn() {
+    updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
 
-
-         if (playerCharacter instanceof Flue) {
+    
+    if (playerCharacter instanceof Flue) {
         Flue flue = (Flue) playerCharacter;
         flue.updateVirusSpread(enemyBoard);
     }
 
-              if (playerCharacter instanceof Selene) {
+    
+    if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
         selene.updateMoonPhase();
     }
     
+    Timer delayTimer = new Timer(500, e -> {
         
-        Timer delayTimer = new Timer(500, e -> {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            
-       
-            if (playerCharacter instanceof Skye) {
-                Skye skye = (Skye) playerCharacter;
-                if (skye.shouldSkipEnemyTurn()) {
-                    updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
-                    playerTurn = true;
-                    onPlayerTurnStart();  
-                    return;
-                }
+        if (playerCharacter instanceof Skye) {
+            Skye skye = (Skye) playerCharacter;
+            if (skye.shouldSkipEnemyTurn()) {
+                updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
+                playerTurn = true;
+                onPlayerTurnStart();  
+                return;
             }
-            
-            useEnemySkill();
+        }
+        
+        int x = random.nextInt(10);
+        int y = random.nextInt(10);
+        
+        useEnemySkill();
 
-            if (currentEnemy instanceof Selene) {
-                Selene selene = (Selene) currentEnemy;
-                selene.checkLinkedCells(playerBoard, x, y);
-            }
-            
-            
-            if (playerCharacter instanceof Jiji) {
-                ((Jiji) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Kael) {
-                ((Kael) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Skye) {
-                ((Skye) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Valerius) {
-                ((Valerius) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Morgana) {  
-                ((Morgana) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Selene) {  
-                ((Selene) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Aeris) {  
-                ((Aeris) playerCharacter).updateTurnCounter();
-            } else if (playerCharacter instanceof Flue) {  
-                ((Flue) playerCharacter).updateTurnCounter();
-            }
-            
-            updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
-            
-            ShotResult result = playerBoard.fire(x, y);
-            
-            if (playerCharacter instanceof Jiji) {
-                Jiji jiji = (Jiji) playerCharacter;
-                if (jiji.checkFirewall(x, y, result)) {
-                    updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
-                } else {
-                    playerBoardPanel.updateCell(x, y, result);
-                }
+        if (currentEnemy instanceof Selene) {
+            Selene selene = (Selene) currentEnemy;
+            selene.checkLinkedCells(playerBoard, x, y);
+        }
+        
+        
+        if (playerCharacter instanceof Jiji) {
+            ((Jiji) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Kael) {
+            ((Kael) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Skye) {
+            ((Skye) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Valerius) {
+            ((Valerius) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Morgana) {  
+            ((Morgana) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Selene) {  
+            ((Selene) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Aeris) {  
+            ((Aeris) playerCharacter).updateTurnCounter();
+        } else if (playerCharacter instanceof Flue) {  
+            ((Flue) playerCharacter).updateTurnCounter();
+        }
+        
+        updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
+        
+        ShotResult result = playerBoard.fire(x, y);
+        
+        if (playerCharacter instanceof Jiji) {
+            Jiji jiji = (Jiji) playerCharacter;
+            if (jiji.checkFirewall(x, y, result)) {
+                updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
             } else {
                 playerBoardPanel.updateCell(x, y, result);
             }
-            
-            switch(result) {
-                case HIT:
-                    updateStatusLabel("💥 Enemy hit one of your ships!", Color.RED);
-                    break;
-                case SUNK:
-                    updateStatusLabel("💀 YOUR SHIP WAS SUNK!", Color.RED);
-                    break;
-                case MISS:
-                    updateStatusLabel("😅 Enemy missed! Lucky break!", Color.GREEN);
-                    break;
-                default:
-                    break;
-            }
-            
-            refreshBoardsOnly();
-            
-            if (playerBoard.allShipsSunk()) {
-                updateStatusLabel("💔 GAME OVER - Your fleet destroyed!", Color.RED);
-                gameOver();
-                return;
-            }
-            
-            playerTurn = true;
-            onPlayerTurnStart();
-            cancelAllSkillTargeting();
-        });
+        } else {
+            playerBoardPanel.updateCell(x, y, result);
+        }
         
-        delayTimer.setRepeats(false);
-        delayTimer.start();
-    }
+        switch(result) {
+            case HIT:
+                updateStatusLabel("💥 Enemy hit one of your ships!", Color.RED);
+                break;
+            case SUNK:
+                updateStatusLabel("💀 YOUR SHIP WAS SUNK!", Color.RED);
+                break;
+            case MISS:
+                updateStatusLabel("😅 Enemy missed! Lucky break!", Color.GREEN);
+                break;
+            default:
+                break;
+        }
+        
+        refreshBoardsOnly();
+        
+        if (playerBoard.allShipsSunk()) {
+            updateStatusLabel("💔 GAME OVER - Your fleet destroyed!", Color.RED);
+            gameOver();
+            return;
+        }
+        
+        playerTurn = true;
+        onPlayerTurnStart();
+        cancelAllSkillTargeting();
+    });
+    
+    delayTimer.setRepeats(false);
+    delayTimer.start();
+}
     
     private void refreshBoardsOnly() {
         if (playerBoardPanel != null) {
