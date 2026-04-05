@@ -6,13 +6,15 @@ import models.Ship;
 import game.ShotResult;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class Jiji extends GameCharacter {
     
     private Random random = new Random();
     private int currentMana;
-    private static final int MAX_MANA = 450;
+    private static final int MAX_MANA = 500;
     
     
     private int dataLeechCooldown = 0;
@@ -29,6 +31,11 @@ public class Jiji extends GameCharacter {
     private ArrayList<String> revealedCells = new ArrayList<>();
     
     
+    private boolean overclockActive = false;
+    private int overclockBonusTurns = 0;
+    private ArrayList<String> overclockTargets = new ArrayList<>();
+    
+    
     private ArrayList<String> disabledEnemySkills = new ArrayList<>();
     private int skillDisableTurns = 0;
     
@@ -36,9 +43,9 @@ public class Jiji extends GameCharacter {
         super(
             "Jiji - The Lazy Technomancer",
             "A lazy gamer who hacked the sea itself. Procrastinates even in battle.",
-            1950, 
-            100,  
-            new Color(100, 200, 255)  
+            1950,
+            100,
+            new Color(100, 200, 255)
         );
         this.currentMana = MAX_MANA;
         this.abilityName = "Technomancer Abilities";
@@ -47,17 +54,9 @@ public class Jiji extends GameCharacter {
     
     
     
-    public int getCurrentMana() {
-        return currentMana;
-    }
-    
-    public int getMaxMana() {
-        return MAX_MANA;
-    }
-    
-    public boolean hasEnoughMana(int cost) {
-        return currentMana >= cost;
-    }
+    public int getCurrentMana() { return currentMana; }
+    public int getMaxMana() { return MAX_MANA; }
+    public boolean hasEnoughMana(int cost) { return currentMana >= cost; }
     
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {
@@ -75,50 +74,65 @@ public class Jiji extends GameCharacter {
     
     
     
-    public boolean useDataLeech(Board enemyBoard) {
-        if (dataLeechCooldown > 0) {
-            System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
-            return false;
-        }
-        
-        if (!hasEnoughMana(50)) {
-            System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
-            return false;
-        }
-        
-        System.out.println("🔓 Jiji uses DATA LEECH: \"Your secrets are mine... wait, that took effort.\"");
-        spendMana(50);
-        
-        
-        int revealed = 0;
-        int attempts = 0;
-        StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals:\n");
-        
-        while (revealed < 2 && attempts < 100) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-            String cellKey = x + "," + y;
-            Cell cell = enemyBoard.getCell(x, y);
-            
-            if (!cell.isFiredUpon() && !revealedCells.contains(cellKey)) {
-                revealedCells.add(cellKey);
-                String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
-                resultMessage.append("• (").append(x).append(",").append(y).append("): ").append(content).append("\n");
-                revealed++;
-            }
-            attempts++;
-        }
-        
-        System.out.println(resultMessage.toString());
-        
-        dataLeechCooldown = 1; 
-        System.out.println("✅ Data Leech complete! " + revealed + " cells revealed.");
-        return true;
+    
+   public boolean useDataLeech(Board enemyBoard) {
+    if (dataLeechCooldown > 0) {
+        System.out.println("⏳ Data Leech is on cooldown for " + dataLeechCooldown + " more turns");
+        return false;
     }
     
-    public boolean isCellRevealed(int x, int y) {
-        return revealedCells.contains(x + "," + y);
+    if (!hasEnoughMana(50)) {
+        System.out.println("⚠️ Not enough mana! Need 50 mana, have " + currentMana);
+        return false;
     }
+    
+    
+    int cellsToReveal = overclockActive ? 4 : 2;
+    
+    String synergyMsg = overclockActive ? " (OVERCLOCK SYNERGY: 4 cells!)" : "";
+    System.out.println("🔓 Jiji uses DATA LEECH" + synergyMsg + ": \"Your secrets are mine... wait, that took effort.\"");
+    spendMana(50);
+    
+    
+    int revealed = 0;
+    int attempts = 0;
+    StringBuilder resultMessage = new StringBuilder("📡 Data Leech reveals and marks:\n");
+    
+    while (revealed < cellsToReveal && attempts < 100) {
+        int x = random.nextInt(10);
+        int y = random.nextInt(10);
+        String cellKey = x + "," + y;
+        Cell cell = enemyBoard.getCell(x, y);
+        
+        
+        if (!cell.isFiredUpon()) {
+            ShotResult result = enemyBoard.fire(x, y);
+            revealedCells.add(cellKey);
+            
+            
+            if (overclockActive) {
+                overclockTargets.add(cellKey);
+                System.out.println("⚡ Overclock synergy: " + cellKey + " marked for chain reaction!");
+            }
+            
+            String content = cell.hasShip() ? "🚢 SHIP" : "🌊 empty";
+            resultMessage.append("   • (").append(x).append(",").append(y)
+                        .append("): ").append(content).append(" → MARKED! (").append(result).append(")\n");
+            revealed++;
+        }
+        attempts++;
+    }
+    
+    System.out.println(resultMessage.toString());
+    System.out.println("✅ Data Leech complete! " + revealed + " cells revealed and marked.");
+    if (overclockActive) {
+        System.out.println("⚡ Overclock synergy: " + overclockTargets.size() + " cells marked for chain reaction!");
+    }
+    
+    dataLeechCooldown = 1;
+    return true;
+}
+    
     
     
     
@@ -128,111 +142,154 @@ public class Jiji extends GameCharacter {
             return false;
         }
         
-        if (!hasEnoughMana(120)) {
-            System.out.println("⚠️ Not enough mana! Need 120 mana, have " + currentMana);
+        if (!hasEnoughMana(100)) {
+            System.out.println("⚠️ Not enough mana! Need 100 mana, have " + currentMana);
             return false;
         }
         
-        System.out.println("⚡ Jiji uses OVERCLOCK: \"Processing power maximum! ...now I need a nap.\"");
-        spendMana(120);
+        System.out.println("⚡ Jiji uses OVERCLOCK: \"Processing power maximum! Synergy mode activated!\"");
+        spendMana(100);
         
         
-        nextShotEnhanced = true;
-        overclockCooldown = 3; 
+        overclockActive = true;
+        overclockBonusTurns = 2;
+        overclockTargets.clear();
         
-        System.out.println("✅ Next shot will fire TWICE!");
+        System.out.println("⚡ OVERCLOCK ACTIVE for 2 turns!");
+        System.out.println("   → Data Leech will mark cells for chain reaction!");
+        System.out.println("   → System Overload will trigger on ALL marked cells!");
+        
+        overclockCooldown = 4; 
         return true;
     }
     
-    public ShotResult applyOverclock(Board enemyBoard, int x, int y) {
-        if (!nextShotEnhanced) {
-            return enemyBoard.fire(x, y);
-        }
-        
-        System.out.println("⚡⚡ OVERCLOCK ACTIVE! Firing twice!");
-        nextShotEnhanced = false;
-        
-        
-        ShotResult result1 = enemyBoard.fire(x, y);
-        int damage1 = random.nextInt(101) + 150; 
-        
-        
-        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
-        int[] dir = directions[random.nextInt(directions.length)];
-        int x2 = x + dir[0];
-        int y2 = y + dir[1];
-        
-        
-        x2 = Math.max(0, Math.min(9, x2));
-        y2 = Math.max(0, Math.min(9, y2));
-        
-        ShotResult result2 = enemyBoard.fire(x2, y2);
-        int damage2 = random.nextInt(101) + 150;
-        
-        System.out.println("💥 First shot: " + result1 + " (damage: " + damage1 + ")");
-        System.out.println("💥 Second shot: " + result2 + " (damage: " + damage2 + ")");
-        System.out.println("💥 Total damage: " + (damage1 + damage2));
-        
-        
-        if (result1 == ShotResult.SUNK || result2 == ShotResult.SUNK) {
-            return ShotResult.SUNK;
-        } else if (result1 == ShotResult.HIT || result2 == ShotResult.HIT) {
-            return ShotResult.HIT;
-        } else {
-            return ShotResult.MISS;
-        }
-    }
     
-    
-    
-    public boolean useSystemOverload(Board enemyBoard) {
-        if (systemOverloadCooldown > 0) {
-            System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
+    public boolean triggerChainReaction(Board enemyBoard) {
+        if (!overclockActive || overclockTargets.isEmpty()) {
             return false;
         }
         
-        if (!hasEnoughMana(400)) {
-            System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
-            return false;
-        }
+        System.out.println("⚡⚡ OVERCLOCK CHAIN REACTION TRIGGERED!");
+        int triggered = 0;
         
-        System.out.println("💻 Jiji uses SYSTEM OVERLOAD: \"System failure in 3... 2... 1... yawn\"");
-        spendMana(400);
-        
-        
-        String[] enemySkills = {"Radar Scan", "Barrage", "Peek", "Emergency Repair", 
-                                "Silent Drift", "Sonar Pulse", "Depth Charge", "Tempest Lock",
-                                "Radar Overload", "Kinetic Barrier", "Orbital Railgun",
-                                "Cat Swarm", "Laser Pointer", "Catnip Explosion"};
-        String disabledSkill = enemySkills[random.nextInt(enemySkills.length)];
-        disabledEnemySkills.add(disabledSkill);
-        skillDisableTurns = 3;
-        
-        System.out.println("🛑 Enemy skill '" + disabledSkill + "' is disabled for 3 turns!");
-        
-        
-        int damage = random.nextInt(151) + 250; 
-        System.out.println("💥 System Overload deals " + damage + " damage!");
-        
-        
-        for (int i = 0; i < 10; i++) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
+        for (String cellKey : overclockTargets) {
+            String[] parts = cellKey.split(",");
+            int x = Integer.parseInt(parts[0]);
+            int y = Integer.parseInt(parts[1]);
             Cell cell = enemyBoard.getCell(x, y);
-            if (cell.hasShip() && !cell.isFiredUpon()) {
+            
+            if (!cell.isFiredUpon()) {
                 ShotResult result = enemyBoard.fire(x, y);
-                System.out.println("🎯 Hit at (" + x + "," + y + ")");
-                break;
+                triggered++;
+                System.out.println("   💥 Chain reaction at (" + x + "," + y + "): " + result);
             }
         }
         
-        systemOverloadCooldown = 5; 
-        return true;
+        overclockTargets.clear();
+        System.out.println("⚡ Chain reaction hit " + triggered + " cells!");
+        return triggered > 0;
     }
     
-    public boolean isSkillDisabled(String skillName) {
-        return disabledEnemySkills.contains(skillName) && skillDisableTurns > 0;
+    
+    
+    
+    
+   public boolean useSystemOverload(Board enemyBoard) {
+    if (systemOverloadCooldown > 0) {
+        System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
+        return false;
     }
+    
+    if (!hasEnoughMana(400)) {
+        System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
+        return false;
+    }
+    
+    
+    ArrayList<Ship> availableShips = new ArrayList<>();
+    for (Ship ship : enemyBoard.getShips()) {
+        if (!ship.isSunk() && !ship.isFullyRevealed()) {
+            availableShips.add(ship);
+        }
+    }
+    
+    if (availableShips.isEmpty()) {
+        System.out.println("⚠️ No available ships to target!");
+        return false;
+    }
+    
+    
+    Ship targetShip = availableShips.get(random.nextInt(availableShips.size()));
+    
+    
+    if (overclockActive) {
+        
+        System.out.println("💻 Jiji uses SYSTEM OVERLOAD with OVERCLOCK SYNERGY!");
+        spendMana(400);
+        
+        System.out.println("⚡⚡ SYNERGY ACTIVATED! " + targetShip.getName() + " will be DESTROYED!");
+        
+        
+        int destroyedCells = 0;
+        StringBuilder destroyReport = new StringBuilder("💀 " + targetShip.getName() + " DESTROYED:\n");
+        
+        for (Ship.Coordinate pos : targetShip.getPositions()) {
+            int x = pos.getX();
+            int y = pos.getY();
+            Cell cell = enemyBoard.getCell(x, y);
+            
+            if (!cell.isFiredUpon()) {
+                
+                ShotResult result = enemyBoard.fire(x, y);
+                destroyedCells++;
+                destroyReport.append("   • (" + x + "," + y + ") destroyed! Result: " + result + "\n");
+            } else {
+                destroyReport.append("   • (" + x + "," + y + ") already destroyed\n");
+            }
+        }
+        
+        
+        targetShip.setFullyRevealed(true);
+        
+        System.out.println(destroyReport.toString());
+        System.out.println("💀 " + targetShip.getName() + " has been COMPLETELY DESTROYED!");
+        System.out.println("   " + destroyedCells + " ship segments obliterated!");
+        
+        
+        triggerChainReaction(enemyBoard);
+        
+        systemOverloadCooldown = 5;
+        return true;
+        
+    } else {
+        
+        System.out.println("💻 Jiji uses SYSTEM OVERLOAD: \"Revealing enemy ship... yawn\"");
+        spendMana(400);
+        
+        int revealedCells = 0;
+        StringBuilder revealReport = new StringBuilder("💻 System Overload reveals " + targetShip.getName() + ":\n");
+        
+        for (Ship.Coordinate pos : targetShip.getPositions()) {
+            int x = pos.getX();
+            int y = pos.getY();
+            Cell cell = enemyBoard.getCell(x, y);
+            
+            if (!cell.isFiredUpon() && !cell.isRevealed()) {
+                cell.setRevealed(true);
+                revealedCells++;
+                revealReport.append("   • (" + x + "," + y + ") revealed!\n");
+            }
+        }
+        
+        targetShip.setFullyRevealed(true);
+        System.out.println(revealReport.toString());
+        System.out.println("💻 " + targetShip.getName() + " has been FULLY REVEALED!");
+        System.out.println("   " + revealedCells + " ship segments are now visible!");
+        
+        systemOverloadCooldown = 5;
+        return true;
+    }
+}
     
     
     
@@ -241,6 +298,16 @@ public class Jiji extends GameCharacter {
         if (dataLeechCooldown > 0) dataLeechCooldown--;
         if (overclockCooldown > 0) overclockCooldown--;
         if (systemOverloadCooldown > 0) systemOverloadCooldown--;
+        
+        
+        if (overclockActive) {
+            overclockBonusTurns--;
+            if (overclockBonusTurns <= 0) {
+                overclockActive = false;
+                overclockTargets.clear();
+                System.out.println("⚡ Overclock has ended.");
+            }
+        }
         
         
         if (skillDisableTurns > 0) {
@@ -252,18 +319,17 @@ public class Jiji extends GameCharacter {
         }
         
         
-        regenerateMana(20);
-        
-        
         turnsSinceLastFirewall++;
         if (turnsSinceLastFirewall >= 4) {
             activateFirewall();
         }
+        
+        regenerateMana(20);
     }
     
     private void activateFirewall() {
         firewallActive = true;
-        firewallTurns = 1; 
+        firewallTurns = 1;
         turnsSinceLastFirewall = 0;
         System.out.println("🛡️ FIREWALL ACTIVE! Next hit will be blocked!");
     }
@@ -272,17 +338,9 @@ public class Jiji extends GameCharacter {
         if (firewallActive && (incomingShot == ShotResult.HIT || incomingShot == ShotResult.SUNK)) {
             firewallActive = false;
             System.out.println("🛡️ Firewall blocked a hit at (" + x + "," + y + ")! \"You can't hack what you can't find...\"");
-            return true; 
+            return true;
         }
-        return false; 
-    }
-    
-    
-    
-    @Override
-    public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
-        
-        System.out.println("Jiji doesn't have a single special - use individual skills!");
+        return false;
     }
     
     
@@ -299,18 +357,21 @@ public class Jiji extends GameCharacter {
                 }
             case 2: 
                 if (overclockCooldown > 0) {
-                    return "Cooldown: " + overclockCooldown + " turns";
+                    return "Cooldown: " + overclockCooldown + " turn" + (overclockCooldown > 1 ? "s" : "");
                 } else if (!hasEnoughMana(120)) {
                     return "Need 120 mana";
                 } else {
-                    return "Ready!";
+                    return "Ready! (2 turns synergy mode)";
                 }
             case 3: 
                 if (systemOverloadCooldown > 0) {
-                    return "Cooldown: " + systemOverloadCooldown + " turns";
-                } else if (!hasEnoughMana(400)) {
-                    return "Need 400 mana";
+                    return "Cooldown: " + systemOverloadCooldown + " turn" + (systemOverloadCooldown > 1 ? "s" : "");
+                } else if (!hasEnoughMana(300)) {
+                    return "Need 300 mana";
                 } else {
+                    if (overclockActive && !overclockTargets.isEmpty()) {
+                        return "SYNERGY READY! (" + overclockTargets.size() + " cells)";
+                    }
                     return "Ready!";
                 }
             default:
@@ -333,11 +394,19 @@ public class Jiji extends GameCharacter {
         return bar.toString();
     }
     
-    public boolean isFirewallActive() {
-        return firewallActive;
+    public boolean isOverclockActive() {
+        return overclockActive;
     }
     
-    public boolean isNextShotEnhanced() {
-        return nextShotEnhanced;
+    public int getOverclockTargetCount() {
+        return overclockTargets.size();
+    }
+    
+    public boolean isFirewallActive() { return firewallActive; }
+    public boolean isNextShotEnhanced() { return false; } 
+    
+    @Override
+    public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
+        System.out.println("Jiji's abilities are used through skill buttons!");
     }
 }

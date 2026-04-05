@@ -8,6 +8,13 @@ public class Ship {
     private int hits;
     private boolean isSunk;
     private ArrayList<Coordinate> positions;
+    private boolean isShielded = false;
+private int shieldedTurns = 0;
+private boolean isInfected = false; 
+private boolean isFullyRevealed = false;
+ private int[] hitSegments;
+
+
     
     
     private boolean isHidden = false;
@@ -21,8 +28,148 @@ public class Ship {
         this.hits = 0;
         this.isSunk = false;
         this.positions = new ArrayList<>();
+        this.hitSegments = new int[size]; 
+         for (int i = 0; i < size; i++) {
+            hitSegments[i] = 0;
+        }
     }
     
+    public void hit() {
+        if (!isSunk) {
+            hits++;
+            if (hits >= size) {
+                isSunk = true;
+            }
+        }
+    }
+    public void hitSegment(int segmentIndex) {
+    if (!isSunk && segmentIndex >= 0 && segmentIndex < size) {
+        
+        if (hitSegments[segmentIndex] == 0) {
+            hitSegments[segmentIndex] = 1;
+            hits++;
+            damageTaken++;
+            if (hits >= size) {
+                isSunk = true;
+                System.out.println("💀 " + name + " has been SUNK!");
+            } else {
+                System.out.println("💥 " + name + " segment " + segmentIndex + " destroyed! (" + hits + "/" + size + " hits)");
+            }
+        } else {
+            System.out.println("⚠️ Segment " + segmentIndex + " already destroyed!");
+        }
+    }
+}
+public boolean isFullyDestroyed() {
+    return isSunk;
+}
+
+public int[] getHitSegments() {
+    return hitSegments;
+}
+
+public boolean isSegmentDestroyed(int segmentIndex) {
+    return segmentIndex >= 0 && segmentIndex < size && hitSegments[segmentIndex] == 1;
+}
+    
+   public void setInfected(boolean infected) {
+        this.isInfected = infected;
+        if (infected) {
+            System.out.println("🦠 " + name + " has been INFECTED by the virus!");
+        }
+    }
+    public boolean isFullyRevealed() {
+    return isFullyRevealed;
+}
+
+public void revive() {
+    this.hits = 0;
+    this.isSunk = false;
+    this.damageTaken = 0;
+    
+    
+    for (int i = 0; i < size; i++) {
+        hitSegments[i] = 0;
+    }
+    
+    
+    this.isInfected = false;
+    this.isHidden = false;
+    this.isRevealed = false;
+    this.isReinforced = false;
+    
+    
+    System.out.println("😺 " + name + " has been FULLY REVIVED with all " + size + " segments restored!");
+}
+public void heal() {
+    this.hits = 0;
+    this.isSunk = false;
+    this.damageTaken = 0;
+    System.out.println("🏥 " + name + " has been fully repaired!");
+}
+public void setFullyRevealed(boolean revealed) {
+    this.isFullyRevealed = revealed;
+}
+
+    
+    public boolean isInfected() {
+        return isInfected;
+    }
+
+    public void setShielded(boolean shielded, int turns) {
+    this.isShielded = shielded;
+    this.shieldedTurns = turns;
+     System.out.println("🛡️ " + name + " shield set to: " + shielded);
+}
+public ArrayList<Coordinate> getPositions() {
+        return positions;
+    }
+    
+    
+    public boolean isAtPosition(int x, int y) {
+        for (Coordinate pos : positions) {
+            if (pos.getX() == x && pos.getY() == y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+public boolean isShielded() {
+    return isShielded;
+}
+
+public boolean containsCoordinate(int x, int y) {
+    for (Coordinate pos : positions) {
+        if (pos.getX() == x && pos.getY() == y) {
+            return true;
+        }
+    }
+    return false;
+}
+public boolean containsCell(int x, int y) {
+    for (Coordinate pos : positions) {
+        if (pos.getX() == x && pos.getY() == y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+public void decrementShieldTurns() {
+    if (shieldedTurns > 0) {
+        shieldedTurns--;
+        if (shieldedTurns <= 0) {
+            isShielded = false;
+            System.out.println("🛡️ " + name + "'s shield has faded.");
+        }
+    }
+}
+
+public int getShieldedTurns() {
+    return shieldedTurns;
+}
     public void addPosition(int x, int y) {
         positions.add(new Coordinate(x, y));
     }
