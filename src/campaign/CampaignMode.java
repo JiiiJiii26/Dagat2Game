@@ -12,6 +12,7 @@ import characters.*;
 import gui.BoardPanel;
 import gui.PlacementPanel;
 import gui.SkillPanel;
+import gui.TimerPanel;
 import models.Board;
 import models.Cell;
 import models.Ship;
@@ -55,6 +56,12 @@ public class CampaignMode {
 private boolean currentSkillTargetsOwnBoard = false;
 private boolean currentSkillRequiresDirection = false;
 private boolean currentSkillDirectionHorizontal = true;
+
+private TimerPanel turnTimer;
+private boolean timerEnabled = true;
+
+private JLabel playerShipLabel;
+private JLabel enemyShipLabel;
 
   
     private boolean waitingForKaelStepSource = false;
@@ -265,7 +272,8 @@ private void startMoonPhaseTimer() {
         
         
         refreshBoardsOnly();
-        
+         updateShipCounters();
+
         System.out.println("✅ Player ships healed!");
     }
 
@@ -747,31 +755,28 @@ private void startMoonPhaseTimer() {
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
-            
-            if (skillPanelRefreshTimer != null) {
-                skillPanelRefreshTimer.stop();
-            }
-            if (moonPhaseTimer != null) {
-                moonPhaseTimer.stop();
-            }
-            if (currentSkillPanel != null) {
-                currentSkillPanel.stopTimers();
-            }
+            if (turnTimer != null) turnTimer.stopTimer();
+            if (skillPanelRefreshTimer != null) skillPanelRefreshTimer.stop();
+            if (moonPhaseTimer != null) moonPhaseTimer.stop();
+            if (currentSkillPanel != null) currentSkillPanel.stopTimers();
             Main.showMainMenu();
         }
     });
     topPanel.add(backButton, BorderLayout.WEST);
     
     
+    turnTimer = new TimerPanel(10, () -> {
+        System.out.println("⏰ TIME'S UP! Auto-ending turn...");
+        updateStatusLabel("⏰ TIME'S UP! Auto-ending turn...", Color.RED);
+        endTurn();
+    });
+    topPanel.add(turnTimer, BorderLayout.CENTER);
+    
     waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
-    waveLabel.setFont(new Font("Arial", Font.BOLD, 24));
+    waveLabel.setFont(new Font("Arial", Font.BOLD, 18));
     waveLabel.setForeground(Color.YELLOW);
-    waveLabel.setHorizontalAlignment(SwingConstants.CENTER);
-    topPanel.add(waveLabel, BorderLayout.CENTER);
-    
-    
-    topPanel.add(new JPanel(), BorderLayout.EAST);
+    topPanel.add(waveLabel, BorderLayout.EAST);
     
     
     JPanel mainContentPanel = new JPanel(new BorderLayout());
@@ -804,7 +809,7 @@ private void startMoonPhaseTimer() {
     
     leftPanel.add(playerBoardPanel, BorderLayout.CENTER);
     
-    JLabel playerShipLabel = new JLabel(getShipCountText(playerBoard), SwingConstants.CENTER);
+     playerShipLabel = new JLabel(getShipCountText(playerBoard), SwingConstants.CENTER);
     playerShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
     playerShipLabel.setForeground(Color.WHITE);
     leftPanel.add(playerShipLabel, BorderLayout.SOUTH);
@@ -831,7 +836,7 @@ private void startMoonPhaseTimer() {
     
     rightPanel.add(enemyBoardPanel, BorderLayout.CENTER);
     
-    JLabel enemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
+     enemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
     enemyShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
     enemyShipLabel.setForeground(Color.WHITE);
     rightPanel.add(enemyShipLabel, BorderLayout.SOUTH);
@@ -852,8 +857,10 @@ private void startMoonPhaseTimer() {
     currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
         @Override
         public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
-            System.out.println("Skill used: " + skillName + " (requiresTarget: " + requiresTarget + ", requiresDirection: " + requiresDirection + ", targetsOwnBoard: " + targetsOwnBoard + ")");
+            System.out.println("Skill used: " + skillName);
             
+            
+            if (turnTimer != null) turnTimer.stopTimer();
             
             if (skillName.equals("Shadow Step")) {
                 System.out.println("🌑 Shadow Step detected - using separate handler!");
@@ -863,12 +870,10 @@ private void startMoonPhaseTimer() {
                 return;  
             }
             
-            
             currentSkillNumber = skillNumber;
             currentSkillName = skillName;
             currentSkillTargetsOwnBoard = targetsOwnBoard;
             currentSkillRequiresDirection = requiresDirection;
-            
             
             if (requiresDirection) {
                 String[] options = {"Horizontal (→)", "Vertical (↓)"};
@@ -882,17 +887,16 @@ private void startMoonPhaseTimer() {
                     options[0]);
                 
                 if (choice < 0) {
+                    if (turnTimer != null && timerEnabled) turnTimer.startTimer();
                     return; 
                 }
                 currentSkillDirectionHorizontal = (choice == 0);
             }
             
-            
             if (requiresTarget) {
                 waitingForSkillTarget = true;
                 updateStatusLabel("Click on " + (targetsOwnBoard ? "YOUR" : "ENEMY") + " board to target " + skillName + "!", Color.YELLOW);
             } else {
-                
                 executeSkill(-1, -1);
             }
         }
@@ -935,13 +939,18 @@ private void startMoonPhaseTimer() {
     });
     skillPanelRefreshTimer.start();
     
-    System.out.println("✅ Battle UI created using SkillPanel!");
+    
+    if (playerTurn && timerEnabled && turnTimer != null) {
+        turnTimer.startTimer();
+    }
+    
+    System.out.println("✅ Battle UI created with Timer!");
 }
+
 private void executeSkill(int targetX, int targetY) {
     System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
     boolean shouldEndTurn = true;
-    
     
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
@@ -966,7 +975,6 @@ private void executeSkill(int targetX, int targetY) {
         Kael kael = (Kael) playerCharacter;
         switch(currentSkillNumber) {
             case 1:
-                
                 System.out.println("⚠️ Shadow Step should not be executed through executeSkill!");
                 updateStatusLabel("Shadow Step requires clicking on your ships - use the skill button then click on your ships!", Color.YELLOW);
                 waitingForSkillTarget = false;
@@ -1115,15 +1123,14 @@ private void executeSkill(int targetX, int targetY) {
     if (success) {
         updateStatusLabel("✨ " + currentSkillName + " used successfully!", Color.GREEN);
         refreshBoardsOnly();
+        updateShipCounters();  
         if (currentSkillPanel != null) {
             currentSkillPanel.updateUI();
         }
         
-        
         if (currentSkillName.equals("Laser Pointer")) {
             updateStatusLabel("🔴 Enemy will skip their next turn! You get another turn!", Color.GREEN);
         }
-        
         
         if (shouldEndTurn) {
             playerTurn = false;
@@ -1131,14 +1138,20 @@ private void executeSkill(int targetX, int targetY) {
             timer.setRepeats(false);
             timer.start();
         } else {
-            
             refreshUI();
             updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
+            
+            if (turnTimer != null && timerEnabled) {
+                turnTimer.startTimer();
+            }
         }
     } else {
         updateStatusLabel("❌ Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
+        
+        if (turnTimer != null && timerEnabled && playerTurn) {
+            turnTimer.startTimer();
+        }
     }
-    
     
     waitingForSkillTarget = false;
     currentSkillNumber = 0;
@@ -1146,6 +1159,7 @@ private void executeSkill(int targetX, int targetY) {
     currentSkillTargetsOwnBoard = false;
     currentSkillRequiresDirection = false;
 }
+
 private String getShipCountText(Board board) {
     int total = 0;
     int sunk = 0;
@@ -1158,16 +1172,27 @@ private String getShipCountText(Board board) {
     int remaining = total - sunk;
     return "🚢 Ships: " + remaining + "/" + total;
 }
+private void updateShipCounters() {
+    if (playerShipLabel != null) {
+        playerShipLabel.setText(getShipCountText(playerBoard));
+        playerShipLabel.repaint();
+    }
+    if (enemyShipLabel != null) {
+        enemyShipLabel.setText(getShipCountText(enemyBoard));
+        enemyShipLabel.repaint();
+    }
+}
+
 
 private void setupClickHandlers() {
     
     playerBoardPanel.setPlayerClickHandler((row, col) -> {
         
         if (waitingForSkillTarget && currentSkillTargetsOwnBoard) {
+            if (turnTimer != null) turnTimer.stopTimer();
             executeSkill(row, col);
             return;
         }
-        
         
         if (waitingForKaelStepSource) {
             System.out.println("🌑 Kael's SHADOW STEP source: (" + row + "," + col + ")");
@@ -1189,6 +1214,7 @@ private void setupClickHandlers() {
                 refreshBoardsOnly();
                 
                 playerTurn = false;
+                if (turnTimer != null) turnTimer.stopTimer();
                 Timer timer = new Timer(1200, e -> enemyTurn());
                 timer.setRepeats(false);
                 timer.start();
@@ -1210,12 +1236,11 @@ private void setupClickHandlers() {
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
         System.out.println("Enemy board clicked at: " + row + "," + col);
         
-        
         if (waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
+            if (turnTimer != null) turnTimer.stopTimer();
             executeSkill(row, col);
             return;
         }
-        
         
         if (waitingForKaelBlade && currentKaelBladeCallback != null) {
             currentKaelBladeCallback.accept(row, col);
@@ -1259,8 +1284,8 @@ private void setupClickHandlers() {
             return;
         }
         
-        
         if (playerTurn) {
+            if (turnTimer != null) turnTimer.stopTimer();
             handlePlayerAttack(row, col);
         }
     });
@@ -1296,8 +1321,7 @@ private void setupClickHandlers() {
     }
     
         
-        JPanel shipCounterPanel = createShipCounterPanel(true);
-        panel.add(shipCounterPanel, BorderLayout.SOUTH);
+        
         
         return panel;
     }
@@ -1322,6 +1346,7 @@ private void setupClickHandlers() {
         
         revealBtn.addActionListener(e -> {
             if (isPlayer && playerTurn) {
+                if (turnTimer != null) turnTimer.stopTimer();
                 updateStatusLabel("🔮 Click on enemy board to reveal area!", Color.YELLOW);
                 waitingForSeleneVision = true;
                 currentSeleneVisionCallback = (x, y) -> {
@@ -1347,6 +1372,7 @@ private void setupClickHandlers() {
         
         strikeBtn.addActionListener(e -> {
             if (isPlayer && playerTurn) {
+                if (turnTimer != null) turnTimer.stopTimer();
                 updateStatusLabel("🌙 Click on enemy board to strike a cross pattern!", Color.YELLOW);
                 waitingForSeleneCrescent = true;
                 currentSeleneCrescentCallback = (x, y) -> {
@@ -1377,6 +1403,7 @@ private void setupClickHandlers() {
         
         starfallBtn.addActionListener(e -> {
             if (isPlayer && playerTurn) {
+                if (turnTimer != null) turnTimer.stopTimer();
                 boolean used = selene.useStarfallLink(enemyBoard);
                 if (used) {
                     updateStatusLabel("⭐ STARFALL LINK ACTIVATED!", Color.YELLOW);
@@ -1433,45 +1460,7 @@ private void setupClickHandlers() {
         portraitLabel.setForeground(wave.waveColor);
         panel.add(portraitLabel, BorderLayout.CENTER);
         
-        int totalShips = enemyBoard.getShips().size();
-        int remainingShips = 0;
-        for (Ship ship : enemyBoard.getShips()) {
-            if (!ship.isSunk()) {
-                remainingShips++;
-            }
-        }
-        
-        JPanel shipCounterPanel = new JPanel(new GridLayout(2, 1));
-        shipCounterPanel.setBackground(new Color(50, 0, 0));
-        
-        JLabel shipsLabel = new JLabel("🚢 ENEMY FLEET", SwingConstants.CENTER);
-        shipsLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        shipsLabel.setForeground(Color.WHITE);
-        shipCounterPanel.add(shipsLabel);
-        
-        JPanel shipIconsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        shipIconsPanel.setBackground(new Color(50, 0, 0));
-        
-        for (int i = 0; i < totalShips; i++) {
-            JLabel shipIcon;
-            if (i < remainingShips) {
-                shipIcon = new JLabel("🚢"); 
-                shipIcon.setForeground(Color.RED);
-            } else {
-                shipIcon = new JLabel("💀"); 
-                shipIcon.setForeground(Color.GRAY);
-            }
-            shipIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
-            shipIconsPanel.add(shipIcon);
-        }
-        
-        JLabel countLabel = new JLabel(remainingShips + "/" + totalShips + " ships", SwingConstants.CENTER);
-        countLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        countLabel.setForeground(Color.WHITE);
-        shipCounterPanel.add(shipIconsPanel);
-        shipCounterPanel.add(countLabel);
-        
-        panel.add(shipCounterPanel, BorderLayout.SOUTH);
+       
         
         return panel;
     }
@@ -1535,6 +1524,7 @@ private void setupClickHandlers() {
             refreshBoardsOnly();
             
             playerTurn = false;
+            if (turnTimer != null) turnTimer.stopTimer();
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
@@ -1547,6 +1537,7 @@ private void setupClickHandlers() {
     
     
     if (waitingForSkillTarget && currentSkillTargetsOwnBoard) {
+        if (turnTimer != null) turnTimer.stopTimer();
         executeSkill(row, col);
         return;
     }
@@ -1602,6 +1593,7 @@ private void setupClickHandlers() {
             }
             
             if (playerTurn) {
+                if (turnTimer != null) turnTimer.stopTimer();
                 handlePlayerAttack(row, col);
             }
         });
@@ -1612,87 +1604,84 @@ private void setupClickHandlers() {
         return panel;
     }
     
-    private void handlePlayerAttack(int row, int col) {
-        if (enemyBoard.isCellFiredUpon(row, col)) {
-            updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
-            JOptionPane.showMessageDialog(null,
-                "⚠️ You already shot at (" + row + "," + col + ")!\nChoose another cell!",
-                "Invalid Target",
-                JOptionPane.WARNING_MESSAGE);
-            return; 
-        }
-        
-        updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
-        
-        ShotResult result = ShotResult.MISS;
-
-        if (playerCharacter instanceof Selene) {
-            Selene selene = (Selene) playerCharacter;
-            selene.checkLinkedCells(enemyBoard, row, col);
-        }
-        
-        result = enemyBoard.fire(row, col);
-        updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
-                          result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
-        
-        if (playerCharacter instanceof Selene) {
-            ((Selene) playerCharacter).endTurn();  
-        }
-
-        enemyBoardPanel.updateCell(row, col, result);
-
-        
-        if (playerCharacter instanceof Jiji) {
-            ((Jiji) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Kael) {
-            ((Kael) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Skye) {
-            ((Skye) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Valerius) {
-            ((Valerius) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Morgana) {  
-            ((Morgana) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Selene) {  
-            ((Selene) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Aeris) {  
-            ((Aeris) playerCharacter).updateTurnCounter();
-        } else if (playerCharacter instanceof Flue) {  
-            ((Flue) playerCharacter).updateTurnCounter();
-        }
-        
-        refreshBoardsOnly();
-        
-        if (enemyBoard.allShipsSunk()) {
-            updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
-            waveComplete();
-            return;
-        }
-        
-        playerTurn = false;
-        
-        for (int i = 3; i > 0; i--) {
-            final int count = i;
-            Timer countTimer = new Timer((4-i) * 300, e -> {
-                updateStatusLabel("🤖 Enemy attacking in " + count + "...", Color.RED);
-            });
-            countTimer.setRepeats(false);
-            countTimer.start();
-        }
-        
-        Timer timer = new Timer(1200, e -> enemyTurn());
-        timer.setRepeats(false);
-        timer.start();
+   private void handlePlayerAttack(int row, int col) {
+    if (enemyBoard.isCellFiredUpon(row, col)) {
+        updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
+        JOptionPane.showMessageDialog(null,
+            "⚠️ You already shot at (" + row + "," + col + ")!\nChoose another cell!",
+            "Invalid Target",
+            JOptionPane.WARNING_MESSAGE);
+        return; 
     }
     
-   private void enemyTurn() {
-    updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
+    updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
+    
+    ShotResult result = ShotResult.MISS;
 
+    if (playerCharacter instanceof Selene) {
+        Selene selene = (Selene) playerCharacter;
+        selene.checkLinkedCells(enemyBoard, row, col);
+    }
+    
+    result = enemyBoard.fire(row, col);
+    updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
+                      result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
+    
+    if (playerCharacter instanceof Selene) {
+        ((Selene) playerCharacter).endTurn();  
+    }
+
+    enemyBoardPanel.updateCell(row, col, result);
+    updateShipCounters();
+
+    if (playerCharacter instanceof Jiji) {
+        ((Jiji) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Kael) {
+        ((Kael) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Skye) {
+        ((Skye) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Valerius) {
+        ((Valerius) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Morgana) {  
+        ((Morgana) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Selene) {  
+        ((Selene) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Aeris) {  
+        ((Aeris) playerCharacter).updateTurnCounter();
+    } else if (playerCharacter instanceof Flue) {  
+        ((Flue) playerCharacter).updateTurnCounter();
+    }
+    
+    refreshBoardsOnly();
+    
+    if (enemyBoard.allShipsSunk()) {
+        updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
+        waveComplete();
+        return;
+    }
+    
+    playerTurn = false;
+    
+    for (int i = 3; i > 0; i--) {
+        final int count = i;
+        Timer countTimer = new Timer((4-i) * 300, e -> {
+            updateStatusLabel("🤖 Enemy attacking in " + count + "...", Color.RED);
+        });
+        countTimer.setRepeats(false);
+        countTimer.start();
+    }
+    
+    Timer timer = new Timer(1200, e -> enemyTurn());
+    timer.setRepeats(false);
+    timer.start();
+}
+  private void enemyTurn() {
+    updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
     if (playerCharacter instanceof Flue) {
         Flue flue = (Flue) playerCharacter;
         flue.updateVirusSpread(enemyBoard);
     }
-
     
     if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
@@ -1700,7 +1689,6 @@ private void setupClickHandlers() {
     }
     
     Timer delayTimer = new Timer(500, e -> {
-        
         if (playerCharacter instanceof Skye) {
             Skye skye = (Skye) playerCharacter;
             if (skye.shouldSkipEnemyTurn()) {
@@ -1720,7 +1708,6 @@ private void setupClickHandlers() {
             Selene selene = (Selene) currentEnemy;
             selene.checkLinkedCells(playerBoard, x, y);
         }
-        
         
         if (playerCharacter instanceof Jiji) {
             ((Jiji) playerCharacter).updateTurnCounter();
@@ -1754,6 +1741,8 @@ private void setupClickHandlers() {
         } else {
             playerBoardPanel.updateCell(x, y, result);
         }
+        
+        updateShipCounters();
         
         switch(result) {
             case HIT:
@@ -1793,6 +1782,7 @@ private void setupClickHandlers() {
         if (enemyBoardPanel != null) {
             enemyBoardPanel.refreshColors();
         }
+        updateShipCounters();
     }
     
     private void refreshUI() {
@@ -1812,6 +1802,7 @@ private void setupClickHandlers() {
         if (currentWaveIndex < waves.size()) {
             message += "Next wave: " + waves.get(currentWaveIndex).enemy.getName();
             healPlayerShips();  
+            updateShipCounters();
         } else {
             message += "You've completed all waves!";
         }
@@ -1986,6 +1977,7 @@ private void setupClickHandlers() {
             
             if (currentWaveIndex < waves.size()) {
                 createBattleUI(waves.get(currentWaveIndex));
+                return;
             }
         }
         
@@ -1995,6 +1987,7 @@ private void setupClickHandlers() {
             updateStatusLabel("🌅 Night ends. Skills return to normal.", Color.CYAN);
             if (currentWaveIndex < waves.size()) {
                 createBattleUI(waves.get(currentWaveIndex));
+                return;
             }
         }
     }
@@ -2004,8 +1997,17 @@ private void setupClickHandlers() {
     
     String turnMessage = getCharacterTurnMessage();
     updateStatusLabel(turnMessage, Color.GREEN);
+    
+    
+    if (timerEnabled && turnTimer != null) {
+        turnTimer.startTimer();
+    }
 }
 private void endTurn() {
+    
+    if (turnTimer != null) {
+        turnTimer.stopTimer();
+    }
     
     if (!playerTurn) {
         updateStatusLabel("It's not your turn!", Color.RED);
@@ -2024,6 +2026,10 @@ private void endTurn() {
             JOptionPane.WARNING_MESSAGE);
         
         if (confirm != JOptionPane.YES_OPTION) {
+            
+            if (timerEnabled && turnTimer != null) {
+                turnTimer.startTimer();
+            }
             return;
         }
         
