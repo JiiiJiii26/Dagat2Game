@@ -21,7 +21,7 @@ import main.Main;
 
 public class CampaignMode {
    //for testing specific enemy waves
-    private boolean testMode = true;  
+    private boolean testMode = false;  
     private String testEnemyName = "Skye";
 
     private Timer moonPhaseTimer;
