@@ -260,6 +260,8 @@ private void startMoonPhaseTimer() {
         
         for (Ship ship : playerBoard.getShips()) {
             ship.heal();
+            ship.setShielded(false, 0);
+        System.out.println("🛡️ Removed shield from " + ship.getName());
         }
         
         
@@ -267,14 +269,17 @@ private void startMoonPhaseTimer() {
             for (int j = 0; j < 10; j++) {
                 Cell cell = playerBoard.getCell(i, j);
                 cell.resetFiredUpon();
+                cell.setRevealed(false);
             }
         }
-        
+        if (playerBoardPanel != null) {
+        playerBoardPanel.refreshColors();
+    }
         
         refreshBoardsOnly();
          updateShipCounters();
 
-        System.out.println("✅ Player ships healed!");
+        System.out.println("✅ Player ships healed and shields removed!");
     }
 
     private void useSeleneEnemySkill() {

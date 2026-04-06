@@ -137,6 +137,7 @@ public Ship getShip() {
 
 public void resetFiredUpon() {
     this.isFiredUpon = false;
+     System.out.println("🔄 Cell (" + x + "," + y + ") reset to unharmed state");
 }
 public void reviveShipSegment() {
     this.isFiredUpon = false;  
