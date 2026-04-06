@@ -20,10 +20,12 @@ import game.ShotResult;
 import main.Main;
 
 public class CampaignMode {
-   //for testing specific enemy waves
+   
     private boolean testMode = false;  
     private String testEnemyName = "Skye";
 
+    private Image oceanBackground;
+    private Image scaledOceanBackground;
     private Timer moonPhaseTimer;
     private JFrame frame;
     private List<GameCharacter> possibleEnemies;  
@@ -94,6 +96,18 @@ private SkillPanel currentSkillPanel;
     
     private Timer seleneUpdateTimer; 
 
+    private void loadOceanBackground() {
+    try {
+       
+        ImageIcon oceanIcon = new ImageIcon("assets/oceanfloor.png");
+        oceanBackground = oceanIcon.getImage();
+        System.out.println("✅ Ocean background loaded!");
+    } catch (Exception e) {
+        System.out.println("⚠️ Could not load ocean.png, using gradient background instead");
+        oceanBackground = null;
+    }
+}
+
 private void startMoonPhaseTimer() {
     if (moonPhaseTimer != null) {
         moonPhaseTimer.stop();
@@ -112,6 +126,73 @@ private void startMoonPhaseTimer() {
         }
     });
     moonPhaseTimer.start();
+}
+
+private class WaveBackgroundPanel extends JPanel {
+    private Image backgroundImage;
+    private float waveOffset = 0;
+    private Timer waveTimer;
+     private boolean animationEnabled = true;
+    
+    public WaveBackgroundPanel() {
+        setLayout(new BorderLayout());
+        setOpaque(false);
+        
+        
+        try {
+            ImageIcon icon = new ImageIcon("assets/battle_background.png");
+            backgroundImage = icon.getImage();
+            System.out.println("✅ Battle background loaded!");
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not load background image");
+        }
+    }
+        
+        
+     /*    waveTimer = new Timer(200, e -> {
+            waveOffset += 0.05f;
+            repaint();
+        });
+        waveTimer.start();
+    }*/
+    
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g.create();
+        
+        int width = getWidth();
+        int height = getHeight();
+        
+        
+        if (backgroundImage != null) {
+            g2d.drawImage(backgroundImage, 0, 0, width, height, this);
+        } else {
+            
+            GradientPaint gp = new GradientPaint(0, 0, new Color(20, 40, 80), 
+                                                   0, height, new Color(10, 20, 50));
+            g2d.setPaint(gp);
+            g2d.fillRect(0, 0, width, height);
+        }
+        
+        
+        g2d.setColor(new Color(100, 180, 220, 60));
+        for (int i = 0; i < 3; i++) {
+            int yBase = height - 40 + i * 15;
+            for (int x = 0; x < width + 50; x += 60) {
+                int y = yBase + (int)(Math.sin(x * 0.04 + waveOffset + i) * 8);
+                g2d.fillOval(x - 30, y, 60, 12);
+            }
+        }
+        
+        g2d.dispose();
+    }
+    
+    public void stopAnimation() {
+        if (waveTimer != null) {
+            waveTimer.stop();
+        }
+    }
 }
     private interface SkillTargetCallback {
         void onTargetSelected(int x, int y);
@@ -555,7 +636,7 @@ private void startMoonPhaseTimer() {
         
         GameCharacter testEnemy = null;
         
-        // Create the specific enemy you want to test
+        
         switch(testEnemyName) {
             case "Jiji":
                 testEnemy = new Jiji();
@@ -758,34 +839,32 @@ private void startMoonPhaseTimer() {
         }
     }
     
- private void createBattleUI(CampaignWave wave) {
+ 
+   private void createBattleUI(CampaignWave wave) {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
+
     
+    WaveBackgroundPanel backgroundPanel = new WaveBackgroundPanel();
+    backgroundPanel.setLayout(new BorderLayout());
+
+    
+    JPanel contentOverlay = new JPanel(new BorderLayout());
+    contentOverlay.setOpaque(false);
+    contentOverlay.setBackground(new Color(0, 0, 0, 30));
+
+    
+    loadOceanBackground();
+
     
     playerBoardPanel = new BoardPanel(true, playerBoard, true);
     enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
-    if(playerCharacter instanceof Flue) {
+    if (playerCharacter instanceof Flue) {
         ((Flue) playerCharacter).setEnemyBoard(enemyBoard);
     }
     
     setupClickHandlers();
-    
-    
-    JPanel backgroundPanel = new JPanel() {
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2d = (Graphics2D) g.create();
-            GradientPaint gp = new GradientPaint(0, 0, new Color(20, 40, 80), 
-                                                   0, getHeight(), new Color(10, 20, 50));
-            g2d.setPaint(gp);
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-            g2d.dispose();
-        }
-    };
-    backgroundPanel.setLayout(new BorderLayout());
     
     
     JPanel topPanel = new JPanel(new BorderLayout());
@@ -823,6 +902,7 @@ private void startMoonPhaseTimer() {
     });
     topPanel.add(turnTimer, BorderLayout.CENTER);
     
+    
     waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
     waveLabel.setFont(new Font("Arial", Font.BOLD, 18));
@@ -841,14 +921,15 @@ private void startMoonPhaseTimer() {
     
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
-    leftPanel.setBorder(BorderFactory.createTitledBorder(
-        BorderFactory.createLineBorder(Color.GREEN, 2),
-        "⚓ YOUR FLEET",
-        TitledBorder.CENTER,
-        TitledBorder.TOP,
-        new Font("Arial", Font.BOLD, 16),
-        Color.GREEN
-    ));
+    leftPanel.setBackground(new Color(0, 50, 0, 120));
+   leftPanel.setBorder(BorderFactory.createTitledBorder(
+    BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
+    "⚓ YOUR FLEET",
+    TitledBorder.CENTER,
+    TitledBorder.TOP,
+    new Font("Arial", Font.BOLD, 16),
+    new Color(0, 255, 0, 200)
+));
     
     JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
     charInfoPanel.setOpaque(false);
@@ -860,7 +941,7 @@ private void startMoonPhaseTimer() {
     
     leftPanel.add(playerBoardPanel, BorderLayout.CENTER);
     
-     playerShipLabel = new JLabel(getShipCountText(playerBoard), SwingConstants.CENTER);
+    playerShipLabel = new JLabel(getShipCountText(playerBoard), SwingConstants.CENTER);
     playerShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
     playerShipLabel.setForeground(Color.WHITE);
     leftPanel.add(playerShipLabel, BorderLayout.SOUTH);
@@ -868,14 +949,15 @@ private void startMoonPhaseTimer() {
     
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
+    rightPanel.setBackground(new Color(0, 50, 0, 120));
     rightPanel.setBorder(BorderFactory.createTitledBorder(
-        BorderFactory.createLineBorder(Color.RED, 2),
-        "🏴‍☠️ ENEMY WATERS",
-        TitledBorder.CENTER,
-        TitledBorder.TOP,
-        new Font("Arial", Font.BOLD, 16),
-        Color.RED
-    ));
+    BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
+    "🏴‍☠️ ENEMY WATERS",
+    TitledBorder.CENTER,
+    TitledBorder.TOP,
+    new Font("Arial", Font.BOLD, 16),
+    new Color(255, 0, 0, 200)
+));
     
     JPanel enemyCharPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
     enemyCharPanel.setOpaque(false);
@@ -887,7 +969,7 @@ private void startMoonPhaseTimer() {
     
     rightPanel.add(enemyBoardPanel, BorderLayout.CENTER);
     
-     enemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
+    enemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
     enemyShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
     enemyShipLabel.setForeground(Color.WHITE);
     rightPanel.add(enemyShipLabel, BorderLayout.SOUTH);
@@ -898,7 +980,8 @@ private void startMoonPhaseTimer() {
     
     
     JPanel skillsContainer = new JPanel(new BorderLayout());
-    skillsContainer.setOpaque(false);
+   skillsContainer.setBackground(new Color(0, 0, 0, 100));
+skillsContainer.setOpaque(true);
     skillsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
     
     currentSkillPanel = new SkillPanel(playerCharacter);
@@ -909,7 +992,6 @@ private void startMoonPhaseTimer() {
         @Override
         public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
             System.out.println("Skill used: " + skillName);
-            
             
             if (turnTimer != null) turnTimer.stopTimer();
             
@@ -965,31 +1047,36 @@ private void startMoonPhaseTimer() {
     statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
     statusLabel.setForeground(Color.WHITE);
     statusLabel.setOpaque(true);
-    statusLabel.setBackground(new Color(0, 0, 0, 150));
+    statusLabel.setBackground(new Color(0, 0, 0, 100));
     statusLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     
     bottomPanel.add(statusLabel);
     
     
-    backgroundPanel.add(topPanel, BorderLayout.NORTH);
-    backgroundPanel.add(mainContentPanel, BorderLayout.CENTER);
-    backgroundPanel.add(bottomPanel, BorderLayout.SOUTH);
+    contentOverlay.add(topPanel, BorderLayout.NORTH);
+    contentOverlay.add(mainContentPanel, BorderLayout.CENTER);
+    contentOverlay.add(bottomPanel, BorderLayout.SOUTH);
+    backgroundPanel.add(contentOverlay, BorderLayout.CENTER);
     
     frame.setContentPane(backgroundPanel);
     frame.revalidate();
     frame.repaint();
     
     
-    if (skillPanelRefreshTimer != null) {
-        skillPanelRefreshTimer.stop();
-    }
-    skillPanelRefreshTimer = new Timer(1000, e -> {
+  //  if (skillPanelRefreshTimer != null) {
+    //    skillPanelRefreshTimer.stop();
+    //}
+    /*skillPanelRefreshTimer = new Timer(3000, e -> {
         if (currentSkillPanel != null) {
-            currentSkillPanel.updateUI();
+           if (currentSkillPanel.getMousePosition() != null) {
+            // Mouse is over the panel - skip update to prevent glitch
+            return;
         }
-    });
+        currentSkillPanel.updateUI();
+    }
+});
     skillPanelRefreshTimer.start();
-    
+    */
     
     if (playerTurn && timerEnabled && turnTimer != null) {
         turnTimer.startTimer();
@@ -997,7 +1084,6 @@ private void startMoonPhaseTimer() {
     
     System.out.println("✅ Battle UI created with Timer!");
 }
-
 private void executeSkill(int targetX, int targetY) {
     System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
@@ -1658,12 +1744,22 @@ private void setupClickHandlers() {
    private void handlePlayerAttack(int row, int col) {
     if (enemyBoard.isCellFiredUpon(row, col)) {
         updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
-        JOptionPane.showMessageDialog(null,
-            "⚠️ You already shot at (" + row + "," + col + ")!\nChoose another cell!",
-            "Invalid Target",
-            JOptionPane.WARNING_MESSAGE);
+        
+        // REMOVED JOptionPane - this was causing the reflection!
+        
+        if (playerBoardPanel != null) {
+            playerBoardPanel.repaint();
+            playerBoardPanel.revalidate();
+        }
+        if (enemyBoardPanel != null) {
+            enemyBoardPanel.refreshColors();
+            enemyBoardPanel.repaint();
+            enemyBoardPanel.revalidate();
+        }
+
         return; 
     }
+    
     
     updateStatusLabel("⚡ FIRING at (" + row + "," + col + ")!", Color.YELLOW);
     
@@ -1869,6 +1965,42 @@ private void setupClickHandlers() {
             Main.showMainMenu();
         }
     }
+
+    private void showToastMessage(String message, Color color) {
+    // Create a temporary label
+    JLabel toast = new JLabel(message);
+    toast.setFont(new Font("Arial", Font.BOLD, 14));
+    toast.setForeground(Color.WHITE);
+    toast.setBackground(color);
+    toast.setOpaque(true);
+    toast.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+    
+    // Create a popup panel
+    JPanel popupPanel = new JPanel(new BorderLayout());
+    popupPanel.setBackground(color);
+    popupPanel.add(toast, BorderLayout.CENTER);
+    popupPanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
+    
+    // Position it relative to the enemy board
+    Point location = enemyBoardPanel.getLocationOnScreen();
+    int x = location.x + enemyBoardPanel.getWidth() / 2 - 150;
+    int y = location.y + enemyBoardPanel.getHeight() / 2 - 30;
+    
+    // Create and show popup
+    PopupFactory factory = PopupFactory.getSharedInstance();
+    Popup popup = factory.getPopup(frame, popupPanel, x, y);
+    popup.show();
+    
+    // Auto-hide after 1.5 seconds
+    Timer timer = new Timer(1500, e -> {
+        popup.hide();
+        // Force repaint to clear any artifacts
+        enemyBoardPanel.repaint();
+        playerBoardPanel.repaint();
+    });
+    timer.setRepeats(false);
+    timer.start();
+}
     
     private void gameOver() {
          if (moonPhaseTimer != null) {

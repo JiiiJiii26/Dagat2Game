@@ -89,8 +89,23 @@ public class SkillPanel extends JPanel {
         
         add(mainPanel, BorderLayout.CENTER);
         
-        updateTimer = new Timer(1000, e -> updateUI());
-        updateTimer.start();
+        updateTimer = new Timer(1000, e -> {
+    
+    if (resourceLabel != null) {
+        String newText = getResourceText();
+        if (!resourceLabel.getText().equals(newText)) {
+            resourceLabel.setText(newText);
+        }
+    }
+    if (passiveLabel != null) {
+        String newText = getPassiveText();
+        if (!passiveLabel.getText().equals(newText)) {
+            passiveLabel.setText(newText);
+        }
+    }
+    
+});
+       
     }
     
     
@@ -746,7 +761,7 @@ tidalWaveBtn.addActionListener(e -> {
     
     @Override
     public void updateUI() {
-        super.updateUI();
+       
         
         if (resourceLabel != null) {
             resourceLabel.setText(getResourceText());

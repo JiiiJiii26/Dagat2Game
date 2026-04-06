@@ -3,22 +3,22 @@ package gui;
 import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
-
-import org.w3c.dom.events.MouseEvent;
-
+import java.awt.event.MouseAdapter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import models.Board;
 import models.Cell;
 import models.Ship; 
-import java.awt.event.MouseAdapter; 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentListener;
+
 public class BoardPanel extends JPanel {
     private JButton[][] gridButtons;
     private Board board;
     private final int SIZE = 10;
     private boolean isPlayerBoard;  
     private boolean showShips;  
-    private PlayerClickHandler playerClickHandler; 
+    private PlayerClickHandler playerClickHandler;
     
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
@@ -27,7 +27,6 @@ public class BoardPanel extends JPanel {
     public void setPlayerClickHandler(PlayerClickHandler handler) {
         this.playerClickHandler = handler;
     }
-    
     
     public BoardPanel(boolean isPlayerBoard, Board board) {
         this(isPlayerBoard, board, isPlayerBoard);
@@ -41,6 +40,10 @@ public class BoardPanel extends JPanel {
         this.isPlayerBoard = isPlayerBoard;
         this.board = board;
         this.showShips = showShips;  
+
+          setDoubleBuffered(true);
+           setOpaque(true);  
+    setBackground(new Color(20, 40, 60));  
         
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
@@ -48,51 +51,45 @@ public class BoardPanel extends JPanel {
             }
         }
         
-        setLayout(new GridLayout(SIZE, SIZE));
+        setLayout(new GridLayout(SIZE, SIZE, 2, 2));
         setPreferredSize(new Dimension(400, 400));
+        setBackground(new Color(20, 40, 60));
         
         gridButtons = new JButton[SIZE][SIZE];
         
         initializeButtons();
     }
     
-   private void initializeButtons() {
+  private void initializeButtons() {
     for (int row = 0; row < SIZE; row++) {
         for (int col = 0; col < SIZE; col++) {
-            JButton button = new JButton();
-            button.putClientProperty("row", row);
-            button.putClientProperty("col", col);
+            final int currentRow = row;
+            final int currentCol = col;
             
-            Cell cell = board.getCell(row, col);
+            JButton button = new JButton();
+            button.putClientProperty("row", currentRow);
+            button.putClientProperty("col", currentCol);
+            
+            button.setContentAreaFilled(true);
+            button.setBorderPainted(true);
+            button.setFocusPainted(false);
+             button.setRolloverEnabled(false);  
+            button.setContentAreaFilled(true); 
+            button.setOpaque(true);   
+            
+            Cell cell = board.getCell(currentRow, currentCol);
+            
+            button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+            button.setBorder(BorderFactory.createLineBorder(new Color(60, 120, 160, 100), 1));
+            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            button.setOpaque(true);
+            button.setBackground(Cell.OCEAN_BLUE); 
             
             updateButtonAppearance(button, cell);
             
-            button.setOpaque(true);
-            button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(70, 130, 200), 1),
-                BorderFactory.createRaisedBevelBorder()
-            ));
-            button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
-            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
             
             button.addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) {
-                    if (!cell.isFiredUpon()) {
-                        button.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(Color.YELLOW, 2),
-                            BorderFactory.createRaisedBevelBorder()
-                        ));
-                    }
-                }
-                public void mouseExited(MouseEvent e) {
-                    if (!cell.isFiredUpon()) {
-                        button.setBorder(BorderFactory.createCompoundBorder(
-                            BorderFactory.createLineBorder(new Color(70, 130, 200), 1),
-                            BorderFactory.createRaisedBevelBorder()
-                        ));
-                    }
-                }
+                
             });
             
             button.addActionListener(e -> {
@@ -102,47 +99,68 @@ public class BoardPanel extends JPanel {
                 handleClick(r, c);
             });
             
-            gridButtons[row][col] = button;
+            gridButtons[currentRow][currentCol] = button;
             add(button);
         }
     }
 }
     
-    private void updateButtonAppearance(JButton button, Cell cell) {
-        Color cellColor = cell.getColor();
+private void updateButtonAppearance(JButton button, Cell cell) {
+    
+    button.setOpaque(true);
+    
+    Color cellColor = cell.getColor();
+    
+    
+    button.setText("");
+    button.setIcon(null);
+    
+    
+    if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
+        button.setBackground(new Color(200, 60, 50, 180));
+        button.setForeground(Color.WHITE);
+        if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
+            button.setText("💀");
+        } else {
+            button.setText("💥");
+        }
+    } 
+    
+    else if (cellColor.equals(Cell.MISS_GRAY)) {
+        button.setBackground(new Color(80, 100, 120, 150));
+        button.setForeground(Color.WHITE);
+        button.setText("•");
+        button.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
+    } 
+    
+    else {
+        int row = (int) button.getClientProperty("row");
+        int col = (int) button.getClientProperty("col");
+        
+        if ((row + col) % 2 == 0) {
+            button.setBackground(new Color(30, 80, 120, 100));
+        } else {
+            button.setBackground(new Color(40, 100, 140, 100));
+        }
         
         
-        if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
-            button.setBackground(cellColor);
-            
-            if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
-                button.setText("💀");
+        if (showShips && cell.hasShip() && !cell.isFiredUpon()) {
+            button.setBackground(new Color(60, 140, 80, 180));
+            if (cell.getShip() != null && cell.getShip().isShielded()) {
+                button.setText("🛡️");
+            } else if (cell.getShip() != null && cell.getShip().isInfected()) {
+                button.setText("🦠");
             } else {
-                button.setText("💥");
+                button.setText("⛵");
             }
-        } 
-        else if (cellColor.equals(Cell.MISS_GRAY)) {
-            button.setBackground(Cell.MISS_GRAY);
-            button.setText("•");
-        } 
-        else {
-            
-            button.setBackground(cellColor);
-            button.setText("");
-            
-            
-            if (showShips && cell.hasShip()) {
-                
-                if (cell.getShip() != null && cell.getShip().isShielded()) {
-                    button.setText("🛡️"); 
-                } else if (cell.getShip() != null && cell.getShip().isInfected()) {
-                    button.setText("🦠"); 
-                } else {
-                    button.setText("⛵"); 
-                }
-            }
+            button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
         }
     }
+    
+    
+    button.paintImmediately(button.getBounds());
+}
+
     
     private void handleClick(int row, int col) {
         if (isPlayerBoard) {
@@ -173,66 +191,29 @@ public class BoardPanel extends JPanel {
         this.enemyClickHandler = handler;
     }
     
-  public void updateCell(int row, int col, ShotResult result) {
-    Cell cell = board.getCell(row, col);
-    JButton button = gridButtons[row][col];
-    
-    switch(result) {
-        case HIT:
-            button.setBackground(Cell.HIT_RED);
-            button.setText("💥");
-            
-            animateExplosion(button);
-            break;
-        case MISS:
-            button.setBackground(Cell.MISS_GRAY);
-            button.setText("💧");
-            
-            animateSplash(button);
-            break;
-        case SUNK:
-            button.setBackground(Cell.HIT_RED);
-            button.setText("💀");
-            animateExplosion(button);
-            break;
-        default:
-            break;
+    public void updateCell(int row, int col, ShotResult result) {
+        Cell cell = board.getCell(row, col);
+        JButton button = gridButtons[row][col];
+        
+        switch(result) {
+            case HIT:
+                button.setBackground(new Color(220, 70, 60, 200));
+                button.setText("💥");
+                button.setForeground(Color.WHITE);
+                break;
+            case MISS:
+                button.setBackground(new Color(80, 100, 120, 180));
+                button.setText("•");
+                button.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
+                break;
+            case SUNK:
+                button.setBackground(new Color(150, 40, 30, 200));
+                button.setText("💀");
+                break;
+            default:
+                break;
+        }
     }
-}
-
-private void animateExplosion(JButton button) {
-    Timer explosionTimer = new Timer(50, new ActionListener() {
-        int frame = 0;
-        String[] frames = {"💥", "🔥", "💢", "💀"};
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (frame < frames.length) {
-                button.setText(frames[frame]);
-                frame++;
-            } else {
-                ((Timer)e.getSource()).stop();
-            }
-        }
-    });
-    explosionTimer.start();
-}
-
-private void animateSplash(JButton button) {
-    Timer splashTimer = new Timer(50, new ActionListener() {
-        int frame = 0;
-        String[] frames = {"💧", "💦", "🌊", "•"};
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (frame < frames.length) {
-                button.setText(frames[frame]);
-                frame++;
-            } else {
-                ((Timer)e.getSource()).stop();
-            }
-        }
-    });
-    splashTimer.start();
-}
     
     public void refreshColors() {
         for (int row = 0; row < SIZE; row++) {
