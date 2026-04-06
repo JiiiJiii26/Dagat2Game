@@ -14,13 +14,11 @@ public class Board {
         ships = new ArrayList<Ship>();
         firedUpon = new boolean[SIZE][SIZE];
         
-        
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 grid[i][j] = new Cell(i, j);
             }
         }
-        
         
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
@@ -33,14 +31,15 @@ public class Board {
         if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return true;
         return firedUpon[x][y];
     }
+    
     public boolean areAllShipsSunk() {
-    for (Ship ship : ships) {
-        if (!ship.isSunk()) {
-            return false;
+        for (Ship ship : ships) {
+            if (!ship.isSunk()) {
+                return false;
+            }
         }
+        return true;
     }
-    return true;
-}
     
     public String getDuplicateShotMessage(int x, int y) {
         return "⚠️ You already shot at (" + x + "," + y + ")!\nChoose another cell!";
@@ -51,21 +50,22 @@ public class Board {
             return ShotResult.INVALID;
         }
         
-        
-        firedUpon[x][y] = true;
-        
-        Cell cell = grid[x][y];
-        
-        if (cell.hasShip() && cell.getShip() != null && cell.getShip().isShielded()) {
-            System.out.println("🔵 Fortress Mode blocked the attack at (" + x + "," + y + ")!");
-            return ShotResult.MISS;
-        }
-        
-        if (cell.isFiredUpon()) {
+        if (firedUpon[x][y]) {
             System.out.println("Already fired at (" + x + "," + y + ")");
             return ShotResult.ALREADY_FIRED;
         }
         
+        firedUpon[x][y] = true;
+        Cell cell = grid[x][y];
+        
+        // Check shield FIRST - blocks the hit and consumes the shield
+        if (cell.hasShip() && cell.getShip() != null && cell.getShip().isShielded()) {
+            System.out.println("🔵 Fortress Mode blocked the attack at (" + x + "," + y + ")!");
+            cell.getShip().consumeShield();
+            return ShotResult.MISS;
+        }
+        
+        // No shield, process normal hit (removed the duplicate cell.isFiredUpon check)
         ShotResult result = cell.fire();
         System.out.println("Fired at (" + x + "," + y + "): " + result);
         return result;
