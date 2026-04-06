@@ -7,6 +7,7 @@ import models.Board;
 import models.Ship;
 import models.Cell;
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class MultiplayerPlacementPanel extends JPanel {
     
@@ -16,12 +17,33 @@ public class MultiplayerPlacementPanel extends JPanel {
     private int playerNumber;
     private String playerName;
     private ArrayList<Ship> shipsToPlace;
+    private ArrayList<Ship> originalShipsToPlace;
     private Ship currentShip;
     private boolean horizontal = true;
     private JLabel instructionLabel;
     private JButton rotateButton;
+    private JButton undoButton;
+    private JButton resetButton;
     private JButton nextPlayerButton;
     private PlacementListener listener;
+    
+    
+    private Stack<UndoAction> undoStack;
+    
+    
+    private class UndoAction {
+        Ship ship;
+        int startX;
+        int startY;
+        boolean wasHorizontal;
+        
+        UndoAction(Ship ship, int x, int y, boolean horizontal) {
+            this.ship = ship;
+            this.startX = x;
+            this.startY = y;
+            this.wasHorizontal = horizontal;
+        }
+    }
     
     public interface PlacementListener {
         void onPlacementComplete(int playerNumber, Board board);
@@ -34,15 +56,17 @@ public class MultiplayerPlacementPanel extends JPanel {
         this.listener = listener;
         this.currentBoard = new Board();
         this.shipsToPlace = new ArrayList<>();
+        this.originalShipsToPlace = new ArrayList<>();
+        this.undoStack = new Stack<>();
         
         
-        shipsToPlace.add(new Ship("Carrier", 5));
-        shipsToPlace.add(new Ship("Battleship", 4));
-        shipsToPlace.add(new Ship("Cruiser", 3));
-        shipsToPlace.add(new Ship("Submarine", 3));
-        shipsToPlace.add(new Ship("Destroyer", 2));
+        originalShipsToPlace.add(new Ship("Carrier", 5));
+        originalShipsToPlace.add(new Ship("Battleship", 4));
+        originalShipsToPlace.add(new Ship("Cruiser", 3));
+        originalShipsToPlace.add(new Ship("Submarine", 3));
+        originalShipsToPlace.add(new Ship("Destroyer", 2));
         
-        currentShip = shipsToPlace.remove(0);
+        resetShipList();
         
         setLayout(new BorderLayout());
         setBackground(new Color(25, 25, 112));
@@ -66,11 +90,29 @@ public class MultiplayerPlacementPanel extends JPanel {
         
         
         JPanel controlPanel = new JPanel();
-        rotateButton = new JButton("Rotate (Horizontal)");
+        
+        rotateButton = new JButton("🔄 Rotate");
         rotateButton.addActionListener(e -> toggleRotation());
         controlPanel.add(rotateButton);
         
-        nextPlayerButton = new JButton("Complete Placement");
+        
+        undoButton = new JButton("↩️ Undo");
+        undoButton.setBackground(new Color(255, 165, 0));
+        undoButton.setForeground(Color.BLACK);
+        undoButton.setFont(new Font("Arial", Font.BOLD, 12));
+        undoButton.setEnabled(false);
+        undoButton.addActionListener(e -> undoLastPlacement());
+        controlPanel.add(undoButton);
+        
+        
+        resetButton = new JButton("🗑️ Reset All");
+        resetButton.setBackground(new Color(255, 100, 100));
+        resetButton.setForeground(Color.WHITE);
+        resetButton.setFont(new Font("Arial", Font.BOLD, 12));
+        resetButton.addActionListener(e -> resetAllShips());
+        controlPanel.add(resetButton);
+        
+        nextPlayerButton = new JButton("✅ Complete Placement");
         nextPlayerButton.setEnabled(false);
         nextPlayerButton.addActionListener(e -> {
             if (listener != null) {
@@ -123,9 +165,106 @@ public class MultiplayerPlacementPanel extends JPanel {
         add(centerPanel, BorderLayout.CENTER);
     }
     
+    private void resetShipList() {
+        shipsToPlace.clear();
+        for (Ship ship : originalShipsToPlace) {
+            shipsToPlace.add(new Ship(ship.getName(), ship.getSize()));
+        }
+        currentShip = shipsToPlace.remove(0);
+        undoStack.clear();
+        if (undoButton != null) {
+            undoButton.setEnabled(false);
+        }
+    }
+    
+    private void undoLastPlacement() {
+        if (undoStack.isEmpty()) {
+            undoButton.setEnabled(false);
+            return;
+        }
+        
+        UndoAction lastAction = undoStack.pop();
+        
+        
+        
+        for (Ship.Coordinate pos : lastAction.ship.getPositions()) {
+            int x = pos.getX();
+            int y = pos.getY();
+            Cell cell = currentBoard.getCell(x, y);
+            cell.setHasShip(false);
+            cell.setShip(null);
+            gridButtons[x][y].setBackground(Cell.OCEAN_BLUE);
+            gridButtons[x][y].setText("");
+        }
+        
+        
+        lastAction.ship.getPositions().clear();
+        
+        
+        currentBoard.getShips().remove(lastAction.ship);
+        
+        
+        shipsToPlace.add(0, lastAction.ship);
+        currentShip = shipsToPlace.get(0);
+        
+        
+        instructionLabel.setText("Place your " + currentShip.getName() + " (" + currentShip.getSize() + " cells)");
+        
+        
+        rotateButton.setEnabled(true);
+        nextPlayerButton.setEnabled(false);
+        
+        
+        undoButton.setEnabled(!undoStack.isEmpty());
+        
+        
+        clearPreview();
+        
+        System.out.println("↩️ Undid placement of " + lastAction.ship.getName());
+    }
+    
+    private void resetAllShips() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Are you sure you want to reset all ship placements?\nThis will clear your current layout.",
+            "Reset Placement",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+        
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        
+        
+        currentBoard = new Board();
+        
+        
+        resetShipList();
+        
+        
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
+                gridButtons[row][col].setBackground(Cell.OCEAN_BLUE);
+                gridButtons[row][col].setText("");
+            }
+        }
+        
+        
+        rotateButton.setEnabled(true);
+        rotateButton.setText("🔄 Rotate");
+        horizontal = true;
+        nextPlayerButton.setEnabled(false);
+        undoButton.setEnabled(false);
+        instructionLabel.setText("Place your " + currentShip.getName() + " (" + currentShip.getSize() + " cells)");
+        
+        JOptionPane.showMessageDialog(this,
+            "All ships have been reset! You can now place them again.",
+            "Reset Complete",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
     private void toggleRotation() {
         horizontal = !horizontal;
-        rotateButton.setText(horizontal ? "Rotate (Horizontal)" : "Rotate (Vertical)");
+        rotateButton.setText(horizontal ? "🔄 Rotate (Horizontal)" : "🔄 Rotate (Vertical)");
     }
     
     private void showPreview(int row, int col) {
@@ -137,7 +276,7 @@ public class MultiplayerPlacementPanel extends JPanel {
                 for (int i = 0; i < currentShip.getSize(); i++) {
                     if (!currentBoard.getCell(row, col + i).hasShip() && 
                         !currentBoard.getCell(row, col + i).isFiredUpon()) {
-                        gridButtons[row][col + i].setBackground(new Color(100, 200, 100));
+                        gridButtons[row][col + i].setBackground(new Color(100, 200, 100, 150));
                     }
                 }
             }
@@ -146,7 +285,7 @@ public class MultiplayerPlacementPanel extends JPanel {
                 for (int i = 0; i < currentShip.getSize(); i++) {
                     if (!currentBoard.getCell(row + i, col).hasShip() &&
                         !currentBoard.getCell(row + i, col).isFiredUpon()) {
-                        gridButtons[row + i][col].setBackground(new Color(100, 200, 100));
+                        gridButtons[row + i][col].setBackground(new Color(100, 200, 100, 150));
                     }
                 }
             }
@@ -173,6 +312,11 @@ public class MultiplayerPlacementPanel extends JPanel {
         
         if (placed) {
             
+            Ship placedShip = currentShip;
+            undoStack.push(new UndoAction(placedShip, row, col, horizontal));
+            undoButton.setEnabled(true);
+            
+            
             for (int i = 0; i < currentShip.getSize(); i++) {
                 if (horizontal) {
                     gridButtons[row][col + i].setBackground(Cell.SHIP_GREEN);
@@ -180,7 +324,6 @@ public class MultiplayerPlacementPanel extends JPanel {
                     gridButtons[row + i][col].setBackground(Cell.SHIP_GREEN);
                 }
             }
-            
             
             if (!shipsToPlace.isEmpty()) {
                 currentShip = shipsToPlace.remove(0);
