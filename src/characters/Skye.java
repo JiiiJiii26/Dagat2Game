@@ -226,6 +226,8 @@ private void reviveFullShip(Board playerBoard, Ship ship) {
         
         
         cell.setRevealed(false);
+
+        playerBoard.resetFiredStatus(x, y);
         
         System.out.println("😺 Cell (" + x + "," + y + ") has been revived and can be damaged again!");
     }

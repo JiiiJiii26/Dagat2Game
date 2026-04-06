@@ -57,9 +57,7 @@ public class Cell {
     
 
     public ShotResult fire() {
-        if (isFiredUpon) {
-            return ShotResult.ALREADY_FIRED;
-        }
+       
         
         isFiredUpon = true;
         
