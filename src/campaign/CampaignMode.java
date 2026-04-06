@@ -149,12 +149,7 @@ private class WaveBackgroundPanel extends JPanel {
     }
         
         
-     /*    waveTimer = new Timer(200, e -> {
-            waveOffset += 0.05f;
-            repaint();
-        });
-        waveTimer.start();
-    }*/
+    
     
     @Override
     protected void paintComponent(Graphics g) {
@@ -840,23 +835,19 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
  
-   private void createBattleUI(CampaignWave wave) {
+  private void createBattleUI(CampaignWave wave) {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
 
-    
     WaveBackgroundPanel backgroundPanel = new WaveBackgroundPanel();
     backgroundPanel.setLayout(new BorderLayout());
 
-    
     JPanel contentOverlay = new JPanel(new BorderLayout());
     contentOverlay.setOpaque(false);
     contentOverlay.setBackground(new Color(0, 0, 0, 30));
 
-    
     loadOceanBackground();
 
-    
     playerBoardPanel = new BoardPanel(true, playerBoard, true);
     enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
@@ -866,11 +857,9 @@ private class WaveBackgroundPanel extends JPanel {
     
     setupClickHandlers();
     
-    
     JPanel topPanel = new JPanel(new BorderLayout());
     topPanel.setOpaque(false);
     topPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-    
     
     JButton backButton = new JButton("← BACK TO MENU");
     backButton.setFont(new Font("Arial", Font.BOLD, 14));
@@ -894,7 +883,6 @@ private class WaveBackgroundPanel extends JPanel {
     });
     topPanel.add(backButton, BorderLayout.WEST);
     
-    
     turnTimer = new TimerPanel(10, () -> {
         System.out.println("⏰ TIME'S UP! Auto-ending turn...");
         updateStatusLabel("⏰ TIME'S UP! Auto-ending turn...", Color.RED);
@@ -902,34 +890,36 @@ private class WaveBackgroundPanel extends JPanel {
     });
     topPanel.add(turnTimer, BorderLayout.CENTER);
     
-    
     waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
     waveLabel.setFont(new Font("Arial", Font.BOLD, 18));
     waveLabel.setForeground(Color.YELLOW);
     topPanel.add(waveLabel, BorderLayout.EAST);
     
-    
     JPanel mainContentPanel = new JPanel(new BorderLayout());
     mainContentPanel.setOpaque(false);
     mainContentPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     
     
+    
+    
+    JPanel boardsWrapper = new JPanel(new GridBagLayout());
+    boardsWrapper.setOpaque(false);
+    
     JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
     boardsPanel.setOpaque(false);
-    
     
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
     leftPanel.setBackground(new Color(0, 50, 0, 120));
-   leftPanel.setBorder(BorderFactory.createTitledBorder(
-    BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
-    "⚓ YOUR FLEET",
-    TitledBorder.CENTER,
-    TitledBorder.TOP,
-    new Font("Arial", Font.BOLD, 16),
-    new Color(0, 255, 0, 200)
-));
+    leftPanel.setBorder(BorderFactory.createTitledBorder(
+        BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
+        "⚓ YOUR FLEET",
+        TitledBorder.CENTER,
+        TitledBorder.TOP,
+        new Font("Arial", Font.BOLD, 16),
+        new Color(0, 255, 0, 200)
+    ));
     
     JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
     charInfoPanel.setOpaque(false);
@@ -946,18 +936,17 @@ private class WaveBackgroundPanel extends JPanel {
     playerShipLabel.setForeground(Color.WHITE);
     leftPanel.add(playerShipLabel, BorderLayout.SOUTH);
     
-    
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
     rightPanel.setBackground(new Color(0, 50, 0, 120));
     rightPanel.setBorder(BorderFactory.createTitledBorder(
-    BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
-    "🏴‍☠️ ENEMY WATERS",
-    TitledBorder.CENTER,
-    TitledBorder.TOP,
-    new Font("Arial", Font.BOLD, 16),
-    new Color(255, 0, 0, 200)
-));
+        BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
+        "🏴‍☠️ ENEMY WATERS",
+        TitledBorder.CENTER,
+        TitledBorder.TOP,
+        new Font("Arial", Font.BOLD, 16),
+        new Color(255, 0, 0, 200)
+    ));
     
     JPanel enemyCharPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
     enemyCharPanel.setOpaque(false);
@@ -976,10 +965,25 @@ private class WaveBackgroundPanel extends JPanel {
     
     boardsPanel.add(leftPanel);
     boardsPanel.add(rightPanel);
-    mainContentPanel.add(boardsPanel, BorderLayout.CENTER);
     
     
-   
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.weightx = 1.0;
+    gbc.weighty = 1.0;
+    gbc.anchor = GridBagConstraints.CENTER;
+
+    gbc.fill = GridBagConstraints.BOTH;  
+gbc.insets = new Insets(20, 20, 20, 20);  
+boardsWrapper.add(boardsPanel, gbc);
+
+    boardsWrapper.add(boardsPanel, gbc);
+    
+    
+    mainContentPanel.add(boardsWrapper, BorderLayout.CENTER);
+    
+    
     
     currentSkillPanel = new SkillPanel(playerCharacter);
     currentSkillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
@@ -1033,9 +1037,7 @@ private class WaveBackgroundPanel extends JPanel {
         }
     });
     
-    
     mainContentPanel.add(currentSkillPanel, BorderLayout.SOUTH);
-    
     
     JPanel bottomPanel = new JPanel();
     bottomPanel.setOpaque(false);
@@ -1050,7 +1052,6 @@ private class WaveBackgroundPanel extends JPanel {
     
     bottomPanel.add(statusLabel);
     
-    
     contentOverlay.add(topPanel, BorderLayout.NORTH);
     contentOverlay.add(mainContentPanel, BorderLayout.CENTER);
     contentOverlay.add(bottomPanel, BorderLayout.SOUTH);
@@ -1059,22 +1060,6 @@ private class WaveBackgroundPanel extends JPanel {
     frame.setContentPane(backgroundPanel);
     frame.revalidate();
     frame.repaint();
-    
-    
-  //  if (skillPanelRefreshTimer != null) {
-    //    skillPanelRefreshTimer.stop();
-    //}
-    /*skillPanelRefreshTimer = new Timer(3000, e -> {
-        if (currentSkillPanel != null) {
-           if (currentSkillPanel.getMousePosition() != null) {
-            // Mouse is over the panel - skip update to prevent glitch
-            return;
-        }
-        currentSkillPanel.updateUI();
-    }
-});
-    skillPanelRefreshTimer.start();
-    */
     
     if (playerTurn && timerEnabled && turnTimer != null) {
         turnTimer.startTimer();
@@ -1619,6 +1604,7 @@ private void setupClickHandlers() {
         playerBoardPanel = new BoardPanel(true, playerBoard, true);
         enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
         
+    
         playerBoardPanel.setPlayerClickHandler((row, col) -> {
              if (waitingForKaelStepSource) {
         System.out.println("🌑 Kael's SHADOW STEP source selection at: (" + row + "," + col + ")");
@@ -1743,7 +1729,7 @@ private void setupClickHandlers() {
     if (enemyBoard.isCellFiredUpon(row, col)) {
         updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
         
-        // REMOVED JOptionPane - this was causing the reflection!
+        
         
         if (playerBoardPanel != null) {
             playerBoardPanel.repaint();
@@ -1820,7 +1806,7 @@ private void setupClickHandlers() {
     timer.setRepeats(false);
     timer.start();
 }
-  private void enemyTurn() {
+ private void enemyTurn() {
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
     if (playerCharacter instanceof Flue) {
@@ -1839,11 +1825,16 @@ private void setupClickHandlers() {
             if (skye.shouldSkipEnemyTurn()) {
                 updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
                 playerTurn = true;
-                onPlayerTurnStart();  
+                onPlayerTurnStart();
+                
+                
+                if (currentSkillPanel != null) {
+                    currentSkillPanel.updateUI();
+                }
                 return;
             }
         }
-        
+
         int x = random.nextInt(10);
         int y = random.nextInt(10);
         
@@ -1914,6 +1905,11 @@ private void setupClickHandlers() {
         playerTurn = true;
         onPlayerTurnStart();
         cancelAllSkillTargeting();
+        
+        
+        if (currentSkillPanel != null) {
+            currentSkillPanel.updateUI();
+        }
     });
     
     delayTimer.setRepeats(false);
@@ -1965,7 +1961,7 @@ private void setupClickHandlers() {
     }
 
     private void showToastMessage(String message, Color color) {
-    // Create a temporary label
+    
     JLabel toast = new JLabel(message);
     toast.setFont(new Font("Arial", Font.BOLD, 14));
     toast.setForeground(Color.WHITE);
@@ -1973,26 +1969,26 @@ private void setupClickHandlers() {
     toast.setOpaque(true);
     toast.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     
-    // Create a popup panel
+    
     JPanel popupPanel = new JPanel(new BorderLayout());
     popupPanel.setBackground(color);
     popupPanel.add(toast, BorderLayout.CENTER);
     popupPanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
     
-    // Position it relative to the enemy board
+    
     Point location = enemyBoardPanel.getLocationOnScreen();
     int x = location.x + enemyBoardPanel.getWidth() / 2 - 150;
     int y = location.y + enemyBoardPanel.getHeight() / 2 - 30;
     
-    // Create and show popup
+    
     PopupFactory factory = PopupFactory.getSharedInstance();
     Popup popup = factory.getPopup(frame, popupPanel, x, y);
     popup.show();
     
-    // Auto-hide after 1.5 seconds
+    
     Timer timer = new Timer(1500, e -> {
         popup.hide();
-        // Force repaint to clear any artifacts
+        
         enemyBoardPanel.repaint();
         playerBoardPanel.repaint();
     });
@@ -2175,10 +2171,15 @@ private void setupClickHandlers() {
     
     cancelAllSkillTargeting();
     refreshBoardsOnly();
+     if (currentSkillPanel != null) {
+        currentSkillPanel.updateUI();
+    }
     
     String turnMessage = getCharacterTurnMessage();
     updateStatusLabel(turnMessage, Color.GREEN);
     
+    
+
     
     if (timerEnabled && turnTimer != null) {
         turnTimer.startTimer();
@@ -2223,14 +2224,20 @@ private void endTurn() {
     playerTurn = false;
     
     
+    if (currentSkillPanel != null) {
+        currentSkillPanel.updateUI();
+    }
+    
     refreshBoardsOnly();
     updateStatusLabel("🤖 ENEMY'S TURN - They're planning...", Color.RED);
-    
     
     Timer timer = new Timer(1200, e -> enemyTurn());
     timer.setRepeats(false);
     timer.start();
 }
+    
+    
+ 
     
     private void cancelAllSkillTargeting() {
         waitingForTarget = false;
