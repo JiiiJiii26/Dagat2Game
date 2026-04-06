@@ -214,23 +214,23 @@ private void reviveFullShip(Board playerBoard, Ship ship) {
     ship.revive();
     
     
-    for (int i = 0; i < playerBoard.getSize(); i++) {
-        for (int j = 0; j < playerBoard.getSize(); j++) {
-            Cell cell = playerBoard.getCell(i, j);
-            if (cell.hasShip() && cell.getShip() == ship) {
-                
-                cell.reviveShipSegment();
-            }
-        }
-    }
-    
-    
-    
     for (Ship.Coordinate pos : ship.getPositions()) {
+        int x = pos.getX();
+        int y = pos.getY();
+        Cell cell = playerBoard.getCell(x, y);
         
         
+        cell.setFiredUpon(false);  
+        cell.setHasShip(true);      
+        cell.setShip(ship);         
         
+        
+        cell.setRevealed(false);
+        
+        System.out.println("😺 Cell (" + x + "," + y + ") has been revived and can be damaged again!");
     }
+    
+    System.out.println("😺 " + ship.getName() + " has been FULLY REVIVED with all " + ship.getSize() + " segments restored!");
 }
     public int getReviveUses() {
     return reviveUses;

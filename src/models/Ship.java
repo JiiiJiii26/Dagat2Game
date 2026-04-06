@@ -92,11 +92,12 @@ public void revive() {
         hitSegments[i] = 0;
     }
     
-    
     this.isInfected = false;
     this.isHidden = false;
     this.isRevealed = false;
     this.isReinforced = false;
+    this.isShielded = false;
+    this.shieldedTurns = 0;
     
     
     System.out.println("😺 " + name + " has been FULLY REVIVED with all " + size + " segments restored!");

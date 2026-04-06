@@ -20,7 +20,10 @@ import game.ShotResult;
 import main.Main;
 
 public class CampaignMode {
-   
+   //for testing specific enemy waves
+    private boolean testMode = true;  
+    private String testEnemyName = "Skye";
+
     private Timer moonPhaseTimer;
     private JFrame frame;
     private List<GameCharacter> possibleEnemies;  
@@ -547,7 +550,50 @@ private void startMoonPhaseTimer() {
     
     private void generateRandomWaves() {
         waves.clear();
+         if (testMode) {
+        System.out.println("🧪 TEST MODE ENABLED - Fighting: " + testEnemyName);
         
+        GameCharacter testEnemy = null;
+        
+        // Create the specific enemy you want to test
+        switch(testEnemyName) {
+            case "Jiji":
+                testEnemy = new Jiji();
+                break;
+            case "Kael":
+                testEnemy = new Kael();
+                break;
+            case "Valerius":
+                testEnemy = new Valerius();
+                break;
+            case "Skye":
+                testEnemy = new Skye();
+                break;
+            case "Morgana":
+                testEnemy = new Morgana();
+                break;
+            case "Aeris":
+                testEnemy = new Aeris();
+                break;
+            case "Selene":
+                testEnemy = new Selene();
+                break;
+            case "Flue":
+                testEnemy = new Flue();
+                break;
+            default:
+                testEnemy = new Skye();
+                break;
+        }
+        
+        waves.add(new CampaignWave(
+            "🧪 TEST WAVE",
+            "Testing: " + testEnemy.getName(),
+            testEnemy,
+            Color.MAGENTA
+        ));
+        return;
+    }
         int numWaves = random.nextInt(3) + 3; 
         System.out.println("🎲 Generating " + numWaves + " random waves...");
         
