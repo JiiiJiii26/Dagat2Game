@@ -979,14 +979,12 @@ private class WaveBackgroundPanel extends JPanel {
     mainContentPanel.add(boardsPanel, BorderLayout.CENTER);
     
     
-    JPanel skillsContainer = new JPanel(new BorderLayout());
-   skillsContainer.setBackground(new Color(0, 0, 0, 100));
-skillsContainer.setOpaque(true);
-    skillsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+   
     
     currentSkillPanel = new SkillPanel(playerCharacter);
     currentSkillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
     currentSkillPanel.setPreferredSize(new Dimension(350, 280));
+    currentSkillPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
     
     currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
         @Override
@@ -1035,8 +1033,8 @@ skillsContainer.setOpaque(true);
         }
     });
     
-    skillsContainer.add(currentSkillPanel, BorderLayout.CENTER);
-    mainContentPanel.add(skillsContainer, BorderLayout.SOUTH);
+    
+    mainContentPanel.add(currentSkillPanel, BorderLayout.SOUTH);
     
     
     JPanel bottomPanel = new JPanel();

@@ -33,38 +33,41 @@ public class SkillPanel extends JPanel {
         this.skillListener = listener;
     }
     
-    public SkillPanel(GameCharacter character) {
-        this.character = character;
-        
-        setLayout(new BorderLayout());
-        
-        characterNameLabel = new JLabel(character.getName(), SwingConstants.CENTER);
-        characterNameLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        characterNameLabel.setForeground(getCharacterColor());
-        characterNameLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        add(characterNameLabel, BorderLayout.NORTH);
-        
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBackground(new Color(25, 25, 112));
-        
-        resourceLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-        resourceLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        resourceLabel.setForeground(getResourceColor());
-        resourceLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 10, 5, 10);
-        mainPanel.add(resourceLabel, gbc);
-        
-        passiveLabel = new JLabel(getPassiveText(), SwingConstants.CENTER);
-        passiveLabel.setFont(new Font("Arial", Font.ITALIC, 11));
-        passiveLabel.setForeground(Color.LIGHT_GRAY);
-        gbc.gridy = 1;
-        mainPanel.add(passiveLabel, gbc);
+  public SkillPanel(GameCharacter character) {
+    this.character = character;
+    
+    setLayout(new BorderLayout());
+    setOpaque(false);  // Make transparent
+    setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));  // Small padding only
+    
+    // REMOVE the character name label (the big box)
+    // characterNameLabel = new JLabel(...);
+    // add(characterNameLabel, BorderLayout.NORTH);  // COMMENT THIS OUT
+    
+    JPanel mainPanel = new JPanel(new GridBagLayout());
+    mainPanel.setOpaque(false);  // Make transparent
+    mainPanel.setBackground(null);  // Remove background
+    
+    // Make resource label smaller and cleaner
+    resourceLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
+    resourceLabel.setFont(new Font("Arial", Font.BOLD, 11));  // Smaller font
+    resourceLabel.setForeground(getResourceColor());
+    resourceLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
+    
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.gridwidth = 2;
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.insets = new Insets(2, 5, 2, 5);
+    mainPanel.add(resourceLabel, gbc);
+    
+    // Make passive label smaller
+    passiveLabel = new JLabel(getPassiveText(), SwingConstants.CENTER);
+    passiveLabel.setFont(new Font("Arial", Font.ITALIC, 9));  // Smaller font
+    passiveLabel.setForeground(Color.LIGHT_GRAY);
+    gbc.gridy = 1;
+    mainPanel.add(passiveLabel, gbc);
         
         
         if (character instanceof Jiji) {
