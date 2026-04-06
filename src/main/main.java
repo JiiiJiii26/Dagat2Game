@@ -1,5 +1,5 @@
 package main;
-//testing
+
 import gui.*;
 import models.Board;
 import ai.AIPlayer;
