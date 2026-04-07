@@ -131,8 +131,12 @@ private void startMoonPhaseTimer() {
 private class WaveBackgroundPanel extends JPanel {
     private Image backgroundImage;
     private float waveOffset = 0;
-    private Timer waveTimer;
-     private boolean animationEnabled = true;
+   private int shakeX = 0;
+        private int shakeY = 0;
+        private int shakeIntensity = 0;
+        private Color flashColor = null;
+        private Timer animTimer;
+        private boolean animationEnabled = true;
     
     public WaveBackgroundPanel() {
         setLayout(new BorderLayout());
@@ -146,15 +150,47 @@ private class WaveBackgroundPanel extends JPanel {
         } catch (Exception e) {
             System.out.println("⚠️ Could not load background image");
         }
+
+        
+        animTimer = new Timer(30, e -> {
+            if (!animationEnabled) return;
+            
+            waveOffset += 0.05f;
+            
+            if (shakeIntensity > 0) {
+                shakeX = (int)((Math.random() - 0.5) * shakeIntensity);
+                shakeY = (int)((Math.random() - 0.5) * shakeIntensity);
+                shakeIntensity -= 2; 
+            } else {
+                shakeX = 0;
+                shakeY = 0;
+            }
+            repaint();
+        });
+        animTimer.start();
     }
-        
-        
-    
+
+    public void triggerShake(int intensity) {
+        this.shakeIntensity = intensity;
+    }
+
+    public void triggerFlash(Color color) {
+        this.flashColor = color;
+        Timer t = new Timer(100, e -> {
+            flashColor = null;
+            repaint();
+        });
+        t.setRepeats(false);
+        t.start();
+    }
     
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g.create();
+        
+        
+        g2d.translate(shakeX, shakeY);
         
         int width = getWidth();
         int height = getHeight();
@@ -180,12 +216,18 @@ private class WaveBackgroundPanel extends JPanel {
             }
         }
         
+        
+        if (flashColor != null) {
+            g2d.setColor(new Color(flashColor.getRed(), flashColor.getGreen(), flashColor.getBlue(), 100));
+            g2d.fillRect(-50, -50, width + 100, height + 100);
+        }
+        
         g2d.dispose();
     }
     
     public void stopAnimation() {
-        if (waveTimer != null) {
-            waveTimer.stop();
+        if (animTimer != null) {
+                animTimer.stop();
         }
     }
 }
@@ -314,9 +356,9 @@ private class WaveBackgroundPanel extends JPanel {
         int skillChoice = enemyRandom.nextInt(3);
         
         switch(skillChoice) {
-            case 0: // Adaptive Instinct
+            case 0: 
                 if (aeris.hasEnoughMana(120)) {
-                    // AI tries to shield a random ship by picking a coordinate it knows contains a ship
+                    
                     for (Ship s : enemyBoard.getShips()) {
                         if (!s.isSunk() && !s.isShielded()) {
                             Ship.Coordinate pos = s.getPositions().get(0);
@@ -327,11 +369,11 @@ private class WaveBackgroundPanel extends JPanel {
                     }
                 }
                 break;
-            case 1: // Multitask Overdrive
+            case 1: 
                 aeris.useMultitaskOverdrive();
                 showEnemySkillMessage("Aeris uses Overdrive to restore mana!");
                 break;
-            case 2: // Relentless Ascent
+            case 2: 
                 if (aeris.hasEnoughMana(500)) {
                     int targetCol = enemyRandom.nextInt(10);
                     aeris.useRelentlessAscent(playerBoard, targetCol);
@@ -346,7 +388,7 @@ private class WaveBackgroundPanel extends JPanel {
         int skillChoice = enemyRandom.nextInt(3);
         
         switch(skillChoice) {
-            case 0: // Corruption.EXE
+            case 0: 
                 if (flue.hasEnoughMana(100)) {
                     int x = enemyRandom.nextInt(10);
                     int y = enemyRandom.nextInt(10);
@@ -354,14 +396,14 @@ private class WaveBackgroundPanel extends JPanel {
                     showEnemySkillMessage("Flue initiates a virus in your fleet!");
                 }
                 break;
-            case 1: // Fortification.GRID
+            case 1: 
                 if (flue.hasEnoughMana(80)) {
-                    // Flue attempts to repair a damaged ship cell
+                    
                     flue.useFortification(enemyBoard, enemyRandom.nextInt(10), enemyRandom.nextInt(10));
                     showEnemySkillMessage("Flue is repairing system integrity!");
                 }
                 break;
-            case 2: // Kernel.Decimation.REQ
+            case 2: 
                 if (flue.hasEnoughMana(300)) {
                     int x = enemyRandom.nextInt(10);
                     int y = enemyRandom.nextInt(10);
@@ -1162,12 +1204,8 @@ private void executeSkill(int targetX, int targetY) {
         Kael kael = (Kael) playerCharacter;
         switch(currentSkillNumber) {
             case 1:
-                System.out.println("⚠️ Shadow Step should not be executed through executeSkill!");
-                updateStatusLabel("Shadow Step requires clicking on your ships - use the skill button then click on your ships!", Color.YELLOW);
-                waitingForSkillTarget = false;
-                currentSkillNumber = 0;
-                currentSkillName = "";
-                return;
+                
+                break;
             case 2:
                 System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ")");
                 int destroyed = kael.useShadowBlade(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
@@ -1309,6 +1347,10 @@ private void executeSkill(int targetX, int targetY) {
     
     if (success) {
         updateStatusLabel("✨ " + currentSkillName + " used successfully!", Color.GREEN);
+        if (frame.getContentPane() instanceof WaveBackgroundPanel) {
+            ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(new Color(255, 255, 255));
+            ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(10);
+        }
         refreshBoardsOnly();
         updateShipCounters();  
         if (currentSkillPanel != null) {
@@ -1822,8 +1864,15 @@ private void setupClickHandlers() {
     }
     
     result = enemyBoard.fire(row, col);
-    updateStatusLabel(result == ShotResult.HIT ? "💥 HIT! Enemy ship damaged!" : "💧 Miss...", 
-                      result == ShotResult.HIT ? Color.GREEN : Color.CYAN);
+    
+    if (result == ShotResult.HIT || result == ShotResult.SUNK) {
+        updateStatusLabel("💥 HIT! Enemy ship damaged!", Color.GREEN);
+        if (frame.getContentPane() instanceof WaveBackgroundPanel) {
+            ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(15);
+        }
+    } else {
+        updateStatusLabel("💧 Miss...", Color.CYAN);
+    }
     
     if (playerCharacter instanceof Selene) {
         ((Selene) playerCharacter).endTurn();  
