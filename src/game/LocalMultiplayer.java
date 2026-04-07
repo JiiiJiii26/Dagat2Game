@@ -1,11 +1,8 @@
 package game;
 
+import characters.*;
 import models.Board;
 import models.Ship;
-import models.Cell;
-import characters.*;
-import java.util.ArrayList;
-import java.awt.Color;
 
 public class LocalMultiplayer {
     
@@ -292,7 +289,11 @@ public class LocalMultiplayer {
             Aeris aeris = (Aeris) character;
             switch(skillNumber) {
                 case 1: 
+<<<<<<< HEAD
                     success = aeris.useAdaptiveInstinct(playerBoard, x, y);
+=======
+                    success = aeris.useAdaptiveInstinct(playerBoard, -1, -1);
+>>>>>>> bd7c1d2ee8a96a476dc5805a4f008f6bc39679f0
                     shouldSwitchTurn = true;
                     break;
                 case 2: 

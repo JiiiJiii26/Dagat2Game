@@ -263,14 +263,12 @@ public class MultiplayerBattlePanel extends JPanel {
                 updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
             }
         } else {
+            // FIX APPLIED HERE: Check turn state before and after skill
+            boolean wasPlayer1Turn = game.isPlayer1Turn();
             boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
             if (success) {
                 updateStatusMessage(skillName + " used successfully!", Color.GREEN);
-                refreshBoards();
-                showPlayerSkills(playerNumber);
-                if (currentSkillPanel != null) {
-                    currentSkillPanel.updateUI();
-                }
+                postSkillActionUpdate(wasPlayer1Turn, playerNumber);
             } else {
                 updateStatusMessage("Failed to use " + skillName + "! Check mana/cooldown.", Color.RED);
             }
@@ -301,11 +299,12 @@ public class MultiplayerBattlePanel extends JPanel {
         }
         
         if (waitingForShadowStepSource && currentSkillPlayer == playerNumber && shadowStepSourceX != -1) {
+            // FIX APPLIED HERE: Check turn state before and after shadow step
+            boolean wasPlayer1Turn = game.isPlayer1Turn();
             boolean success = game.useShadowStep(playerNumber, shadowStepSourceX, shadowStepSourceY, row, col);
             if (success) {
                 updateStatusMessage("🌑 Shadow Step successful! Ship teleported!", Color.GREEN);
-                refreshBoards();
-                showPlayerSkills(playerNumber);
+                postSkillActionUpdate(wasPlayer1Turn, playerNumber);
             } else {
                 updateStatusMessage("Failed to use Shadow Step!", Color.RED);
             }
@@ -332,15 +331,13 @@ public class MultiplayerBattlePanel extends JPanel {
     private void handleSkillTarget(int row, int col) {
         if (!waitingForSkillTarget) return;
         
+        // FIX APPLIED HERE: Check turn state before and after targeted skill
+        boolean wasPlayer1Turn = game.isPlayer1Turn();
         boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
         
         if (success) {
             updateStatusMessage(currentSkillName + " used successfully!", Color.GREEN);
-            refreshBoards();
-            if (currentSkillPanel != null) {
-                currentSkillPanel.updateUI();
-            }
-            showPlayerSkills(currentSkillPlayer);
+            postSkillActionUpdate(wasPlayer1Turn, currentSkillPlayer);
         } else {
             updateStatusMessage("Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
         }
@@ -350,6 +347,36 @@ public class MultiplayerBattlePanel extends JPanel {
         currentSkillNumber = 0;
         currentSkillName = "";
         skillTargetsOwnBoard = false;
+    }
+
+    // NEW HELPER METHOD: Handles the UI transition safely after any successful skill logic.
+    private void postSkillActionUpdate(boolean wasPlayer1Turn, int currentPlayerNumber) {
+        refreshBoards();
+        updateShipCounts();
+        
+        if (wasPlayer1Turn != game.isPlayer1Turn()) {
+            updateBoardViews(); // Swaps the board to the new player
+        } else {
+            updateTurnDisplay();
+            showPlayerSkills(currentPlayerNumber); // Ensures mana and CDs reflect accurately
+            if (currentSkillPanel != null) {
+                currentSkillPanel.updateUI();
+            }
+        }
+        
+        if (game.isGameOver()) {
+            String winner = game.getWinner();
+            updateStatusMessage("GAME OVER! " + winner + " WINS!", Color.YELLOW);
+            
+            if (player1BoardPanel != null) {
+                player1BoardPanel.setEnemyClickHandler(null);
+                player1BoardPanel.setPlayerClickHandler(null);
+            }
+            if (player2BoardPanel != null) {
+                player2BoardPanel.setEnemyClickHandler(null);
+                player2BoardPanel.setPlayerClickHandler(null);
+            }
+        }
     }
     
     private JPanel createBoardPanel(String title, Board board, boolean showShips, boolean isPlayerBoard) {
