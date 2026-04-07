@@ -92,11 +92,12 @@ public void revive() {
         hitSegments[i] = 0;
     }
     
-    
     this.isInfected = false;
     this.isHidden = false;
     this.isRevealed = false;
     this.isReinforced = false;
+    this.isShielded = false;
+    this.shieldedTurns = 0;
     
     
     System.out.println("😺 " + name + " has been FULLY REVIVED with all " + size + " segments restored!");
@@ -105,6 +106,13 @@ public void heal() {
     this.hits = 0;
     this.isSunk = false;
     this.damageTaken = 0;
+
+      for (int i = 0; i < size; i++) {
+        hitSegments[i] = 0;
+    }
+
+      this.isShielded = false;
+    this.shieldedTurns = 0;
     System.out.println("🏥 " + name + " has been fully repaired!");
 }
 public void setFullyRevealed(boolean revealed) {
@@ -119,7 +127,11 @@ public void setFullyRevealed(boolean revealed) {
     public void setShielded(boolean shielded, int turns) {
     this.isShielded = shielded;
     this.shieldedTurns = turns;
-     System.out.println("🛡️ " + name + " shield set to: " + shielded);
+      if (shielded) {
+        System.out.println("🛡️ " + name + " shield set to: " + shielded + " for " + turns + " turns");
+    } else {
+        System.out.println("🛡️ " + name + " shield removed");
+    }
 }
 public ArrayList<Coordinate> getPositions() {
         return positions;
@@ -135,9 +147,18 @@ public ArrayList<Coordinate> getPositions() {
         return false;
     }
 
+public boolean consumeShield() {
+    if (isShielded && shieldedTurns > 0) {
+        isShielded = false;
+        shieldedTurns = 0;
+        System.out.println("🛡️ " + name + " shield was consumed by an attack!");
+        return true;
+    }
+    return false;
+}
 
 public boolean isShielded() {
-    return isShielded;
+    return isShielded && shieldedTurns > 0;
 }
 
 public boolean containsCoordinate(int x, int y) {
@@ -168,6 +189,9 @@ public void decrementShieldTurns() {
 }
 
 public int getShieldedTurns() {
+    return shieldedTurns;
+}
+public int getShieldedTurnsRemaining() {
     return shieldedTurns;
 }
     public void addPosition(int x, int y) {

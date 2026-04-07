@@ -100,11 +100,15 @@ public class TimerPanel extends JPanel {
         timerLabel.setForeground(Color.WHITE);
     }
     
-    private void updateDisplay() {
-        timerLabel.setText("⏱️ Time: " + timeLeft + "s");
+   private void updateDisplay() {
+    String newTimeText = "⏱️ Time: " + timeLeft + "s";
+    if (!timerLabel.getText().equals(newTimeText)) {
+        timerLabel.setText(newTimeText);
         timerBar.setValue(timeLeft);
+        
         repaint();
     }
+}
     
     public boolean isTimeRunningOut() {
         return timeLeft <= 3;

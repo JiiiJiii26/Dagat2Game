@@ -172,38 +172,41 @@ public class Valerius extends GameCharacter {
     
     
     
-  public boolean useFortressMode() {
+ public boolean useFortressMode() {
     if (fortressModeCooldown > 0) {
         System.out.println("⏳ Fortress Mode is on cooldown for " + fortressModeCooldown + " more turns");
+        updateStatusMessage("Fortress Mode is on cooldown!", Color.RED);
         return false;
     }
     
     if (!hasEnoughMana(300)) {
         System.out.println("⚠️ Not enough mana! Need 300 mana, have " + currentMana);
+        updateStatusMessage("Not enough mana! Need 300 mana.", Color.RED);
         return false;
     }
     
     Board playerBoard = getPlayerBoard();
     if (playerBoard == null) {
         System.out.println("⚠️ Cannot shield ships - player board reference is null!");
+        updateStatusMessage("Player board reference is missing!", Color.RED);
         return false;
     }
     
     System.out.println("🏰 VALERIUS uses FORTRESS MODE: \"I am the Iron Shoreline! I will not fall!\"");
     spendMana(300);
     
-    
     int shipsShielded = 0;
     for (Ship ship : playerBoard.getShips()) {
         if (!ship.isSunk()) {
-            ship.setShielded(true, 2);  
+            // Set shield to block exactly ONE hit (turns = 1 means it lasts for 1 hit)
+            ship.setShielded(true, 1);
             shipsShielded++;
-            System.out.println("🔵 " + ship.getName() + " is now SHIELDED!");
+            System.out.println("🔵 " + ship.getName() + " is now SHIELDED (will block 1 hit)!");
         }
     }
     
-    System.out.println("🏰 FORTRESS MODE ACTIVE for 2 turns!");
-    System.out.println("   " + shipsShielded + " ships are now SHIELDED and will block 1 hit each!");
+    System.out.println("🏰 FORTRESS MODE ACTIVE! " + shipsShielded + " ships are SHIELDED!");
+    System.out.println("   Each shield will block exactly 1 attack and then disappear.");
     
     fortressModeCooldown = 5;
     return true;
