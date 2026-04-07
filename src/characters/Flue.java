@@ -447,6 +447,7 @@ private Board getEnemyBoard() {
         fortificationActiveTurns--;
         if (fortificationActiveTurns <= 0) {
             fortifiedCells.clear();
+            
             System.out.println("🛡️ Fortification grid has faded.");
         }
     }
