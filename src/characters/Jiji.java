@@ -358,16 +358,16 @@ public class Jiji extends GameCharacter {
             case 2: 
                 if (overclockCooldown > 0) {
                     return "Cooldown: " + overclockCooldown + " turn" + (overclockCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(120)) {
-                    return "Need 120 mana";
+                } else if (!hasEnoughMana(100)) {
+                    return "Need 100 mana";
                 } else {
                     return "Ready! (2 turns synergy mode)";
                 }
             case 3: 
                 if (systemOverloadCooldown > 0) {
                     return "Cooldown: " + systemOverloadCooldown + " turn" + (systemOverloadCooldown > 1 ? "s" : "");
-                } else if (!hasEnoughMana(300)) {
-                    return "Need 300 mana";
+                } else if (!hasEnoughMana(400)) {
+                    return "Need 400 mana";
                 } else {
                     if (overclockActive && !overclockTargets.isEmpty()) {
                         return "SYNERGY READY! (" + overclockTargets.size() + " cells)";

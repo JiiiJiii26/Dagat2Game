@@ -299,9 +299,76 @@ private class WaveBackgroundPanel extends JPanel {
                 useMorganaEnemySkill();
             } else if (currentEnemy instanceof Selene) {
                 useSeleneEnemySkill();
+            } else if (currentEnemy instanceof Aeris) {
+                useAerisEnemySkill();
+            } else if (currentEnemy instanceof Flue) {
+                useFlueEnemySkill();
             }
         } else {
             System.out.println("🤖 Enemy decides to just attack normally.");
+        }
+    }
+
+    private void useAerisEnemySkill() {
+        Aeris aeris = (Aeris) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: // Adaptive Instinct
+                if (aeris.hasEnoughMana(120)) {
+                    // AI tries to shield a random ship by picking a coordinate it knows contains a ship
+                    for (Ship s : enemyBoard.getShips()) {
+                        if (!s.isSunk() && !s.isShielded()) {
+                            Ship.Coordinate pos = s.getPositions().get(0);
+                            aeris.useAdaptiveInstinct(enemyBoard, pos.getX(), pos.getY());
+                            showEnemySkillMessage("Aeris shields one of his ships!");
+                            break;
+                        }
+                    }
+                }
+                break;
+            case 1: // Multitask Overdrive
+                aeris.useMultitaskOverdrive();
+                showEnemySkillMessage("Aeris uses Overdrive to restore mana!");
+                break;
+            case 2: // Relentless Ascent
+                if (aeris.hasEnoughMana(500)) {
+                    int targetCol = enemyRandom.nextInt(10);
+                    aeris.useRelentlessAscent(playerBoard, targetCol);
+                    showEnemySkillMessage("Aeris strikes a full column with Relentless Ascent!");
+                }
+                break;
+        }
+    }
+
+    private void useFlueEnemySkill() {
+        Flue flue = (Flue) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: // Corruption.EXE
+                if (flue.hasEnoughMana(100)) {
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    flue.useCorruption(playerBoard, x, y);
+                    showEnemySkillMessage("Flue initiates a virus in your fleet!");
+                }
+                break;
+            case 1: // Fortification.GRID
+                if (flue.hasEnoughMana(80)) {
+                    // Flue attempts to repair a damaged ship cell
+                    flue.useFortification(enemyBoard, enemyRandom.nextInt(10), enemyRandom.nextInt(10));
+                    showEnemySkillMessage("Flue is repairing system integrity!");
+                }
+                break;
+            case 2: // Kernel.Decimation.REQ
+                if (flue.hasEnoughMana(300)) {
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    flue.useKernelDecimation(playerBoard, x, y);
+                    showEnemySkillMessage("Flue executes Kernel Decimation!");
+                }
+                break;
         }
     }
 
@@ -1184,7 +1251,7 @@ private void executeSkill(int targetX, int targetY) {
         switch(currentSkillNumber) {
             case 1:
                 System.out.println("Using Adaptive Instinct");
-                success = aeris.useAdaptiveInstinct(playerBoard, -1);
+                success = aeris.useAdaptiveInstinct(playerBoard, targetX, targetY);
                 shouldEndTurn = true;
                 break;
             case 2:

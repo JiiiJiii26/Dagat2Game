@@ -198,7 +198,7 @@ public class Valerius extends GameCharacter {
     int shipsShielded = 0;
     for (Ship ship : playerBoard.getShips()) {
         if (!ship.isSunk()) {
-            // Set shield to block exactly ONE hit (turns = 1 means it lasts for 1 hit)
+            
             ship.setShielded(true, 1);
             shipsShielded++;
             System.out.println("🔵 " + ship.getName() + " is now SHIELDED (will block 1 hit)!");

@@ -89,7 +89,7 @@ public class Aeris extends GameCharacter {
     
     
     
-    public boolean useAdaptiveInstinct(Board playerBoard, int shipIndex) {
+    public boolean useAdaptiveInstinct(Board playerBoard, int targetX, int targetY) {
         if (adaptiveInstinctCooldown > 0) {
             System.out.println("⏳ Adaptive Instinct is on cooldown for " + adaptiveInstinctCooldown + " more turns");
             return false;
@@ -100,23 +100,24 @@ public class Aeris extends GameCharacter {
             return false;
         }
         
-        ArrayList<Ship> availableShips = new ArrayList<>();
-        for (Ship ship : playerBoard.getShips()) {
-            if (!ship.isSunk() && !ship.isShielded()) {
-                availableShips.add(ship);
+        Ship targetShip = null;
+        
+        // Try to find the ship at the clicked coordinates
+        if (targetX >= 0 && targetY >= 0) {
+            Cell cell = playerBoard.getCell(targetX, targetY);
+            if (cell.hasShip()) {
+                targetShip = cell.getShip();
             }
         }
-        
-        if (availableShips.isEmpty()) {
-            System.out.println("⚠️ No available ships to shield!");
+
+        if (targetShip == null || targetShip.isSunk()) {
+            System.out.println("⚠️ No active ship at the selected location!");
             return false;
         }
-        
-        Ship targetShip;
-        if (shipIndex >= 0 && shipIndex < availableShips.size()) {
-            targetShip = availableShips.get(shipIndex);
-        } else {
-            targetShip = availableShips.get(0);
+
+        if (targetShip.isShielded()) {
+            System.out.println("⚠️ " + targetShip.getName() + " is already shielded!");
+            return false;
         }
         
         System.out.println("🛡️ AERIS uses ADAPTIVE INSTINCT: \"" + targetShip.getName() + " will endure!\"");
@@ -177,20 +178,18 @@ public class Aeris extends GameCharacter {
         double missingPercent = (double) missingHP / maxHealth;
         
         
-        int bonusCells = (int)(missingPercent * 3); 
-        int cellsToDestroy = 10 + bonusCells; 
-        cellsToDestroy = Math.min(cellsToDestroy, 10); 
+        int cellsToDestroy = 6 + (int)(missingPercent * 4); 
         
         System.out.println("⚔️ AERIS uses RELENTLESS ASCENT: \"My pain is my power!\"");
         System.out.println("📈 Missing HP: " + missingHP + "/" + maxHealth + " (" + (int)(missingPercent * 100) + "%)");
-        System.out.println("💥 Bonus cells: +" + bonusCells);
+        System.out.println("💥 Cells targeted: " + cellsToDestroy);
         spendMana(500);
         
         int cellsDestroyed = 0;
         StringBuilder hitReport = new StringBuilder("⚔️ Relentless Ascent destroys column " + targetY + ":\n");
         
         
-        for (int row = 0; row < 10; row++) {
+        for (int row = 0; row < cellsToDestroy; row++) {
             Cell cell = enemyBoard.getCell(row, targetY);
             
             if (!cell.isFiredUpon()) {
