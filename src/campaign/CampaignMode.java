@@ -679,6 +679,7 @@ private class WaveBackgroundPanel extends JPanel {
         this.enemyBoard = new Board();
         this.waves = new ArrayList<>();
         this.possibleEnemies = new ArrayList<>();
+    
         
         initializePossibleEnemies();
         generateRandomWaves();
@@ -944,7 +945,7 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
  
-  private void createBattleUI(CampaignWave wave) {
+private void createBattleUI(CampaignWave wave) {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
 
@@ -1009,9 +1010,6 @@ private class WaveBackgroundPanel extends JPanel {
     mainContentPanel.setOpaque(false);
     mainContentPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     
-    
-    
-    
     JPanel boardsWrapper = new JPanel(new GridBagLayout());
     boardsWrapper.setOpaque(false);
     
@@ -1033,6 +1031,16 @@ private class WaveBackgroundPanel extends JPanel {
     JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
     charInfoPanel.setOpaque(false);
     JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
+    
+    Icon playerPortrait = getCharacterPortrait(playerCharacter);
+    
+    if (playerPortrait != null && !(playerCharacter instanceof Jiji)) {
+        charNameLabel.setIcon(playerPortrait);
+        charNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+        charNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
+    } else {
+        charNameLabel.setText(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
+    }
     charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     charNameLabel.setForeground(Color.CYAN);
     charInfoPanel.add(charNameLabel);
@@ -1059,7 +1067,17 @@ private class WaveBackgroundPanel extends JPanel {
     
     JPanel enemyCharPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
     enemyCharPanel.setOpaque(false);
-    JLabel enemyNameLabel = new JLabel(getCharacterEmoji(currentEnemy) + " " + currentEnemy.getName());
+
+    Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+    JLabel enemyNameLabel = new JLabel(currentEnemy.getName());
+
+    if (enemyPortrait != null) {
+        enemyNameLabel.setIcon(enemyPortrait);
+        enemyNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+        enemyNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
+    } else {
+        enemyNameLabel.setText(getCharacterEmoji(currentEnemy) + " " + currentEnemy.getName());
+    }
     enemyNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     enemyNameLabel.setForeground(Color.ORANGE);
     enemyCharPanel.add(enemyNameLabel);
@@ -1075,28 +1093,21 @@ private class WaveBackgroundPanel extends JPanel {
     boardsPanel.add(leftPanel);
     boardsPanel.add(rightPanel);
     
-    
     GridBagConstraints gbc = new GridBagConstraints();
     gbc.gridx = 0;
     gbc.gridy = 0;
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
     gbc.anchor = GridBagConstraints.CENTER;
-
     gbc.fill = GridBagConstraints.BOTH;  
-gbc.insets = new Insets(20, 20, 20, 20);  
-boardsWrapper.add(boardsPanel, gbc);
-
+    gbc.insets = new Insets(20, 20, 20, 20);  
     boardsWrapper.add(boardsPanel, gbc);
-    
-    
+
     mainContentPanel.add(boardsWrapper, BorderLayout.CENTER);
-    
-    
     
     currentSkillPanel = new SkillPanel(playerCharacter);
     currentSkillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
-    currentSkillPanel.setPreferredSize(new Dimension(350, 280));
+    currentSkillPanel.setPreferredSize(new Dimension(450, 500));
     currentSkillPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
     
     currentSkillPanel.setSkillListener(new SkillPanel.SkillButtonListener() {
@@ -1146,11 +1157,43 @@ boardsWrapper.add(boardsPanel, gbc);
         }
     });
     
-    mainContentPanel.add(currentSkillPanel, BorderLayout.SOUTH);
     
-    JPanel bottomPanel = new JPanel();
-    bottomPanel.setOpaque(false);
-    bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+    JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
+    combinedBottomPanel.setOpaque(false);
+    combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
+    combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
+
+    
+    if (playerCharacter instanceof Jiji) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            
+            Image img = ((ImageIcon) portrait).getImage();
+            Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
+            
+            JLabel portraitLabel = new JLabel(new ImageIcon(scaled));
+            portraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
+            
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.add(portraitLabel, BorderLayout.CENTER);
+            
+            JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255)); 
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+            
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+        }
+    }
+
+    combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
+    mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
+    
+    
+    JPanel statusBarPanel = new JPanel();
+    statusBarPanel.setOpaque(false);
+    statusBarPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
     
     statusLabel = new JLabel("YOUR TURN - Click on enemy waters to fire!", SwingConstants.CENTER);
     statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
@@ -1158,12 +1201,11 @@ boardsWrapper.add(boardsPanel, gbc);
     statusLabel.setOpaque(true);
     statusLabel.setBackground(new Color(0, 0, 0, 100));
     statusLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    
-    bottomPanel.add(statusLabel);
+    statusBarPanel.add(statusLabel);
     
     contentOverlay.add(topPanel, BorderLayout.NORTH);
     contentOverlay.add(mainContentPanel, BorderLayout.CENTER);
-    contentOverlay.add(bottomPanel, BorderLayout.SOUTH);
+    contentOverlay.add(statusBarPanel, BorderLayout.SOUTH);
     backgroundPanel.add(contentOverlay, BorderLayout.CENTER);
     
     frame.setContentPane(backgroundPanel);
@@ -1705,6 +1747,27 @@ private void setupClickHandlers() {
         if (character instanceof Flue) return "💻";
         return "🎮";
     }
+
+    /**
+     * Helper to load animated GIFs for character portraits.
+     * Looks for assets/[charactername]_idle.gif
+     */
+    private Icon getCharacterPortrait(GameCharacter character) {
+        try {
+            String name = character.getName().split(" ")[0].toLowerCase();
+            
+            String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
+            
+            for (String path : possiblePaths) {
+                if (new java.io.File(path).exists()) {
+                    return new ImageIcon(path);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not load portrait for " + character.getName());
+        }
+        return null;
+    }
     
     private JPanel createBoardsPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 2, 10, 0));
@@ -1983,13 +2046,10 @@ private void setupClickHandlers() {
         
         ShotResult result = playerBoard.fire(x, y);
         
-        if (playerCharacter instanceof Jiji) {
-            Jiji jiji = (Jiji) playerCharacter;
-            if (jiji.checkFirewall(x, y, result)) {
-                updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
-            } else {
-                playerBoardPanel.updateCell(x, y, result);
-            }
+        if (playerCharacter instanceof Jiji && ((Jiji) playerCharacter).checkFirewall(x, y, result)) {
+            updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
+        } else if (playerCharacter instanceof Morgana && ((Morgana) playerCharacter).tryDodgeHit(x, y, result)) {
+            updateStatusLabel("🌊 OCEAN'S EMBRACE blocked the hit!", Color.CYAN);
         } else {
             playerBoardPanel.updateCell(x, y, result);
         }

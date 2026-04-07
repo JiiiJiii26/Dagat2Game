@@ -46,6 +46,10 @@ public class LocalMultiplayer {
                 ((Kael) player1Char).setPlayerBoard(player1Board);
             } else if (player1Char instanceof Skye) {
                 ((Skye) player1Char).setPlayerBoard(player1Board);
+            } else if (player1Char instanceof Valerius) {
+                ((Valerius) player1Char).setPlayerBoard(player1Board);
+            } else if (player1Char instanceof Flue) {
+                ((Flue) player1Char).setEnemyBoard(player2Board);
             }
         }
         
@@ -57,6 +61,10 @@ public class LocalMultiplayer {
                 ((Kael) player2Char).setPlayerBoard(player2Board);
             } else if (player2Char instanceof Skye) {
                 ((Skye) player2Char).setPlayerBoard(player2Board);
+            } else if (player2Char instanceof Valerius) {
+                ((Valerius) player2Char).setPlayerBoard(player2Board);
+            } else if (player2Char instanceof Flue) {
+                ((Flue) player2Char).setEnemyBoard(player1Board);
             }
         }
     }
@@ -284,7 +292,7 @@ public class LocalMultiplayer {
             Aeris aeris = (Aeris) character;
             switch(skillNumber) {
                 case 1: 
-                    success = aeris.useAdaptiveInstinct(playerBoard, -1);
+                    success = aeris.useAdaptiveInstinct(playerBoard, x, y);
                     shouldSwitchTurn = true;
                     break;
                 case 2: 
