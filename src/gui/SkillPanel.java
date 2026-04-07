@@ -37,20 +37,20 @@ public class SkillPanel extends JPanel {
     this.character = character;
     
     setLayout(new BorderLayout());
-    setOpaque(false);  // Make transparent
-    setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));  // Small padding only
+    setOpaque(false);  
+    setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));  
     
-    // REMOVE the character name label (the big box)
-    // characterNameLabel = new JLabel(...);
-    // add(characterNameLabel, BorderLayout.NORTH);  // COMMENT THIS OUT
+    
+    
+    
     
     JPanel mainPanel = new JPanel(new GridBagLayout());
-    mainPanel.setOpaque(false);  // Make transparent
-    mainPanel.setBackground(null);  // Remove background
+    mainPanel.setOpaque(false);  
+    mainPanel.setBackground(null);  
     
-    // Make resource label smaller and cleaner
+    
     resourceLabel = new JLabel(getResourceText(), SwingConstants.CENTER);
-    resourceLabel.setFont(new Font("Arial", Font.BOLD, 11));  // Smaller font
+    resourceLabel.setFont(new Font("Arial", Font.BOLD, 11));  
     resourceLabel.setForeground(getResourceColor());
     resourceLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
     
@@ -62,9 +62,9 @@ public class SkillPanel extends JPanel {
     gbc.insets = new Insets(2, 5, 2, 5);
     mainPanel.add(resourceLabel, gbc);
     
-    // Make passive label smaller
+    
     passiveLabel = new JLabel(getPassiveText(), SwingConstants.CENTER);
-    passiveLabel.setFont(new Font("Arial", Font.ITALIC, 9));  // Smaller font
+    passiveLabel.setFont(new Font("Arial", Font.ITALIC, 9));  
     passiveLabel.setForeground(Color.LIGHT_GRAY);
     gbc.gridy = 1;
     mainPanel.add(passiveLabel, gbc);
@@ -189,7 +189,7 @@ public class SkillPanel extends JPanel {
         stepBtn.setToolTipText("<html>Teleport one of your ships to an empty cell.<br>Damaged cells become wreckage.</html>");
         stepBtn.addActionListener(e -> {
             if (skillListener != null) {
-                skillListener.onSkillUsed(1, "Shadow Step", true, false, true);
+                skillListener.onSkillUsed(1, "Shadow Step", false, false, true);
             }
         });
         panel.add(stepBtn, gbc);
@@ -578,7 +578,7 @@ tidalWaveBtn.addActionListener(e -> {
         panel.add(fortificationLabel, gbc);
         
         gbc.gridy++;
-        JButton fortificationBtn = new JButton("USE (200 mana)");
+        JButton fortificationBtn = new JButton("USE (80 mana)");
         fortificationBtn.setBackground(new Color(0, 200, 100));
         fortificationBtn.setForeground(Color.BLACK);
         fortificationBtn.setToolTipText("<html>Repairs a damaged ship segment.<br>Restores 1 health to the ship!</html>");
