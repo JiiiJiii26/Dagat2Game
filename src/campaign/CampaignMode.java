@@ -19,11 +19,17 @@ import models.Cell;
 import models.Ship;
 import game.ShotResult;
 import main.Main;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 
 public class CampaignMode {
    
     private boolean testMode = true;  
     private String testEnemyName = "Kael";
+
+    private JPanel jijiPortraitContainer;
+    private JLabel jijiDamageOverlay;
 
     private Image oceanBackground;
     private Image scaledOceanBackground;
@@ -99,7 +105,8 @@ private SkillPanel currentSkillPanel;
     
     
              
-    private JLabel jijiLargePortraitLabel;     
+    private JLabel jijiLargePortraitLabel;  
+       
 
     private void loadOceanBackground() {
     try {
@@ -549,8 +556,10 @@ private class WaveBackgroundPanel extends JPanel {
                 break;
             case 1: 
                 if (enemyKael.hasEnoughEnergy(150)) {
-                    int x = enemyRandom.nextInt(10);
-                    int y = enemyRandom.nextInt(10);
+                    // Get a random cell that hasn't been fired upon
+                    int[] target = getRandomUnfiredCellForEnemySkill();
+                    int x = target[0];
+                    int y = target[1];
                     boolean horizontal = enemyRandom.nextBoolean();
                     int destroyed = enemyKael.useShadowBlade(playerBoard, x, y, horizontal);
                     if (destroyed > 0) {
@@ -560,8 +569,10 @@ private class WaveBackgroundPanel extends JPanel {
                 break;
             case 2: 
                 if (enemyKael.hasEnoughEnergy(200)) {
-                    int x = enemyRandom.nextInt(8);
-                    int y = enemyRandom.nextInt(8);
+                    // Get a random cell that hasn't been fired upon
+                    int[] target = getRandomUnfiredCellForEnemySkill();
+                    int x = Math.min(target[0], 8);
+                    int y = Math.min(target[1], 8);
                     int destroyed = enemyKael.useShadowDomain(playerBoard, x, y);
                     if (destroyed > 0) {
                         showEnemySkillMessage("Kael's shadow domain destroyed " + destroyed + " cells!");
@@ -1172,38 +1183,48 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     });
     
     
-    JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
-    combinedBottomPanel.setOpaque(false);
-    combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
-    combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
+   JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
+combinedBottomPanel.setOpaque(false);
+combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
+combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
 
-    
-    if (playerCharacter instanceof Jiji) {
-        Icon portrait = getCharacterPortrait(playerCharacter);
-        if (portrait != null) {
-            
-            Image img = ((ImageIcon) portrait).getImage();
-            Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
-            
-            jijiLargePortraitLabel = new JLabel(new ImageIcon(scaled));
-            jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
-            
-            JPanel westWrapper = new JPanel(new BorderLayout());
-            westWrapper.setOpaque(false);
-            westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
-            
-            JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
-            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            nameTag.setForeground(new Color(100, 200, 255)); 
-            westWrapper.add(nameTag, BorderLayout.SOUTH);
-            
-            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
-            System.out.println("✅ Jiji large portrait label stored");
-        }
+// JIJI LARGE PORTRAIT - Bottom Left
+if (playerCharacter instanceof Jiji) {
+    Icon portrait = getCharacterPortrait(playerCharacter);
+    if (portrait != null) {
+        Image img = ((ImageIcon) portrait).getImage();
+        Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
+        
+        jijiLargePortraitLabel = new JLabel(new ImageIcon(scaled));
+        jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
+        jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        
+        JPanel westWrapper = new JPanel(new BorderLayout());
+        westWrapper.setOpaque(false);
+        westWrapper.setPreferredSize(new Dimension(200, 220));
+        westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
+        
+        JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
+        nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        nameTag.setForeground(new Color(100, 200, 255)); 
+        westWrapper.add(nameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+        System.out.println("✅ Jiji large portrait created at bottom left");
+    } else {
+        System.out.println("⚠️ Could not load Jiji portrait");
     }
+} else {
+    // For non-Jiji characters, add an empty panel to maintain layout
+    JPanel emptyPanel = new JPanel();
+    emptyPanel.setOpaque(false);
+    emptyPanel.setPreferredSize(new Dimension(200, 220));
+    combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
+}
 
-    combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
-    mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
+combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
+mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
     
     
     JPanel statusBarPanel = new JPanel();
@@ -1238,28 +1259,123 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
 private void refreshJijiPortrait() {
     System.out.println("🔄 Refreshing Jiji portrait - Damaged state: " + ((Jiji)playerCharacter).isDamaged());
     
-    if (playerCharacter instanceof Jiji) {
+    if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
         Icon newPortrait = getCharacterPortrait(playerCharacter);
         if (newPortrait != null) {
+            Image img = ((ImageIcon) newPortrait).getImage();
+            // Keep consistent size - 200x200
+            Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
+            jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
+            jijiLargePortraitLabel.repaint();
+            jijiLargePortraitLabel.revalidate();
+            System.out.println("✅ Jiji portrait refreshed");
             
-            if (jijiLargePortraitLabel != null) {
-                Image img = ((ImageIcon) newPortrait).getImage();
-                Image scaledLarge = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
-                jijiLargePortraitLabel.setIcon(new ImageIcon(scaledLarge));
-                jijiLargePortraitLabel.repaint();
-                System.out.println("✅ Large portrait updated");
-            } else {
-                System.out.println("⚠️ jijiLargePortraitLabel is NULL!");
+            // Add visual feedback when damaged
+            Jiji jiji = (Jiji) playerCharacter;
+            if (jiji.isDamaged()) {
+                // Flash red border when damaged - cast to JComponent to use setBorder
+                java.awt.Component parent = jijiLargePortraitLabel.getParent();
+                if (parent instanceof JComponent) {
+                    JComponent jparent = (JComponent) parent;
+                    jparent.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    // Remove border after 1 second
+                    Timer borderTimer = new Timer(1000, e -> {
+                        if (jijiLargePortraitLabel != null) {
+                            java.awt.Component parent2 = jijiLargePortraitLabel.getParent();
+                            if (parent2 instanceof JComponent) {
+                                ((JComponent) parent2).setBorder(null);
+                            }
+                        }
+                    });
+                    borderTimer.setRepeats(false);
+                    borderTimer.start();
+                }
             }
             
-            
+            // Add a visual flash effect when Jiji gets damaged
             if (frame.getContentPane() instanceof WaveBackgroundPanel) {
                 ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
             }
         } else {
             System.out.println("⚠️ newPortrait is NULL!");
         }
+    } else {
+        System.out.println("⚠️ Cannot refresh - jijiLargePortraitLabel is null or not Jiji");
     }
+}
+
+private void animateDamagedShake() {
+    if (jijiLargePortraitLabel == null) return;
+    
+    // Store original position
+    java.awt.Point originalPos = jijiLargePortraitLabel.getLocation();
+    Timer shakeTimer = new Timer(50, new ActionListener() {
+        int shakes = 0;
+        int maxShakes = 10;
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (shakes >= maxShakes) {
+                // Reset position
+                jijiLargePortraitLabel.setLocation(originalPos);
+                ((Timer)e.getSource()).stop();
+                return;
+            }
+            
+            // Random offset for shaking
+            int offsetX = (int)(Math.random() * 8) - 4;
+            int offsetY = (int)(Math.random() * 8) - 4;
+            jijiLargePortraitLabel.setLocation(originalPos.x + offsetX, originalPos.y + offsetY);
+            shakes++;
+        }
+    });
+    shakeTimer.start();
+}
+
+// Helper method to get a random cell that hasn't been fired upon yet
+private int[] getRandomUnfiredCell() {
+    // First, collect all cells that haven't been fired upon yet
+    java.util.ArrayList<int[]> availableCells = new java.util.ArrayList<>();
+    
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (!playerBoard.isCellFiredUpon(i, j)) {
+                availableCells.add(new int[]{i, j});
+            }
+        }
+    }
+    
+    // If there are no available cells (all have been fired upon), return a random cell as fallback
+    if (availableCells.isEmpty()) {
+        System.out.println("⚠️ No available cells! All have been fired upon!");
+        return new int[]{random.nextInt(10), random.nextInt(10)};
+    }
+    
+    // Pick a random cell from the available ones
+    int randomIndex = random.nextInt(availableCells.size());
+    int[] selected = availableCells.get(randomIndex);
+    System.out.println("🎯 Enemy AI selected cell (" + selected[0] + "," + selected[1] + 
+                       ") - " + availableCells.size() + " cells remaining");
+    return selected;
+}
+
+// Helper method for enemy skills to target unfired cells
+private int[] getRandomUnfiredCellForEnemySkill() {
+    java.util.ArrayList<int[]> availableCells = new java.util.ArrayList<>();
+    
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (!playerBoard.isCellFiredUpon(i, j)) {
+                availableCells.add(new int[]{i, j});
+            }
+        }
+    }
+    
+    if (availableCells.isEmpty()) {
+        return new int[]{random.nextInt(10), random.nextInt(10)};
+    }
+    
+    return availableCells.get(random.nextInt(availableCells.size()));
 }
 
 private void executeSkill(int targetX, int targetY) {
@@ -1536,6 +1652,7 @@ private String getShipCountText(Board board) {
     int remaining = total - sunk;
     return "🚢 Ships: " + remaining + "/" + total;
 }
+
 private void updateShipCounters() {
     if (playerShipLabel != null) {
         playerShipLabel.setText(getShipCountText(playerBoard));
@@ -1845,19 +1962,17 @@ private void setupClickHandlers() {
  private Icon getCharacterPortrait(GameCharacter character) {
     try {
         String name = character.getName().split(" ")[0].toLowerCase();
+        System.out.println("🔍 Loading portrait for: " + name);
         
-        
+        // Check for Jiji's damaged state
         if (character instanceof Jiji) {
             Jiji jiji = (Jiji) character;
-            System.out.println("🔍 Checking Jiji damaged state: " + jiji.isDamaged());
+            System.out.println("🔍 Jiji damaged state: " + jiji.isDamaged());
             if (jiji.isDamaged()) {
-                
                 String damagedPath = "assets/jiji_whenDamaged.gif";
                 File damagedFile = new File(damagedPath);
-                System.out.println("🔍 Looking for damaged GIF at: " + damagedFile.getAbsolutePath());
-                System.out.println("🔍 File exists: " + damagedFile.exists());
                 if (damagedFile.exists()) {
-                    System.out.println("💢 Jiji damaged! Using damaged animation");
+                    System.out.println("💢 Jiji damaged! Using damaged animation from: " + damagedPath);
                     return new ImageIcon(damagedPath);
                 } else {
                     System.out.println("⚠️ Damaged GIF not found at: " + damagedFile.getAbsolutePath());
@@ -1865,7 +1980,7 @@ private void setupClickHandlers() {
             }
         }
         
-        
+        // Normal idle animation
         String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
         
         for (String path : possiblePaths) {
@@ -1876,9 +1991,8 @@ private void setupClickHandlers() {
             }
         }
         System.out.println("⚠️ No portrait found for: " + name);
-        System.out.println("   Current working dir: " + System.getProperty("user.dir"));
     } catch (Exception e) {
-        System.out.println("⚠️ Could not load portrait for " + character.getName() + ": " + e.getMessage());
+        System.out.println("⚠️ Could not load portrait: " + e.getMessage());
     }
     return null;
 }
@@ -2099,6 +2213,7 @@ private void setupClickHandlers() {
     timer.setRepeats(false);
     timer.start();
 }
+
 private void enemyTurn() {
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
@@ -2128,8 +2243,10 @@ private void enemyTurn() {
             }
         }
 
-        int x = random.nextInt(10);
-        int y = random.nextInt(10);
+        // Get a random unused cell instead of just random
+        int[] coordinates = getRandomUnfiredCell();
+        int x = coordinates[0];
+        int y = coordinates[1];
         
         useEnemySkill();
 
@@ -2158,7 +2275,7 @@ private void enemyTurn() {
         
         updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
         
-        
+        // Track ship count before the attack to detect if a ship gets sunk
         int shipsBeforeAttack = 0;
         if (playerCharacter instanceof Jiji) {
             for (Ship ship : playerBoard.getShips()) {
@@ -2171,7 +2288,7 @@ private void enemyTurn() {
         
         ShotResult result = playerBoard.fire(x, y);
         
-        
+        // Check if Jiji had a ship sunk by this attack
         if (playerCharacter instanceof Jiji) {
             int shipsAfterAttack = 0;
             for (Ship ship : playerBoard.getShips()) {
@@ -2181,7 +2298,7 @@ private void enemyTurn() {
             }
             System.out.println("Ships after attack: " + shipsAfterAttack);
             
-            
+            // If a ship was sunk (ships decreased), trigger damaged animation
             if (shipsAfterAttack < shipsBeforeAttack) {
                 Jiji jiji = (Jiji) playerCharacter;
                 jiji.onShipSunk();
