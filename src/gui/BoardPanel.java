@@ -144,7 +144,7 @@ private void updateButtonAppearance(JButton button, Cell cell) {
         }
         
         
-        if (showShips && cell.hasShip() && !cell.isFiredUpon()) {
+        if ((showShips || cell.isRevealed()) && cell.hasShip() && !cell.isFiredUpon()) {
             button.setBackground(new Color(60, 140, 80, 180));
             if (cell.getShip() != null && cell.getShip().isShielded()) {
                 button.setText("🛡️");

@@ -1305,6 +1305,28 @@ private void refreshJijiPortrait() {
     }
 }
 
+private void showJijiAttackAnimation() {
+    System.out.println("⚔️ showJijiAttackAnimation called!");
+    if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
+        String attackPath = "assets/jiji_attack.gif";
+        File attackFile = new File(attackPath);
+        System.out.println("Attack file exists: " + attackFile.exists());
+        if (attackFile.exists()) {
+            ImageIcon attackIcon = new ImageIcon(attackPath);
+            Image img = attackIcon.getImage();
+            Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
+            jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
+            System.out.println("✅ Attack animation set!");
+            
+            javax.swing.Timer attackTimer = new javax.swing.Timer(1500, e -> {
+                refreshJijiPortrait();
+            });
+            attackTimer.setRepeats(false);
+            attackTimer.start();
+        }
+    }
+}
+
 private void animateDamagedShake() {
     if (jijiLargePortraitLabel == null) return;
     
@@ -2161,6 +2183,9 @@ private void setupClickHandlers() {
         updateStatusLabel("💥 HIT! Enemy ship damaged!", Color.GREEN);
         if (frame.getContentPane() instanceof WaveBackgroundPanel) {
             ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(15);
+        }
+        if (playerCharacter instanceof Jiji && result == ShotResult.SUNK) {
+            showJijiAttackAnimation();
         }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
