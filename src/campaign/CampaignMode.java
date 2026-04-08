@@ -1223,168 +1223,219 @@ private void executeSkill(int targetX, int targetY) {
     boolean success = false;
     boolean shouldEndTurn = true;
     
-    if (playerCharacter instanceof Jiji) {
-        Jiji jiji = (Jiji) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Data Leech");
-                success = jiji.useDataLeech(enemyBoard);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Overclock");
-                success = jiji.useOverclock();
-                shouldEndTurn = false; 
-                break;
-            case 3:
-                System.out.println("Using System Overload");
-                success = jiji.useSystemOverload(enemyBoard);
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Kael) {
-        Kael kael = (Kael) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                
-                break;
-            case 2:
-                System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ")");
-                int destroyed = kael.useShadowBlade(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Shadow Domain at (" + targetX + "," + targetY + ")");
-                destroyed = kael.useShadowDomain(enemyBoard, targetX, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Valerius) {
-        Valerius valerius = (Valerius) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Radar Overload");
-                success = valerius.useRadarOverload();
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Precision Strike");
-                if (valerius.usePrecisionStrike()) {
-                    int destroyed = valerius.applyPrecisionStrike(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
+    try {
+        if (playerCharacter instanceof Jiji) {
+            Jiji jiji = (Jiji) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Data Leech");
+                    success = jiji.useDataLeech(enemyBoard);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Overclock");
+                    success = jiji.useOverclock();
+                    shouldEndTurn = false; 
+                    break;
+                case 3:
+                    System.out.println("Using System Overload");
+                    success = jiji.useSystemOverload(enemyBoard);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    System.out.println("⚠️ Unknown Jiji skill number: " + currentSkillNumber);
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Kael) {
+            Kael kael = (Kael) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    
+                    
+                    System.out.println("⚠️ Shadow Step should not be in executeSkill!");
+                    success = false;
+                    shouldEndTurn = false;
+                    break;
+                case 2:
+                    System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ")");
+                    int destroyed = kael.useShadowBlade(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
                     success = destroyed > 0;
                     shouldEndTurn = true;
-                }
-                break;
-            case 3:
-                System.out.println("Using Fortress Mode");
-                success = valerius.useFortressMode();
-                shouldEndTurn = true;
-                break;
+                    break;
+                case 3:
+                    System.out.println("Using Shadow Domain at (" + targetX + "," + targetY + ")");
+                    destroyed = kael.useShadowDomain(enemyBoard, targetX, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    System.out.println("⚠️ Unknown Kael skill number: " + currentSkillNumber);
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Valerius) {
+            Valerius valerius = (Valerius) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Radar Overload");
+                    success = valerius.useRadarOverload();
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Precision Strike");
+                    if (valerius.usePrecisionStrike()) {
+                        int destroyed = valerius.applyPrecisionStrike(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
+                        success = destroyed > 0;
+                        shouldEndTurn = true;
+                    } else {
+                        success = false;
+                        shouldEndTurn = false;
+                    }
+                    break;
+                case 3:
+                    System.out.println("Using Fortress Mode");
+                    success = valerius.useFortressMode();
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Skye) {
+            Skye skye = (Skye) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Catnip Explosion at (" + targetX + "," + targetY + ")");
+                    int destroyed = skye.useCatnipExplosion(enemyBoard, targetX, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Laser Pointer");
+                    success = skye.useLaserPointer();
+                    shouldEndTurn = false; 
+                    if (success) {
+                        System.out.println("🔴 Laser Pointer used - Enemy will skip their next turn!");
+                    }
+                    break;
+                case 3:
+                    System.out.println("Using Nine Lives at (" + targetX + "," + targetY + ")");
+                    success = skye.useNineLives(playerBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Morgana) {
+            Morgana morgana = (Morgana) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Enchanting Melody");
+                    success = morgana.useEnchantingMelody();
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Whirlpool Trap at (" + targetX + "," + targetY + ")");
+                    success = morgana.useWhirlpoolTrap(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 3:
+                    System.out.println("Using Tidal Wave");
+                    int flooded = morgana.useTidalWave(enemyBoard);
+                    success = flooded > 0;
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Aeris) {
+            Aeris aeris = (Aeris) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Adaptive Instinct");
+                    success = aeris.useAdaptiveInstinct(playerBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Multitask Overdrive");
+                    success = aeris.useMultitaskOverdrive();
+                    shouldEndTurn = false; 
+                    break;
+                case 3:
+                    System.out.println("Using Relentless Ascent at column " + targetY);
+                    int destroyed = aeris.useRelentlessAscent(enemyBoard, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Selene) {
+            Selene selene = (Selene) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Lunar Reveal at (" + targetX + "," + targetY + ")");
+                    success = selene.useLunarReveal(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Crescent Strike at (" + targetX + "," + targetY + ")");
+                    int destroyed = selene.useCrescentStrike(enemyBoard, targetX, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                case 3:
+                    System.out.println("Using Starfall Link");
+                    success = selene.useStarfallLink(enemyBoard);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Flue) {
+            Flue flue = (Flue) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Corruption.EXE at (" + targetX + "," + targetY + ")");
+                    success = flue.useCorruption(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Fortification.GRID at (" + targetX + "," + targetY + ")");
+                    success = flue.useFortification(playerBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 3:
+                    System.out.println("Using Kernel.Decimation.REQ at (" + targetX + "," + targetY + ")");
+                    success = flue.useKernelDecimation(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else {
+            System.out.println("⚠️ Unknown character type for skill execution");
+            success = false;
+            shouldEndTurn = false;
         }
-    } else if (playerCharacter instanceof Skye) {
-        Skye skye = (Skye) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Catnip Explosion at (" + targetX + "," + targetY + ")");
-                int destroyed = skye.useCatnipExplosion(enemyBoard, targetX, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Laser Pointer");
-                success = skye.useLaserPointer();
-                shouldEndTurn = false; 
-                if (success) {
-                    System.out.println("🔴 Laser Pointer used - Enemy will skip their next turn!");
-                }
-                break;
-            case 3:
-                System.out.println("Using Nine Lives at (" + targetX + "," + targetY + ")");
-                success = skye.useNineLives(playerBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Morgana) {
-        Morgana morgana = (Morgana) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Enchanting Melody");
-                success = morgana.useEnchantingMelody();
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Whirlpool Trap at (" + targetX + "," + targetY + ")");
-                success = morgana.useWhirlpoolTrap(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Tidal Wave");
-                int flooded = morgana.useTidalWave(enemyBoard);
-                success = flooded > 0;
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Aeris) {
-        Aeris aeris = (Aeris) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Adaptive Instinct");
-                success = aeris.useAdaptiveInstinct(playerBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Multitask Overdrive");
-                success = aeris.useMultitaskOverdrive();
-                shouldEndTurn = false; 
-                break;
-            case 3:
-                System.out.println("Using Relentless Ascent at column " + targetY);
-                int destroyed = aeris.useRelentlessAscent(enemyBoard, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Selene) {
-        Selene selene = (Selene) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Lunar Reveal at (" + targetX + "," + targetY + ")");
-                success = selene.useLunarReveal(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Crescent Strike at (" + targetX + "," + targetY + ")");
-                int destroyed = selene.useCrescentStrike(enemyBoard, targetX, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Starfall Link");
-                success = selene.useStarfallLink(enemyBoard);
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Flue) {
-        Flue flue = (Flue) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Corruption.EXE at (" + targetX + "," + targetY + ")");
-                success = flue.useCorruption(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Fortification.GRID at (" + targetX + "," + targetY + ")");
-                success = flue.useFortification(playerBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Kernel.Decimation.REQ at (" + targetX + "," + targetY + ")");
-                success = flue.useKernelDecimation(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        updateStatusLabel("❌ Skill error: " + e.getMessage(), Color.RED);
+        success = false;
+        shouldEndTurn = false;
+    } finally {
+        
+        waitingForSkillTarget = false;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        currentSkillTargetsOwnBoard = false;
+        currentSkillRequiresDirection = false;
     }
     
     if (success) {
@@ -1405,6 +1456,8 @@ private void executeSkill(int targetX, int targetY) {
         
         if (shouldEndTurn) {
             playerTurn = false;
+            
+            if (turnTimer != null) turnTimer.stopTimer();
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
@@ -1413,6 +1466,7 @@ private void executeSkill(int targetX, int targetY) {
             updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
             
             if (turnTimer != null && timerEnabled) {
+                turnTimer.stopTimer();
                 turnTimer.startTimer();
             }
         }
@@ -1420,15 +1474,10 @@ private void executeSkill(int targetX, int targetY) {
         updateStatusLabel("❌ Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
         
         if (turnTimer != null && timerEnabled && playerTurn) {
+            turnTimer.stopTimer();
             turnTimer.startTimer();
         }
     }
-    
-    waitingForSkillTarget = false;
-    currentSkillNumber = 0;
-    currentSkillName = "";
-    currentSkillTargetsOwnBoard = false;
-    currentSkillRequiresDirection = false;
 }
 
 private String getShipCountText(Board board) {
@@ -2358,6 +2407,7 @@ private void setupClickHandlers() {
 
     
     if (timerEnabled && turnTimer != null) {
+        turnTimer.stopTimer(); 
         turnTimer.startTimer();
     }
 }
