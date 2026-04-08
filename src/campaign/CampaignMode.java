@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.awt.*;
+import java.io.File;
 
 import characters.*;
 import gui.BoardPanel;
@@ -21,8 +22,8 @@ import main.Main;
 
 public class CampaignMode {
    
-    private boolean testMode = false;  
-    private String testEnemyName = "Skye";
+    private boolean testMode = true;  
+    private String testEnemyName = "Kael";
 
     private Image oceanBackground;
     private Image scaledOceanBackground;
@@ -95,6 +96,10 @@ private SkillPanel currentSkillPanel;
     private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
     
     private Timer seleneUpdateTimer; 
+    
+    // Store references to Jiji's portrait labels for dynamic updates
+             // Small portrait in YOUR FLEET panel
+    private JLabel jijiLargePortraitLabel;     // Large portrait in bottom left
 
     private void loadOceanBackground() {
     try {
@@ -1028,23 +1033,32 @@ private void createBattleUI(CampaignWave wave) {
         new Color(0, 255, 0, 200)
     ));
     
-    JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-    charInfoPanel.setOpaque(false);
+   JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+charInfoPanel.setOpaque(false);
+
+// For Jiji - show ONLY text, no portrait at the top
+if (playerCharacter instanceof Jiji) {
     JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
-    
+    charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+    charNameLabel.setForeground(Color.CYAN);
+    charInfoPanel.add(charNameLabel);
+    System.out.println("✅ Jiji - text only at top, no portrait");
+} else {
+    // For other characters - show portrait and text
+    JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
     Icon playerPortrait = getCharacterPortrait(playerCharacter);
-    
-    if (playerPortrait != null && !(playerCharacter instanceof Jiji)) {
+    if (playerPortrait != null) {
         charNameLabel.setIcon(playerPortrait);
         charNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
         charNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
-    } else {
-        charNameLabel.setText(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
     }
     charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     charNameLabel.setForeground(Color.CYAN);
     charInfoPanel.add(charNameLabel);
-    leftPanel.add(charInfoPanel, BorderLayout.NORTH);
+}
+
+leftPanel.add(charInfoPanel, BorderLayout.NORTH);
+
     
     leftPanel.add(playerBoardPanel, BorderLayout.CENTER);
     
@@ -1171,12 +1185,12 @@ private void createBattleUI(CampaignWave wave) {
             Image img = ((ImageIcon) portrait).getImage();
             Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
             
-            JLabel portraitLabel = new JLabel(new ImageIcon(scaled));
-            portraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
+            jijiLargePortraitLabel = new JLabel(new ImageIcon(scaled));
+            jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
             
             JPanel westWrapper = new JPanel(new BorderLayout());
             westWrapper.setOpaque(false);
-            westWrapper.add(portraitLabel, BorderLayout.CENTER);
+            westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
             
             JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
             nameTag.setFont(new Font("Arial", Font.BOLD, 12));
@@ -1184,6 +1198,7 @@ private void createBattleUI(CampaignWave wave) {
             westWrapper.add(nameTag, BorderLayout.SOUTH);
             
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+            System.out.println("✅ Jiji large portrait label stored");
         }
     }
 
@@ -1218,6 +1233,35 @@ private void createBattleUI(CampaignWave wave) {
     
     System.out.println("✅ Battle UI created with Timer!");
 }
+
+// Helper method to refresh Jiji's portrait when damaged (updates BOTH portraits)
+private void refreshJijiPortrait() {
+    System.out.println("🔄 Refreshing Jiji portrait - Damaged state: " + ((Jiji)playerCharacter).isDamaged());
+    
+    if (playerCharacter instanceof Jiji) {
+        Icon newPortrait = getCharacterPortrait(playerCharacter);
+        if (newPortrait != null) {
+            // Update only the large portrait (200x200) in bottom left
+            if (jijiLargePortraitLabel != null) {
+                Image img = ((ImageIcon) newPortrait).getImage();
+                Image scaledLarge = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
+                jijiLargePortraitLabel.setIcon(new ImageIcon(scaledLarge));
+                jijiLargePortraitLabel.repaint();
+                System.out.println("✅ Large portrait updated");
+            } else {
+                System.out.println("⚠️ jijiLargePortraitLabel is NULL!");
+            }
+            
+            // Add a visual flash effect when Jiji gets damaged
+            if (frame.getContentPane() instanceof WaveBackgroundPanel) {
+                ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
+            }
+        } else {
+            System.out.println("⚠️ newPortrait is NULL!");
+        }
+    }
+}
+
 private void executeSkill(int targetX, int targetY) {
     System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
@@ -1801,22 +1845,46 @@ private void setupClickHandlers() {
      * Helper to load animated GIFs for character portraits.
      * Looks for assets/[charactername]_idle.gif
      */
-    private Icon getCharacterPortrait(GameCharacter character) {
-        try {
-            String name = character.getName().split(" ")[0].toLowerCase();
-            
-            String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
-            
-            for (String path : possiblePaths) {
-                if (new java.io.File(path).exists()) {
-                    return new ImageIcon(path);
+ private Icon getCharacterPortrait(GameCharacter character) {
+    try {
+        String name = character.getName().split(" ")[0].toLowerCase();
+        
+        // Check for Jiji's damaged state
+        if (character instanceof Jiji) {
+            Jiji jiji = (Jiji) character;
+            System.out.println("🔍 Checking Jiji damaged state: " + jiji.isDamaged());
+            if (jiji.isDamaged()) {
+                // Try damaged animation first
+                String damagedPath = "assets/jiji_whenDamaged.gif";
+                File damagedFile = new File(damagedPath);
+                System.out.println("🔍 Looking for damaged GIF at: " + damagedFile.getAbsolutePath());
+                System.out.println("🔍 File exists: " + damagedFile.exists());
+                if (damagedFile.exists()) {
+                    System.out.println("💢 Jiji damaged! Using damaged animation");
+                    return new ImageIcon(damagedPath);
+                } else {
+                    System.out.println("⚠️ Damaged GIF not found at: " + damagedFile.getAbsolutePath());
                 }
             }
-        } catch (Exception e) {
-            System.out.println("⚠️ Could not load portrait for " + character.getName());
         }
-        return null;
+        
+        // Normal idle animation
+        String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
+        
+        for (String path : possiblePaths) {
+            File file = new File(path);
+            if (file.exists()) {
+                System.out.println("✅ Loading portrait from: " + path);
+                return new ImageIcon(path);
+            }
+        }
+        System.out.println("⚠️ No portrait found for: " + name);
+        System.out.println("   Current working dir: " + System.getProperty("user.dir"));
+    } catch (Exception e) {
+        System.out.println("⚠️ Could not load portrait for " + character.getName() + ": " + e.getMessage());
     }
+    return null;
+}
     
     private JPanel createBoardsPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 2, 10, 0));
@@ -1946,7 +2014,7 @@ private void setupClickHandlers() {
         return panel;
     }
     
-   private void handlePlayerAttack(int row, int col) {
+ private void handlePlayerAttack(int row, int col) {
     if (enemyBoard.isCellFiredUpon(row, col)) {
         updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
         
@@ -2034,7 +2102,7 @@ private void setupClickHandlers() {
     timer.setRepeats(false);
     timer.start();
 }
- private void enemyTurn() {
+private void enemyTurn() {
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
     if (playerCharacter instanceof Flue) {
@@ -2093,7 +2161,37 @@ private void setupClickHandlers() {
         
         updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
         
+        // Track ship count before the attack to detect if a ship gets sunk
+        int shipsBeforeAttack = 0;
+        if (playerCharacter instanceof Jiji) {
+            for (Ship ship : playerBoard.getShips()) {
+                if (!ship.isSunk()) {
+                    shipsBeforeAttack++;
+                }
+            }
+            System.out.println("Ships before attack: " + shipsBeforeAttack);
+        }
+        
         ShotResult result = playerBoard.fire(x, y);
+        
+        // Check if Jiji had a ship sunk by this attack
+        if (playerCharacter instanceof Jiji) {
+            int shipsAfterAttack = 0;
+            for (Ship ship : playerBoard.getShips()) {
+                if (!ship.isSunk()) {
+                    shipsAfterAttack++;
+                }
+            }
+            System.out.println("Ships after attack: " + shipsAfterAttack);
+            
+            // If a ship was sunk (ships decreased), trigger damaged animation
+            if (shipsAfterAttack < shipsBeforeAttack) {
+                Jiji jiji = (Jiji) playerCharacter;
+                jiji.onShipSunk();
+                refreshJijiPortrait();
+                updateStatusLabel("💀 JIJI's ship was SUNK! Jiji is damaged!", Color.RED);
+            }
+        }
         
         if (playerCharacter instanceof Jiji && ((Jiji) playerCharacter).checkFirewall(x, y, result)) {
             updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
@@ -2356,9 +2454,22 @@ private void setupClickHandlers() {
         return "YOUR TURN - Click on enemy waters to fire!";
     }
     
-  private void onPlayerTurnStart() {
+ private void onPlayerTurnStart() {
     System.out.println("🔄 Player turn started! Checking conditions...");
 
+    // Update Jiji's damage state (clear after 2 turns of no ship destruction)
+    if (playerCharacter instanceof Jiji) {
+        Jiji jiji = (Jiji) playerCharacter;
+        boolean wasDamaged = jiji.isDamaged();
+        jiji.updateDamageState();
+        
+        // If damage state changed from damaged to normal, refresh portrait
+        if (wasDamaged && !jiji.isDamaged()) {
+            System.out.println("😺 Jiji recovered! Returning to idle animation");
+            refreshJijiPortrait();
+            updateStatusLabel("😺 Jiji has recovered from the damage!", Color.GREEN);
+        }
+    }
 
      if (playerCharacter instanceof Flue) {
         Flue flue = (Flue) playerCharacter;

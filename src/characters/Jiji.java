@@ -27,6 +27,9 @@ public class Jiji extends GameCharacter {
     private int firewallTurns = 0;
     private int turnsSinceLastFirewall = 0;
     
+    private boolean isDamaged = false;
+private int turnsSinceDamage = 0;
+private static final int DAMAGE_DISPLAY_DURATION = 2;
     
     private ArrayList<String> revealedCells = new ArrayList<>();
     
@@ -64,6 +67,38 @@ public class Jiji extends GameCharacter {
             System.out.println("💰 Jiji spent " + cost + " mana. Remaining: " + currentMana);
         }
     }
+    public boolean isDamaged() { return isDamaged; }
+public void setDamaged(boolean damaged) { 
+    this.isDamaged = damaged;
+    if (!damaged) {
+        turnsSinceDamage = 0;
+    }
+}
+
+
+public void updateDamageState() {
+    if (isDamaged) {
+        turnsSinceDamage++;
+        System.out.println("Jiji damaged turns: " + turnsSinceDamage + "/" + DAMAGE_DISPLAY_DURATION);
+        if (turnsSinceDamage >= DAMAGE_DISPLAY_DURATION) {
+            isDamaged = false;
+            turnsSinceDamage = 0;
+            System.out.println("😺 Jiji recovered!");
+        }
+    }
+}
+
+
+
+public void onShipDamaged() {
+    isDamaged = true;
+    turnsSinceDamage = 0;
+}
+public void onShipSunk() {
+    isDamaged = true;
+    turnsSinceDamage = 0;
+    System.out.println("💢 JIJI's ship was sunk! Entering damaged state!");
+}
     
     public void regenerateMana(int amount) {
         currentMana += amount;
