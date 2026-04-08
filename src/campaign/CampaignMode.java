@@ -1193,7 +1193,7 @@ if (playerCharacter instanceof Jiji) {
     Icon portrait = getCharacterPortrait(playerCharacter);
     if (portrait != null) {
         Image img = ((ImageIcon) portrait).getImage();
-        Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
+        Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
         
         jijiLargePortraitLabel = new JLabel(new ImageIcon(scaled));
         jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
@@ -1202,7 +1202,7 @@ if (playerCharacter instanceof Jiji) {
         
         JPanel westWrapper = new JPanel(new BorderLayout());
         westWrapper.setOpaque(false);
-        westWrapper.setPreferredSize(new Dimension(200, 220));
+        westWrapper.setPreferredSize(new Dimension(250, 220));
         westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
         
         JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
@@ -1260,18 +1260,19 @@ private void refreshJijiPortrait() {
     System.out.println("🔄 Refreshing Jiji portrait - Damaged state: " + ((Jiji)playerCharacter).isDamaged());
     
     if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
+        Jiji jiji = (Jiji) playerCharacter;
+        int portraitWidth = jiji.isDamaged() ? 500 : 250;
+        
         Icon newPortrait = getCharacterPortrait(playerCharacter);
         if (newPortrait != null) {
             Image img = ((ImageIcon) newPortrait).getImage();
-            // Keep consistent size - 200x200
-            Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
+            Image scaled = img.getScaledInstance(portraitWidth, 200, Image.SCALE_DEFAULT);
             jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
             jijiLargePortraitLabel.repaint();
             jijiLargePortraitLabel.revalidate();
-            System.out.println("✅ Jiji portrait refreshed");
+            System.out.println("✅ Jiji portrait refreshed - width: " + portraitWidth);
             
             // Add visual feedback when damaged
-            Jiji jiji = (Jiji) playerCharacter;
             if (jiji.isDamaged()) {
                 // Flash red border when damaged - cast to JComponent to use setBorder
                 java.awt.Component parent = jijiLargePortraitLabel.getParent();
