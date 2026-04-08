@@ -97,9 +97,9 @@ private SkillPanel currentSkillPanel;
     
     private Timer seleneUpdateTimer; 
     
-    // Store references to Jiji's portrait labels for dynamic updates
-             // Small portrait in YOUR FLEET panel
-    private JLabel jijiLargePortraitLabel;     // Large portrait in bottom left
+    
+             
+    private JLabel jijiLargePortraitLabel;     
 
     private void loadOceanBackground() {
     try {
@@ -1036,7 +1036,7 @@ private void createBattleUI(CampaignWave wave) {
    JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
 charInfoPanel.setOpaque(false);
 
-// For Jiji - show ONLY text, no portrait at the top
+
 if (playerCharacter instanceof Jiji) {
     JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
     charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
@@ -1044,7 +1044,7 @@ if (playerCharacter instanceof Jiji) {
     charInfoPanel.add(charNameLabel);
     System.out.println("✅ Jiji - text only at top, no portrait");
 } else {
-    // For other characters - show portrait and text
+    
     JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
     Icon playerPortrait = getCharacterPortrait(playerCharacter);
     if (playerPortrait != null) {
@@ -1234,14 +1234,14 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     System.out.println("✅ Battle UI created with Timer!");
 }
 
-// Helper method to refresh Jiji's portrait when damaged (updates BOTH portraits)
+
 private void refreshJijiPortrait() {
     System.out.println("🔄 Refreshing Jiji portrait - Damaged state: " + ((Jiji)playerCharacter).isDamaged());
     
     if (playerCharacter instanceof Jiji) {
         Icon newPortrait = getCharacterPortrait(playerCharacter);
         if (newPortrait != null) {
-            // Update only the large portrait (200x200) in bottom left
+            
             if (jijiLargePortraitLabel != null) {
                 Image img = ((ImageIcon) newPortrait).getImage();
                 Image scaledLarge = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
@@ -1252,7 +1252,7 @@ private void refreshJijiPortrait() {
                 System.out.println("⚠️ jijiLargePortraitLabel is NULL!");
             }
             
-            // Add a visual flash effect when Jiji gets damaged
+            
             if (frame.getContentPane() instanceof WaveBackgroundPanel) {
                 ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
             }
@@ -1841,20 +1841,17 @@ private void setupClickHandlers() {
         return "🎮";
     }
 
-    /**
-     * Helper to load animated GIFs for character portraits.
-     * Looks for assets/[charactername]_idle.gif
-     */
+   
  private Icon getCharacterPortrait(GameCharacter character) {
     try {
         String name = character.getName().split(" ")[0].toLowerCase();
         
-        // Check for Jiji's damaged state
+        
         if (character instanceof Jiji) {
             Jiji jiji = (Jiji) character;
             System.out.println("🔍 Checking Jiji damaged state: " + jiji.isDamaged());
             if (jiji.isDamaged()) {
-                // Try damaged animation first
+                
                 String damagedPath = "assets/jiji_whenDamaged.gif";
                 File damagedFile = new File(damagedPath);
                 System.out.println("🔍 Looking for damaged GIF at: " + damagedFile.getAbsolutePath());
@@ -1868,7 +1865,7 @@ private void setupClickHandlers() {
             }
         }
         
-        // Normal idle animation
+        
         String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
         
         for (String path : possiblePaths) {
@@ -2161,7 +2158,7 @@ private void enemyTurn() {
         
         updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
         
-        // Track ship count before the attack to detect if a ship gets sunk
+        
         int shipsBeforeAttack = 0;
         if (playerCharacter instanceof Jiji) {
             for (Ship ship : playerBoard.getShips()) {
@@ -2174,7 +2171,7 @@ private void enemyTurn() {
         
         ShotResult result = playerBoard.fire(x, y);
         
-        // Check if Jiji had a ship sunk by this attack
+        
         if (playerCharacter instanceof Jiji) {
             int shipsAfterAttack = 0;
             for (Ship ship : playerBoard.getShips()) {
@@ -2184,7 +2181,7 @@ private void enemyTurn() {
             }
             System.out.println("Ships after attack: " + shipsAfterAttack);
             
-            // If a ship was sunk (ships decreased), trigger damaged animation
+            
             if (shipsAfterAttack < shipsBeforeAttack) {
                 Jiji jiji = (Jiji) playerCharacter;
                 jiji.onShipSunk();
@@ -2457,13 +2454,13 @@ private void enemyTurn() {
  private void onPlayerTurnStart() {
     System.out.println("🔄 Player turn started! Checking conditions...");
 
-    // Update Jiji's damage state (clear after 2 turns of no ship destruction)
+    
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
         boolean wasDamaged = jiji.isDamaged();
         jiji.updateDamageState();
         
-        // If damage state changed from damaged to normal, refresh portrait
+        
         if (wasDamaged && !jiji.isDamaged()) {
             System.out.println("😺 Jiji recovered! Returning to idle animation");
             refreshJijiPortrait();
