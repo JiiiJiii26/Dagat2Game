@@ -239,25 +239,32 @@ public class Main {
     
     
    private static void showCharacterSelectForCampaign() {
-    CharacterSelectPanel charPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
+    // Create a modal dialog that floats over the main menu
+    JDialog dialog = new JDialog(frame, "Choose Your Commander", true);
+    dialog.setUndecorated(true);
+    dialog.setSize(frame.getSize());
+    dialog.setLocationRelativeTo(frame);
+    dialog.setBackground(new Color(0, 0, 0, 0)); // transparent
+
+    // Use the NEW redesigned CharacterSelectPanel (the one that loads selection.png)
+    CharacterSelectPanel selectPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
         @Override
         public void onCharacterSelected(GameCharacter character) {
+            dialog.dispose(); // close the floating panel
             selectedCharacter = character;
             System.out.println("🎮 Starting CAMPAIGN with: " + character.getName());
             CampaignMode campaign = new CampaignMode(frame, selectedCharacter);
             campaign.start();
         }
-        
+
         @Override
         public void onBackToMenu() {
-            showMainMenu();
+            dialog.dispose(); // just close, return to main menu
         }
     });
-    
-    frame.getContentPane().removeAll();
-    frame.add(charPanel, BorderLayout.CENTER);
-    frame.revalidate();
-    frame.repaint();
+
+    dialog.add(selectPanel);
+    dialog.setVisible(true);
 }
     
     
