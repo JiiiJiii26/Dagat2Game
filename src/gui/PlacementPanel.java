@@ -2,6 +2,7 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.*;
 import java.awt.event.*;
 import models.Board;
 import models.Ship;
@@ -13,6 +14,7 @@ public class PlacementPanel extends JPanel {
     private JButton[][] gridButtons;
     private Board playerBoard;
     private final int SIZE = 10;
+    private Image placementBackgroundImage;
     private ArrayList<Ship> originalShipsToPlace;
     private ArrayList<Ship> shipsToPlace;
     private Ship currentShip;
@@ -52,6 +54,21 @@ public class PlacementPanel extends JPanel {
         this.originalShipsToPlace = new ArrayList<>();
         this.shipsToPlace = new ArrayList<>();
         this.undoStack = new Stack<>();
+        
+        // Load boat placement background
+        try {
+            String imagePath = "D:\\GameProj\\Battleship Game\\assets\\boatPlacementbg.jpg";
+            Image image = Toolkit.getDefaultToolkit().getImage(imagePath);
+            MediaTracker tracker = new MediaTracker(new JLabel());
+            tracker.addImage(image, 0);
+            tracker.waitForID(0);
+            if (image.getWidth(null) > 0) {
+                placementBackgroundImage = image;
+                System.out.println("✅ Boat placement background loaded: " + image.getWidth(null) + "x" + image.getHeight(null));
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not load boatPlacementbg.jpg: " + e.getMessage());
+        }
         
         
         originalShipsToPlace.add(new Ship("Carrier", 5));
@@ -108,9 +125,23 @@ public class PlacementPanel extends JPanel {
         controlPanel.add(buttonPanel, BorderLayout.SOUTH);
         
         
-        JPanel gridPanel = new JPanel(new GridLayout(SIZE, SIZE));
+        JPanel gridPanel = new JPanel(new GridLayout(SIZE, SIZE, 0, 0));
         gridPanel.setPreferredSize(new Dimension(500, 500));
         gridPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // Set boat placement background on the grid panel
+        if (placementBackgroundImage != null) {
+            final Image bgImage = placementBackgroundImage.getScaledInstance(500, 500, Image.SCALE_SMOOTH);
+            gridPanel = new JPanel(new GridLayout(SIZE, SIZE, 0, 0)) {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(bgImage, 0, 0, getWidth(), getHeight(), null);
+                }
+            };
+            gridPanel.setPreferredSize(new Dimension(500, 500));
+            gridPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        }
         
         gridButtons = new JButton[SIZE][SIZE];
         
@@ -120,9 +151,10 @@ public class PlacementPanel extends JPanel {
                 button.putClientProperty("row", row);
                 button.putClientProperty("col", col);
                 
-                button.setBackground(Cell.OCEAN_BLUE);
-                button.setOpaque(true);
-                button.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                // Make cells transparent so background shows through
+                button.setOpaque(false);
+                button.setContentAreaFilled(false);
+                button.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 80), 1));
                 
                 final int r = row;
                 final int c = col;
@@ -173,8 +205,10 @@ public class PlacementPanel extends JPanel {
             Cell cell = playerBoard.getCell(x, y);
             cell.setHasShip(false);
             cell.setShip(null);
-            gridButtons[x][y].setBackground(Cell.OCEAN_BLUE);
             gridButtons[x][y].setText("");
+            gridButtons[x][y].setOpaque(false);
+            gridButtons[x][y].setContentAreaFilled(false);
+            gridButtons[x][y].setBackground(null);
         }
         
         
@@ -223,8 +257,10 @@ public class PlacementPanel extends JPanel {
         
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
-                gridButtons[row][col].setBackground(Cell.OCEAN_BLUE);
                 gridButtons[row][col].setText("");
+                gridButtons[row][col].setOpaque(false);
+                gridButtons[row][col].setContentAreaFilled(false);
+                gridButtons[row][col].setBackground(null);
             }
         }
         
@@ -247,6 +283,20 @@ public class PlacementPanel extends JPanel {
         rotateButton.setText(horizontal ? "🔄 Rotate (Horizontal)" : "🔄 Rotate (Vertical)");
     }
     
+    private void setButtonBackground(JButton button) {
+        if (placementBackgroundImage != null) {
+            Image scaled = placementBackgroundImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+            button.setIcon(new ImageIcon(scaled));
+        } else {
+            button.setBackground(Cell.OCEAN_BLUE);
+        }
+    }
+    
+    private void clearCell(JButton button) {
+        setButtonBackground(button);
+        button.setText("");
+    }
+    
     private void showPreview(int row, int col) {
         if (currentShip == null) return;
         clearPreview();
@@ -255,6 +305,8 @@ public class PlacementPanel extends JPanel {
             if (col + currentShip.getSize() <= SIZE) {
                 for (int i = 0; i < currentShip.getSize(); i++) {
                     if (!playerBoard.getCell(row, col + i).hasShip()) {
+                        gridButtons[row][col + i].setOpaque(true);
+                        gridButtons[row][col + i].setContentAreaFilled(true);
                         gridButtons[row][col + i].setBackground(new Color(100, 200, 100, 150));
                     }
                 }
@@ -263,6 +315,8 @@ public class PlacementPanel extends JPanel {
             if (row + currentShip.getSize() <= SIZE) {
                 for (int i = 0; i < currentShip.getSize(); i++) {
                     if (!playerBoard.getCell(row + i, col).hasShip()) {
+                        gridButtons[row + i][col].setOpaque(true);
+                        gridButtons[row + i][col].setContentAreaFilled(true);
                         gridButtons[row + i][col].setBackground(new Color(100, 200, 100, 150));
                     }
                 }
@@ -275,9 +329,17 @@ public class PlacementPanel extends JPanel {
             for (int col = 0; col < SIZE; col++) {
                 Cell cell = playerBoard.getCell(row, col);
                 if (cell.hasShip()) {
-                    gridButtons[row][col].setBackground(Cell.SHIP_GREEN);
+                    // Show ship indicator
+                    gridButtons[row][col].setOpaque(true);
+                    gridButtons[row][col].setContentAreaFilled(true);
+                    gridButtons[row][col].setBackground(new Color(50, 150, 50, 200));
+                    gridButtons[row][col].setText("⛵");
                 } else {
-                    gridButtons[row][col].setBackground(Cell.OCEAN_BLUE);
+                    // Keep transparent to show background
+                    gridButtons[row][col].setOpaque(false);
+                    gridButtons[row][col].setContentAreaFilled(false);
+                    gridButtons[row][col].setBackground(null);
+                    gridButtons[row][col].setText("");
                 }
             }
         }
@@ -297,8 +359,12 @@ public class PlacementPanel extends JPanel {
             
             for (int i = 0; i < currentShip.getSize(); i++) {
                 if (horizontal) {
+                    gridButtons[row][col + i].setOpaque(true);
+                    gridButtons[row][col + i].setContentAreaFilled(true);
                     gridButtons[row][col + i].setBackground(Cell.SHIP_GREEN);
                 } else {
+                    gridButtons[row + i][col].setOpaque(true);
+                    gridButtons[row + i][col].setContentAreaFilled(true);
                     gridButtons[row + i][col].setBackground(Cell.SHIP_GREEN);
                 }
             }

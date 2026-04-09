@@ -1038,6 +1038,7 @@ private void createBattleUI(CampaignWave wave) {
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
     leftPanel.setBackground(new Color(0, 50, 0, 120));
+    leftPanel.setPreferredSize(new Dimension(800, 800));
     leftPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
         "⚓ YOUR FLEET",
@@ -1084,6 +1085,7 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
     rightPanel.setBackground(new Color(0, 50, 0, 120));
+    rightPanel.setPreferredSize(new Dimension(900, 900));
     rightPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
         "🏴‍☠️ ENEMY WATERS",
@@ -1639,7 +1641,6 @@ private void executeSkill(int targetX, int targetY) {
         updateStatusLabel("❌ Skill error: " + e.getMessage(), Color.RED);
         success = false;
         shouldEndTurn = false;
-    } finally {
         
         waitingForSkillTarget = false;
         currentSkillNumber = 0;
@@ -1649,7 +1650,14 @@ private void executeSkill(int targetX, int targetY) {
     }
     
     if (success) {
-        updateStatusLabel("✨ " + currentSkillName + " used successfully!", Color.GREEN);
+        String skillNameCopy = currentSkillName;
+        waitingForSkillTarget = false;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        currentSkillTargetsOwnBoard = false;
+        currentSkillRequiresDirection = false;
+        
+        updateStatusLabel("✨ " + skillNameCopy + " used successfully!", Color.GREEN);
         if (frame.getContentPane() instanceof WaveBackgroundPanel) {
             ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(new Color(255, 255, 255));
             ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(10);
@@ -1660,7 +1668,7 @@ private void executeSkill(int targetX, int targetY) {
             currentSkillPanel.updateUI();
         }
         
-        if (currentSkillName.equals("Laser Pointer")) {
+        if (skillNameCopy.equals("Laser Pointer")) {
             updateStatusLabel("🔴 Enemy will skip their next turn! You get another turn!", Color.GREEN);
         }
         
@@ -1681,7 +1689,14 @@ private void executeSkill(int targetX, int targetY) {
             }
         }
     } else {
-        updateStatusLabel("❌ Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
+        String failedSkillName = currentSkillName;
+        waitingForSkillTarget = false;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        currentSkillTargetsOwnBoard = false;
+        currentSkillRequiresDirection = false;
+        
+        updateStatusLabel("❌ Failed to use " + failedSkillName + "! Check mana/cooldown.", Color.RED);
         
         if (turnTimer != null && timerEnabled && playerTurn) {
             turnTimer.stopTimer();
@@ -1765,9 +1780,10 @@ private void setupClickHandlers() {
     
     
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-        System.out.println("Enemy board clicked at: " + row + "," + col);
+        System.out.println("🔍 ENEMY BOARD CLICKED at (" + row + "," + col + ") - waitingForSkillTarget=" + waitingForSkillTarget + " targetsOwnBoard=" + currentSkillTargetsOwnBoard);
         
         if (waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
+            System.out.println("🎯 Executing skill target!");
             if (turnTimer != null) turnTimer.stopTimer();
             executeSkill(row, col);
             return;

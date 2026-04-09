@@ -3,14 +3,12 @@ package gui;
 import game.ShotResult;
 import java.awt.*;
 import javax.swing.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
 import models.Board;
 import models.Cell;
-import models.Ship; 
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentListener;
+import models.Ship;
 
 public class BoardPanel extends JPanel {
     private JButton[][] gridButtons;
@@ -19,6 +17,9 @@ public class BoardPanel extends JPanel {
     private boolean isPlayerBoard;  
     private boolean showShips;  
     private PlayerClickHandler playerClickHandler;
+    private List<Image> oceanFrames;
+    private int currentFrameIndex = 0;
+    private Timer animationTimer;
     
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
@@ -41,126 +42,136 @@ public class BoardPanel extends JPanel {
         this.board = board;
         this.showShips = showShips;  
 
-          setDoubleBuffered(true);
-           setOpaque(true);  
-    setBackground(new Color(20, 40, 60));  
+        // Load ocean floor PNG frames
+        oceanFrames = new ArrayList<>();
+        String basePath = "D:\\GameProj\\Battleship Game\\assets\\oceanfloor-";
         
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                board.getCell(i, j).setPlayerBoard(isPlayerBoard);
+        for (int i = 1; i <= 4; i++) {
+            try {
+                String imagePath = basePath + i + ".png";
+                java.io.File file = new java.io.File(imagePath);
+                if (file.exists()) {
+                    Image img = javax.imageio.ImageIO.read(file);
+                    if (img != null) {
+                        oceanFrames.add(img);
+                    }
+                }
+            } catch (Exception e) {
+                // Silent fail
             }
         }
         
-        setLayout(new GridLayout(SIZE, SIZE, 2, 2));
-        setPreferredSize(new Dimension(400, 400));
-        setBackground(new Color(20, 40, 60));
+        // Start animation timer
+        if (!oceanFrames.isEmpty()) {
+            animationTimer = new Timer(500, e -> {
+                currentFrameIndex = (currentFrameIndex + 1) % oceanFrames.size();
+                repaint();
+            });
+            animationTimer.start();
+        }
+
+        setLayout(null);
+        setPreferredSize(new Dimension(900, 900));
+        setMinimumSize(new Dimension(900, 900));
+        setBounds(0, 0, 900, 900);
         
+        // Create grid buttons directly in this panel
         gridButtons = new JButton[SIZE][SIZE];
         
-        initializeButtons();
-    }
-    
-  private void initializeButtons() {
-    for (int row = 0; row < SIZE; row++) {
-        for (int col = 0; col < SIZE; col++) {
-            final int currentRow = row;
-            final int currentCol = col;
-            
-            JButton button = new JButton();
-            button.putClientProperty("row", currentRow);
-            button.putClientProperty("col", currentCol);
-            
-            button.setContentAreaFilled(true);
-            button.setBorderPainted(true);
-            button.setFocusPainted(false);
-             button.setRolloverEnabled(false);  
-            button.setContentAreaFilled(true); 
-            button.setOpaque(true);   
-            
-            Cell cell = board.getCell(currentRow, currentCol);
-            
-            button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-            button.setBorder(BorderFactory.createLineBorder(new Color(60, 120, 160, 100), 1));
-            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            button.setOpaque(true);
-            button.setBackground(Cell.OCEAN_BLUE); 
-            
-            updateButtonAppearance(button, cell);
-            
-            
-            button.addMouseListener(new MouseAdapter() {
-                
-            });
-            
-            button.addActionListener(e -> {
-                JButton clicked = (JButton) e.getSource();
-                int r = (int) clicked.getClientProperty("row");
-                int c = (int) clicked.getClientProperty("col");
-                handleClick(r, c);
-            });
-            
-            gridButtons[currentRow][currentCol] = button;
-            add(button);
-        }
-    }
-}
-    
-private void updateButtonAppearance(JButton button, Cell cell) {
-    
-    button.setOpaque(true);
-    
-    Color cellColor = cell.getColor();
-    
-    
-    button.setText("");
-    button.setIcon(null);
-    
-    
-    if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
-        button.setBackground(new Color(200, 60, 50, 180));
-        button.setForeground(Color.WHITE);
-        if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
-            button.setText("💀");
-        } else {
-            button.setText("💥");
-        }
-    } 
-    
-    else if (cellColor.equals(Cell.MISS_GRAY)) {
-        button.setBackground(new Color(80, 100, 120, 150));
-        button.setForeground(Color.WHITE);
-        button.setText("•");
-        button.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
-    } 
-    
-    else {
-        int row = (int) button.getClientProperty("row");
-        int col = (int) button.getClientProperty("col");
-        
-        if ((row + col) % 2 == 0) {
-            button.setBackground(new Color(30, 80, 120, 100));
-        } else {
-            button.setBackground(new Color(40, 100, 140, 100));
-        }
-        
-        
-        if ((showShips || cell.isRevealed()) && cell.hasShip() && !cell.isFiredUpon()) {
-            button.setBackground(new Color(60, 140, 80, 180));
-            if (cell.getShip() != null && cell.getShip().isShielded()) {
-                button.setText("🛡️");
-            } else if (cell.getShip() != null && cell.getShip().isInfected()) {
-                button.setText("🦠");
-            } else {
-                button.setText("⛵");
+        int cellSize = 90;
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
+                Cell cell = board.getCell(row, col);
+                JButton button = createCellButton(row, col, cell);
+                button.setBounds(col * cellSize, row * cellSize, cellSize, cellSize);
+                updateButtonAppearance(button, cell, row, col);
+                gridButtons[row][col] = button;
+                add(button);
             }
-            button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
         }
     }
     
+    @Override
+    protected void paintComponent(Graphics g) {
+        // Draw the ocean background first
+        if (!oceanFrames.isEmpty()) {
+            Image img = oceanFrames.get(currentFrameIndex);
+            if (img != null) {
+                // Draw scaled to fill the entire panel (900x900)
+                g.drawImage(img, 0, 0, 900, 900, this);
+            }
+        } else {
+            // Fallback
+            g.setColor(new Color(20, 40, 60));
+            g.fillRect(0, 0, 900, 900);
+        }
+    }
     
-    button.paintImmediately(button.getBounds());
-}
-
+    private JButton createCellButton(int row, int col, Cell cell) {
+        JButton button = new JButton();
+        
+        button.putClientProperty("row", row);
+        button.putClientProperty("col", col);
+        
+        // Transparent button so background shows through
+        button.setOpaque(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(true);
+        button.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 100), 1));
+        button.setFocusPainted(false);
+        button.setRolloverEnabled(false);
+        button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        final int finalRow = row;
+        final int finalCol = col;
+        button.addActionListener(e -> handleClick(finalRow, finalCol));
+        
+        return button;
+    }
+    
+    private void updateButtonAppearance(JButton button, Cell cell, int row, int col) {
+        button.setOpaque(false);
+        button.setIcon(null);
+        button.setText("");
+        
+        Color cellColor = cell.getColor();
+        
+        if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
+            button.setForeground(Color.WHITE);
+            if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
+                button.setText("💀");
+            } else {
+                button.setText("💥");
+            }
+            button.setOpaque(true);
+            button.setContentAreaFilled(true);
+            button.setBackground(new Color(180, 50, 40, 200));
+        } 
+        else if (cellColor.equals(Cell.MISS_GRAY)) {
+            button.setForeground(Color.WHITE);
+            button.setText("•");
+            button.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
+            button.setOpaque(true);
+            button.setContentAreaFilled(true);
+            button.setBackground(new Color(80, 100, 120, 180));
+        } 
+        else {
+            if ((showShips || cell.isRevealed()) && cell.hasShip() && !cell.isFiredUpon()) {
+                button.setOpaque(true);
+                button.setContentAreaFilled(true);
+                button.setBackground(new Color(50, 150, 50, 200));
+                if (cell.getShip() != null && cell.getShip().isShielded()) {
+                    button.setText("🛡️");
+                } else if (cell.getShip() != null && cell.getShip().isInfected()) {
+                    button.setText("🦠");
+                } else {
+                    button.setText("⛵");
+                }
+                button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+            }
+        }
+    }
     
     private void handleClick(int row, int col) {
         if (isPlayerBoard) {
@@ -181,6 +192,14 @@ private void updateButtonAppearance(JButton button, Cell cell) {
         return board;
     }
     
+    public void updateCell(int row, int col, ShotResult result) {
+        if (row >= 0 && row < SIZE && col >= 0 && col < SIZE) {
+            Cell cell = board.getCell(row, col);
+            JButton button = gridButtons[row][col];
+            updateButtonAppearance(button, cell, row, col);
+        }
+    }
+    
     public interface EnemyClickHandler {
         void onEnemyCellClicked(int row, int col);
     }
@@ -191,36 +210,12 @@ private void updateButtonAppearance(JButton button, Cell cell) {
         this.enemyClickHandler = handler;
     }
     
-    public void updateCell(int row, int col, ShotResult result) {
-        Cell cell = board.getCell(row, col);
-        JButton button = gridButtons[row][col];
-        
-        switch(result) {
-            case HIT:
-                button.setBackground(new Color(220, 70, 60, 200));
-                button.setText("💥");
-                button.setForeground(Color.WHITE);
-                break;
-            case MISS:
-                button.setBackground(new Color(80, 100, 120, 180));
-                button.setText("•");
-                button.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
-                break;
-            case SUNK:
-                button.setBackground(new Color(150, 40, 30, 200));
-                button.setText("💀");
-                break;
-            default:
-                break;
-        }
-    }
-    
     public void refreshColors() {
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 Cell cell = board.getCell(row, col);
                 JButton button = gridButtons[row][col];
-                updateButtonAppearance(button, cell);
+                updateButtonAppearance(button, cell, row, col);
             }
         }
         repaint();
