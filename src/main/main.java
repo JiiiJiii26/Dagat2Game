@@ -102,7 +102,7 @@ public class Main {
     frame.add(charSelectPanel, BorderLayout.CENTER);
     frame.revalidate();
     frame.repaint();
-}
+}    
     
     
     
@@ -239,33 +239,26 @@ public class Main {
     
     
    private static void showCharacterSelectForCampaign() {
-    // Create a modal dialog that floats over the main menu
-    JDialog dialog = new JDialog(frame, "Choose Your Commander", true);
-    dialog.setUndecorated(true);
-    dialog.setSize(frame.getSize());
-    dialog.setLocationRelativeTo(frame);
-    dialog.setBackground(new Color(0, 0, 0, 0)); // transparent
-
-    // Use the NEW redesigned CharacterSelectPanel (the one that loads selection.png)
-    CharacterSelectPanel selectPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
+    CharacterSelectPanel charPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
         @Override
         public void onCharacterSelected(GameCharacter character) {
-            dialog.dispose(); // close the floating panel
             selectedCharacter = character;
             System.out.println("🎮 Starting CAMPAIGN with: " + character.getName());
             CampaignMode campaign = new CampaignMode(frame, selectedCharacter);
             campaign.start();
         }
-
+        
         @Override
         public void onBackToMenu() {
-            dialog.dispose(); // just close, return to main menu
+            showMainMenu();
         }
     });
-
-    dialog.add(selectPanel);
-    dialog.setVisible(true);
-}
+    
+    frame.getContentPane().removeAll();
+    frame.add(charPanel, BorderLayout.CENTER);
+    frame.revalidate();
+    frame.repaint();
+}    
     
     
   private static void showCharacterSelectForQuickBattle() {
@@ -287,7 +280,7 @@ public class Main {
     frame.add(charPanel, BorderLayout.CENTER);
     frame.revalidate();
     frame.repaint();
-}
+}    
     
     private static void showPlacementScreen() {
         PlacementPanel placementPanel = new PlacementPanel(new PlacementPanel.PlacementListener() {
@@ -430,7 +423,7 @@ public class Main {
     frame.repaint();
 
     System.out.println("⚓ Battle started against " + difficulty + " AI!");
-}
+}    
     
     
     
