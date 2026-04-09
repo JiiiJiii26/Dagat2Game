@@ -102,7 +102,7 @@ public class Main {
     frame.add(charSelectPanel, BorderLayout.CENTER);
     frame.revalidate();
     frame.repaint();
-}    
+}
     
     
     
@@ -239,26 +239,33 @@ public class Main {
     
     
    private static void showCharacterSelectForCampaign() {
-    CharacterSelectPanel charPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
+    
+    JDialog dialog = new JDialog(frame, "Choose Your Commander", true);
+    dialog.setUndecorated(true);
+    dialog.setSize(frame.getSize());
+    dialog.setLocationRelativeTo(frame);
+    dialog.setBackground(new Color(0, 0, 0, 0)); 
+
+    
+    CharacterSelectPanel selectPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
         @Override
         public void onCharacterSelected(GameCharacter character) {
+            dialog.dispose(); 
             selectedCharacter = character;
             System.out.println("🎮 Starting CAMPAIGN with: " + character.getName());
             CampaignMode campaign = new CampaignMode(frame, selectedCharacter);
             campaign.start();
         }
-        
+
         @Override
         public void onBackToMenu() {
-            showMainMenu();
+            dialog.dispose(); 
         }
     });
-    
-    frame.getContentPane().removeAll();
-    frame.add(charPanel, BorderLayout.CENTER);
-    frame.revalidate();
-    frame.repaint();
-}    
+
+    dialog.add(selectPanel);
+    dialog.setVisible(true);
+}
     
     
   private static void showCharacterSelectForQuickBattle() {
@@ -280,7 +287,7 @@ public class Main {
     frame.add(charPanel, BorderLayout.CENTER);
     frame.revalidate();
     frame.repaint();
-}    
+}
     
     private static void showPlacementScreen() {
         PlacementPanel placementPanel = new PlacementPanel(new PlacementPanel.PlacementListener() {
@@ -423,7 +430,7 @@ public class Main {
     frame.repaint();
 
     System.out.println("⚓ Battle started against " + difficulty + " AI!");
-}    
+}
     
     
     
