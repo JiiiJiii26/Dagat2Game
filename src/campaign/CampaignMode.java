@@ -99,6 +99,9 @@ private SkillPanel currentSkillPanel;
     
     
     private boolean waitingForSeleneCrescent = false;
+    private boolean jijiAttackAnimationPlaying = false;
+    private boolean jijiAttackPlayedThisTurn = false;
+    private boolean jijiDamagedAnimationPlaying = false;
     private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
     
     private Timer seleneUpdateTimer; 
@@ -1272,8 +1275,11 @@ private void refreshJijiPortrait() {
             jijiLargePortraitLabel.revalidate();
             System.out.println("✅ Jiji portrait refreshed - width: " + portraitWidth);
             
-            // Add visual feedback when damaged
-            if (jiji.isDamaged()) {
+            // Add visual feedback when damaged - only trigger once
+            if (jiji.isDamaged() && !jijiDamagedAnimationPlaying) {
+                jijiDamagedAnimationPlaying = true;
+                System.out.println("💢 Starting damaged animation once!");
+                
                 // Flash red border when damaged - cast to JComponent to use setBorder
                 java.awt.Component parent = jijiLargePortraitLabel.getParent();
                 if (parent instanceof JComponent) {
@@ -1291,11 +1297,21 @@ private void refreshJijiPortrait() {
                     borderTimer.setRepeats(false);
                     borderTimer.start();
                 }
-            }
-            
-            // Add a visual flash effect when Jiji gets damaged
-            if (frame.getContentPane() instanceof WaveBackgroundPanel) {
-                ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
+                
+                // Add a visual flash effect when Jiji gets damaged
+                if (frame.getContentPane() instanceof WaveBackgroundPanel) {
+                    ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
+                }
+                
+                // Reset damaged animation flag when Jiji recovers
+                javax.swing.Timer recoveryTimer = new javax.swing.Timer(2500, e -> {
+                    if (!jiji.isDamaged()) {
+                        jijiDamagedAnimationPlaying = false;
+                        System.out.println("🔄 Jiji recovered, damaged animation can play again");
+                    }
+                });
+                recoveryTimer.setRepeats(false);
+                recoveryTimer.start();
             }
         } else {
             System.out.println("⚠️ newPortrait is NULL!");
@@ -1307,18 +1323,29 @@ private void refreshJijiPortrait() {
 
 private void showJijiAttackAnimation() {
     System.out.println("⚔️ showJijiAttackAnimation called!");
+    
+    // Only play once per turn and if not already playing
+    if (jijiAttackAnimationPlaying || jijiAttackPlayedThisTurn) {
+        System.out.println("⏭️ Attack animation already played this turn or playing, skipping...");
+        return;
+    }
+    
     if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
         String attackPath = "assets/jiji_attack.gif";
         File attackFile = new File(attackPath);
         System.out.println("Attack file exists: " + attackFile.exists());
         if (attackFile.exists()) {
+            jijiAttackAnimationPlaying = true;
+            jijiAttackPlayedThisTurn = true;
             ImageIcon attackIcon = new ImageIcon(attackPath);
             Image img = attackIcon.getImage();
             Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
             jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
             System.out.println("✅ Attack animation set!");
             
-            javax.swing.Timer attackTimer = new javax.swing.Timer(1500, e -> {
+            // Play animation longer (3 seconds) before returning to normal
+            javax.swing.Timer attackTimer = new javax.swing.Timer(3000, e -> {
+                jijiAttackAnimationPlaying = false;
                 refreshJijiPortrait();
             });
             attackTimer.setRepeats(false);
@@ -2597,6 +2624,8 @@ private void enemyTurn() {
  private void onPlayerTurnStart() {
     System.out.println("🔄 Player turn started! Checking conditions...");
 
+    // Reset Jiji attack animation flag for new turn
+    jijiAttackPlayedThisTurn = false;
     
     if (playerCharacter instanceof Jiji) {
         Jiji jiji = (Jiji) playerCharacter;
