@@ -42,13 +42,13 @@ public class BoardPanel extends JPanel {
         this.board = board;
         this.showShips = showShips;  
 
-        // Load ocean floor PNG frames
+        // Load ocean floor JPG frames
         oceanFrames = new ArrayList<>();
-        String basePath = "D:\\GameProj\\Battleship Game\\assets\\oceanfloor-";
+        String basePath = "D:\\GameProj\\Battleship Game\\assets\\oceanfloor";
         
-        for (int i = 1; i <= 4; i++) {
+        for (int i = 1; i <= 3; i++) {
             try {
-                String imagePath = basePath + i + ".png";
+                String imagePath = basePath + i + ".jpg";
                 java.io.File file = new java.io.File(imagePath);
                 if (file.exists()) {
                     Image img = javax.imageio.ImageIO.read(file);
