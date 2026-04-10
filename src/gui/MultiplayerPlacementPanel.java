@@ -70,6 +70,9 @@ public class MultiplayerPlacementPanel extends JPanel {
         
         setLayout(new BorderLayout());
         setBackground(new Color(25, 25, 112));
+        setPreferredSize(new Dimension(700, 700));
+        setMinimumSize(new Dimension(700, 700));
+        setMaximumSize(new Dimension(700, 700));
         
         
         JLabel titleLabel = new JLabel(playerName + "'s Fleet Placement", SwingConstants.CENTER);
@@ -128,7 +131,7 @@ public class MultiplayerPlacementPanel extends JPanel {
         
         
         JPanel gridPanel = new JPanel(new GridLayout(SIZE, SIZE));
-        gridPanel.setPreferredSize(new Dimension(400, 400));
+        gridPanel.setPreferredSize(new Dimension(700, 700));
         gridButtons = new JButton[SIZE][SIZE];
         
         for (int row = 0; row < SIZE; row++) {
@@ -140,6 +143,7 @@ public class MultiplayerPlacementPanel extends JPanel {
                 button.setBackground(Cell.OCEAN_BLUE);
                 button.setOpaque(true);
                 button.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                button.setPreferredSize(new Dimension(70, 70));
                 
                 final int r = row;
                 final int c = col;

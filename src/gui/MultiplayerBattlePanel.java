@@ -23,6 +23,7 @@ public class MultiplayerBattlePanel extends JPanel {
     private JPanel skillsPanel;
     private SkillPanel currentSkillPanel;
     private int currentPlayer = 1;
+    private TimerPanel turnTimer;
     
     
     private boolean waitingForSkillTarget = false;
@@ -77,7 +78,16 @@ public class MultiplayerBattlePanel extends JPanel {
         turnLabel = new JLabel("", SwingConstants.CENTER);
         turnLabel.setFont(new Font("Arial", Font.BOLD, 24));
         turnLabel.setForeground(new Color(173, 216, 230));
-        topPanel.add(turnLabel, BorderLayout.CENTER);
+        
+        turnTimer = new TimerPanel(30, () -> {
+            endTurnTimer();
+        });
+        
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setOpaque(false);
+        centerPanel.add(turnLabel, BorderLayout.CENTER);
+        centerPanel.add(turnTimer, BorderLayout.SOUTH);
+        topPanel.add(centerPanel, BorderLayout.CENTER);
         
         
         JPanel rightPlaceholder = new JPanel();
@@ -93,6 +103,9 @@ public class MultiplayerBattlePanel extends JPanel {
         boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         boardsPanel.setBackground(new Color(25, 25, 112));
         boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        boardsPanel.setPreferredSize(new Dimension(1500, 700));
+        boardsPanel.setMaximumSize(new Dimension(1500, 700));
+        boardsPanel.setMinimumSize(new Dimension(1500, 700));
         
         
         skillsPanel = new JPanel(new BorderLayout());
@@ -175,6 +188,8 @@ public class MultiplayerBattlePanel extends JPanel {
         
         updateTurnDisplay();
         updateShipCounts();
+        turnTimer.resetTimer();
+        turnTimer.startTimer();
     }
     
     private void showPlayerSkills(int playerNumber) {
@@ -353,9 +368,11 @@ public class MultiplayerBattlePanel extends JPanel {
     private void postSkillActionUpdate(boolean wasPlayer1Turn, int currentPlayerNumber) {
         refreshBoards();
         updateShipCounts();
+        turnTimer.resetTimer();
+        turnTimer.startTimer();
         
         if (wasPlayer1Turn != game.isPlayer1Turn()) {
-            updateBoardViews(); // Swaps the board to the new player
+            updateBoardViews();
         } else {
             updateTurnDisplay();
             showPlayerSkills(currentPlayerNumber); // Ensures mana and CDs reflect accurately
@@ -427,6 +444,8 @@ public class MultiplayerBattlePanel extends JPanel {
         
         refreshBoards();
         updateShipCounts();
+        turnTimer.resetTimer();
+        turnTimer.startTimer();
         
         if (wasPlayer1Turn != game.isPlayer1Turn()) {
             updateBoardViews();
@@ -469,6 +488,20 @@ public class MultiplayerBattlePanel extends JPanel {
         if (player2BoardPanel != null) {
             player2BoardPanel.refreshColors();
         }
+    }
+    
+    private void endTurnTimer() {
+        turnTimer.stopTimer();
+        if (waitingForSkillTarget) {
+            waitingForSkillTarget = false;
+            currentSkillNumber = 0;
+            currentSkillName = "";
+            updateBoardViews();
+            return;
+        }
+        boolean isPlayer1Turn = game.isPlayer1Turn();
+        game.setPlayer1Turn(!isPlayer1Turn);
+        updateBoardViews();
     }
     
     private void updateShipCounts() {

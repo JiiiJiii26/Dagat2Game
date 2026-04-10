@@ -41,8 +41,37 @@ public class TimerPanel extends JPanel {
         
         add(timerLabel, BorderLayout.NORTH);
         add(timerBar, BorderLayout.CENTER);
-        
-        setVisible(false);
+    }
+    
+    public void setTimerLabel(String label) {
+        timerLabel.setText(label);
+    }
+    
+    public void setUseCustomLabel(boolean useCustom) {
+        this.useCustomLabel = useCustom;
+    }
+    
+    private boolean useCustomLabel = false;
+    
+    private void updateDisplay() {
+        if (!useCustomLabel) {
+            String newTimeText = "⏱️ Time: " + timeLeft + "s";
+            if (!timerLabel.getText().equals(newTimeText)) {
+                timerLabel.setText(newTimeText);
+                timerBar.setValue(timeLeft);
+                repaint();
+            }
+        } else {
+            timerBar.setValue(timeLeft);
+            repaint();
+        }
+    }
+    
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        timerLabel.setVisible(visible);
+        timerBar.setVisible(visible);
     }
     
     public void startTimer() {
@@ -89,7 +118,6 @@ public class TimerPanel extends JPanel {
         if (gameTimer != null) {
             gameTimer.stop();
         }
-        setVisible(false);
     }
     
     public void resetTimer() {
@@ -99,16 +127,6 @@ public class TimerPanel extends JPanel {
         timerBar.setForeground(new Color(50, 200, 50));
         timerLabel.setForeground(Color.WHITE);
     }
-    
-   private void updateDisplay() {
-    String newTimeText = "⏱️ Time: " + timeLeft + "s";
-    if (!timerLabel.getText().equals(newTimeText)) {
-        timerLabel.setText(newTimeText);
-        timerBar.setValue(timeLeft);
-        
-        repaint();
-    }
-}
     
     public boolean isTimeRunningOut() {
         return timeLeft <= 3;

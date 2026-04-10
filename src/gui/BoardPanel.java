@@ -14,6 +14,8 @@ public class BoardPanel extends JPanel {
     private JButton[][] gridButtons;
     private Board board;
     private final int SIZE = 10;
+    private int cellWidth = 90;   // CUSTOMIZABLE
+    private int cellHeight = 58;   // CUSTOMIZABLE
     private boolean isPlayerBoard;  
     private boolean showShips;  
     private PlayerClickHandler playerClickHandler;
@@ -22,7 +24,6 @@ public class BoardPanel extends JPanel {
     private Timer animationTimer;
     private ImageIcon carrierIcon;
     private Image carrierImageRaw;
-    private final int CELL_SIZE = 90;
     private int carrierOffset = 0;
     private int carrierDirection = 1;
 
@@ -32,6 +33,14 @@ public class BoardPanel extends JPanel {
     
     public void setPlayerClickHandler(PlayerClickHandler handler) {
         this.playerClickHandler = handler;
+    }
+    
+    // Constructor with custom cell size
+    public BoardPanel(boolean isPlayerBoard, Board board, int cellWidth, int cellHeight) {
+        this(isPlayerBoard, board, isPlayerBoard);
+        this.cellWidth = cellWidth;
+        this.cellHeight = cellHeight;
+        reinitializeLayout();
     }
     
     public BoardPanel(boolean isPlayerBoard, Board board) {
@@ -81,9 +90,8 @@ public class BoardPanel extends JPanel {
             if (carrierFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(carrierFile);
                 if (img != null) {
-                    // Pre-scale to fit 90px cells (5 cells = 450px wide)
-                    carrierImageRaw = img.getScaledInstance(450, 90, Image.SCALE_SMOOTH);
-                    System.out.println("✅ Carrier image loaded and pre-scaled to 450x90");
+                    carrierImageRaw = img;
+                    System.out.println("✅ Carrier image loaded");
                 } else {
                     System.out.println("⚠️ Carrier image is null after reading");
                 }
@@ -104,26 +112,61 @@ public class BoardPanel extends JPanel {
         });
         carrierTimer.start();
 
+        initializeLayout();
+    }
+    
+    private void initializeLayout() {
         setLayout(null);
-        setPreferredSize(new Dimension(900, 900));
-        setMinimumSize(new Dimension(900, 900));
-        setBounds(0, 0, 900, 900);
+        int panelWidth = SIZE * cellWidth;
+        int panelHeight = SIZE * cellHeight;
+        setPreferredSize(new Dimension(panelWidth, panelHeight));
+        setMinimumSize(new Dimension(panelWidth, panelHeight));
+        setBounds(0, 0, panelWidth, panelHeight);
         
-        // Create grid buttons directly in this panel
+        // Create grid buttons
         gridButtons = new JButton[SIZE][SIZE];
         
-        int cellSize = CELL_SIZE;
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 Cell cell = board.getCell(row, col);
                 JButton button = createCellButton(row, col, cell);
-                button.setBounds(col * cellSize, row * cellSize, cellSize, cellSize);
+                button.setBounds(col * cellWidth, row * cellHeight, cellWidth, cellHeight);
                 updateButtonAppearance(button, cell, row, col);
                 gridButtons[row][col] = button;
                 add(button);
             }
         }
     }
+    
+    private void reinitializeLayout() {
+        removeAll();
+        initializeLayout();
+        revalidate();
+        repaint();
+    }
+    
+    // Setters for custom sizing after creation
+    public void setCellSize(int width, int height) {
+        this.cellWidth = width;
+        this.cellHeight = height;
+        reinitializeLayout();
+    }
+    
+    public void setCellWidth(int width) {
+        this.cellWidth = width;
+        reinitializeLayout();
+    }
+    
+    public void setCellHeight(int height) {
+        this.cellHeight = height;
+        reinitializeLayout();
+    }
+    
+    // Getters
+    public int getCellWidth() { return cellWidth; }
+    public int getCellHeight() { return cellHeight; }
+    public int getBoardWidth() { return SIZE * cellWidth; }
+    public int getBoardHeight() { return SIZE * cellHeight; }
     
     @Override
     protected void paintComponent(Graphics g) {
@@ -132,16 +175,16 @@ public class BoardPanel extends JPanel {
         if (!oceanFrames.isEmpty()) {
             Image img = oceanFrames.get(currentFrameIndex);
             if (img != null) {
-                // Draw scaled to fill the entire panel (900x900)
-                g.drawImage(img, 0, 0, 900, 900, this);
+                // Draw scaled to fill the entire panel
+                g.drawImage(img, 0, 0, getBoardWidth(), getBoardHeight(), this);
             }
         } else {
             // Fallback
             g.setColor(new Color(20, 40, 60));
-            g.fillRect(0, 0, 900, 900);
+            g.fillRect(0, 0, getBoardWidth(), getBoardHeight());
         }
         
-        // Draw carrier image - spanning all 5 cells
+        // Draw carrier image - spanning ship cells
         if (showShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
             for (Ship ship : board.getShips()) {
                 if ("Carrier".equals(ship.getName()) && !ship.isSunk()) {
@@ -155,10 +198,10 @@ public class BoardPanel extends JPanel {
                             maxX = Math.max(maxX, pos.getX());
                             maxY = Math.max(maxY, pos.getY());
                         }
-                        int width = (maxY - minY + 1) * CELL_SIZE;
-                        int height = (maxX - minX + 1) * CELL_SIZE;
-                        int drawX = minY * CELL_SIZE;
-                        int drawY = minX * CELL_SIZE + carrierOffset;
+                        int width = (maxY - minY + 1) * cellWidth;
+                        int height = (maxX - minX + 1) * cellHeight;
+                        int drawX = minY * cellWidth;
+                        int drawY = minX * cellHeight + carrierOffset;
                         Image scaledCarrier = carrierImageRaw.getScaledInstance(width, height, Image.SCALE_SMOOTH);
                         g.drawImage(scaledCarrier, drawX, drawY, null);
                     }
@@ -181,7 +224,7 @@ public class BoardPanel extends JPanel {
         button.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 100), 1));
         button.setFocusPainted(false);
         button.setRolloverEnabled(false);
-        button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+        button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, Math.min(cellWidth, cellHeight) / 3));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         final int finalRow = row;
@@ -212,7 +255,7 @@ public class BoardPanel extends JPanel {
         else if (cellColor.equals(Cell.MISS_GRAY)) {
             button.setForeground(Color.WHITE);
             button.setText("•");
-            button.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
+            button.setFont(new Font("Segoe UI Emoji", Font.BOLD, Math.min(cellWidth, cellHeight) / 2));
             button.setOpaque(true);
             button.setContentAreaFilled(true);
             button.setBackground(new Color(80, 100, 120, 180));
@@ -239,7 +282,7 @@ public class BoardPanel extends JPanel {
                     button.setBackground(new Color(50, 150, 50, 200));
                     button.setText("⛵");
                 }
-                button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+                button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, Math.min(cellWidth, cellHeight) / 4));
             }
         }
     }

@@ -69,7 +69,8 @@ private boolean currentSkillTargetsOwnBoard = false;
 private boolean currentSkillRequiresDirection = false;
 private boolean currentSkillDirectionHorizontal = true;
 
-private TimerPanel turnTimer;
+    private TimerPanel turnTimer;
+    private TimerPanel enemyTurnTimer;
 private boolean timerEnabled = true;
 
 private JLabel playerShipLabel;
@@ -964,7 +965,7 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
  
-private void createBattleUI(CampaignWave wave) {
+ private void createBattleUI(CampaignWave wave) {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
 
@@ -1017,13 +1018,46 @@ private void createBattleUI(CampaignWave wave) {
         updateStatusLabel("⏰ TIME'S UP! Auto-ending turn...", Color.RED);
         endTurn();
     });
-    topPanel.add(turnTimer, BorderLayout.CENTER);
+    
+    enemyTurnTimer = new TimerPanel(10, () -> {
+        System.out.println("⏰ ENEMY TIME'S UP! Switching to player...");
+        updateStatusLabel("⏰ Enemy took too long! Your turn!", Color.GREEN);
+        playerTurn = true;
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
+        if (turnTimer != null) {
+            turnTimer.setTimerLabel("Your Turn");
+            turnTimer.setVisible(true);
+            turnTimer.startTimer();
+        }
+        onPlayerTurnStart();
+        cancelAllSkillTargeting();
+        if (currentSkillPanel != null) currentSkillPanel.updateUI();
+    });
     
     waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
     waveLabel.setFont(new Font("Arial", Font.BOLD, 18));
     waveLabel.setForeground(Color.YELLOW);
-    topPanel.add(waveLabel, BorderLayout.EAST);
+    
+    JPanel centerTopPanel = new JPanel(new BorderLayout());
+    centerTopPanel.setOpaque(false);
+    centerTopPanel.add(waveLabel, BorderLayout.NORTH);
+    
+    JPanel timerPanel = new JPanel(new GridLayout(1, 1, 0, 5));
+    timerPanel.setOpaque(false);
+    turnTimer.setUseCustomLabel(true);
+    turnTimer.setTimerLabel("Your Turn");
+    turnTimer.setVisible(true);
+    enemyTurnTimer.setUseCustomLabel(true);
+    enemyTurnTimer.setTimerLabel("Enemy Turn");
+    enemyTurnTimer.setVisible(false);
+    timerPanel.add(turnTimer);
+    timerPanel.add(enemyTurnTimer);
+    centerTopPanel.add(timerPanel, BorderLayout.CENTER);
+    topPanel.add(centerTopPanel, BorderLayout.CENTER);
     
     JPanel mainContentPanel = new JPanel(new BorderLayout());
     mainContentPanel.setOpaque(false);
@@ -1034,11 +1068,15 @@ private void createBattleUI(CampaignWave wave) {
     
     JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
     boardsPanel.setOpaque(false);
+    boardsPanel.setPreferredSize(new Dimension(1500, 700));
+    boardsPanel.setMaximumSize(new Dimension(1500, 700));
+    boardsPanel.setMinimumSize(new Dimension(1500, 700));
     
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
-    leftPanel.setPreferredSize(new Dimension(900, 900));
-    leftPanel.setMaximumSize(new Dimension(900, 900));
+    leftPanel.setPreferredSize(new Dimension(700, 700));
+    leftPanel.setMaximumSize(new Dimension(700, 700));
+    leftPanel.setMinimumSize(new Dimension(700, 700));
     leftPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
         "⚓ YOUR FLEET",
@@ -1084,8 +1122,9 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
-    rightPanel.setPreferredSize(new Dimension(900, 900));
-    rightPanel.setMaximumSize(new Dimension(900, 900));
+    rightPanel.setPreferredSize(new Dimension(700, 700));
+    rightPanel.setMaximumSize(new Dimension(700, 700));
+    rightPanel.setMinimumSize(new Dimension(700, 700));
     rightPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
         "🏴‍☠️ ENEMY WATERS",
@@ -1172,7 +1211,15 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
                     options[0]);
                 
                 if (choice < 0) {
-                    if (turnTimer != null && timerEnabled) turnTimer.startTimer();
+                    if (enemyTurnTimer != null) {
+                        enemyTurnTimer.stopTimer();
+                        enemyTurnTimer.setVisible(false);
+                    }
+                    if (turnTimer != null && timerEnabled) {
+                        turnTimer.setTimerLabel("Your Turn");
+                        turnTimer.setVisible(true);
+                        turnTimer.startTimer();
+                    }
                     return; 
                 }
                 currentSkillDirectionHorizontal = (choice == 0);
@@ -1254,6 +1301,12 @@ mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
     frame.repaint();
     
     if (playerTurn && timerEnabled && turnTimer != null) {
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
+        turnTimer.setTimerLabel("Your Turn");
+        turnTimer.setVisible(true);
         turnTimer.startTimer();
     }
     
@@ -1675,7 +1728,15 @@ private void executeSkill(int targetX, int targetY) {
         if (shouldEndTurn) {
             playerTurn = false;
             
-            if (turnTimer != null) turnTimer.stopTimer();
+            if (turnTimer != null) {
+                turnTimer.stopTimer();
+                turnTimer.setVisible(false);
+            }
+            if (enemyTurnTimer != null) {
+                enemyTurnTimer.setTimerLabel("Enemy Turn");
+                enemyTurnTimer.setVisible(true);
+                enemyTurnTimer.startTimer();
+            }
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
@@ -1683,7 +1744,13 @@ private void executeSkill(int targetX, int targetY) {
             refreshUI();
             updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
             
+            if (enemyTurnTimer != null) {
+                enemyTurnTimer.stopTimer();
+                enemyTurnTimer.setVisible(false);
+            }
             if (turnTimer != null && timerEnabled) {
+                turnTimer.setTimerLabel("Your Turn");
+                turnTimer.setVisible(true);
                 turnTimer.stopTimer();
                 turnTimer.startTimer();
             }
@@ -1698,7 +1765,13 @@ private void executeSkill(int targetX, int targetY) {
         
         updateStatusLabel("❌ Failed to use " + failedSkillName + "! Check mana/cooldown.", Color.RED);
         
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
         if (turnTimer != null && timerEnabled && playerTurn) {
+            turnTimer.setTimerLabel("Your Turn");
+            turnTimer.setVisible(true);
             turnTimer.stopTimer();
             turnTimer.startTimer();
         }
@@ -1760,7 +1833,15 @@ private void setupClickHandlers() {
                 refreshBoardsOnly();
                 
                 playerTurn = false;
-                if (turnTimer != null) turnTimer.stopTimer();
+                if (turnTimer != null) {
+                    turnTimer.stopTimer();
+                    turnTimer.setVisible(false);
+                }
+                if (enemyTurnTimer != null) {
+                    enemyTurnTimer.setTimerLabel("Enemy Turn");
+                    enemyTurnTimer.setVisible(true);
+                    enemyTurnTimer.startTimer();
+                }
                 Timer timer = new Timer(1200, e -> enemyTurn());
                 timer.setRepeats(false);
                 timer.start();
@@ -2111,7 +2192,15 @@ private void setupClickHandlers() {
             refreshBoardsOnly();
             
             playerTurn = false;
-            if (turnTimer != null) turnTimer.stopTimer();
+            if (turnTimer != null) {
+                turnTimer.stopTimer();
+                turnTimer.setVisible(false);
+            }
+            if (enemyTurnTimer != null) {
+                enemyTurnTimer.setTimerLabel("Enemy Turn");
+                enemyTurnTimer.setVisible(true);
+                enemyTurnTimer.startTimer();
+            }
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
@@ -2268,6 +2357,15 @@ private void setupClickHandlers() {
     }
     
     playerTurn = false;
+    if (turnTimer != null) {
+        turnTimer.stopTimer();
+        turnTimer.setVisible(false);
+    }
+    if (enemyTurnTimer != null) {
+        enemyTurnTimer.setTimerLabel("Enemy Turn");
+        enemyTurnTimer.setVisible(true);
+        enemyTurnTimer.startTimer();
+    }
     
     for (int i = 3; i > 0; i--) {
         final int count = i;
@@ -2284,6 +2382,9 @@ private void setupClickHandlers() {
 }
 
 private void enemyTurn() {
+    if (enemyTurnTimer != null) {
+        enemyTurnTimer.setVisible(true);
+    }
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
     if (playerCharacter instanceof Flue) {
@@ -2302,6 +2403,15 @@ private void enemyTurn() {
             if (skye.shouldSkipEnemyTurn()) {
                 updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
                 playerTurn = true;
+                if (enemyTurnTimer != null) {
+                    enemyTurnTimer.stopTimer();
+                    enemyTurnTimer.setVisible(false);
+                }
+                if (turnTimer != null) {
+                    turnTimer.setTimerLabel("Your Turn");
+                    turnTimer.setVisible(true);
+                    turnTimer.startTimer();
+                }
                 onPlayerTurnStart();
                 
                 
@@ -2409,6 +2519,11 @@ private void enemyTurn() {
         }
         
         playerTurn = true;
+        if (turnTimer != null) {
+            turnTimer.setTimerLabel("Your Turn");
+            turnTimer.setVisible(true);
+            turnTimer.startTimer();
+        }
         onPlayerTurnStart();
         cancelAllSkillTargeting();
         
@@ -2703,6 +2818,12 @@ private void enemyTurn() {
 
     
     if (timerEnabled && turnTimer != null) {
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
+        turnTimer.setTimerLabel("Your Turn");
+        turnTimer.setVisible(true);
         turnTimer.stopTimer(); 
         turnTimer.startTimer();
     }
@@ -2732,6 +2853,12 @@ private void endTurn() {
         if (confirm != JOptionPane.YES_OPTION) {
             
             if (timerEnabled && turnTimer != null) {
+                if (enemyTurnTimer != null) {
+                    enemyTurnTimer.stopTimer();
+                    enemyTurnTimer.setVisible(false);
+                }
+                turnTimer.setTimerLabel("Your Turn");
+                turnTimer.setVisible(true);
                 turnTimer.startTimer();
             }
             return;
@@ -2744,6 +2871,15 @@ private void endTurn() {
     
     
     playerTurn = false;
+    if (turnTimer != null) {
+        turnTimer.stopTimer();
+        turnTimer.setVisible(false);
+    }
+    if (enemyTurnTimer != null) {
+        enemyTurnTimer.setTimerLabel("Enemy Turn");
+        enemyTurnTimer.setVisible(true);
+        enemyTurnTimer.startTimer();
+    }
     
     
     if (currentSkillPanel != null) {

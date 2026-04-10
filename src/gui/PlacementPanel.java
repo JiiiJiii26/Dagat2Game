@@ -80,7 +80,9 @@ public class PlacementPanel extends JPanel {
         resetShipList();
         
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(600, 700));
+        setPreferredSize(new Dimension(700, 800));
+        setMinimumSize(new Dimension(700, 800));
+        setMaximumSize(new Dimension(700, 800));
         
         
         JPanel topPanel = new JPanel();
@@ -126,12 +128,14 @@ public class PlacementPanel extends JPanel {
         
         
         JPanel gridPanel = new JPanel(new GridLayout(SIZE, SIZE, 0, 0));
-        gridPanel.setPreferredSize(new Dimension(500, 500));
+        gridPanel.setPreferredSize(new Dimension(700, 800));
+        gridPanel.setMaximumSize(new Dimension(700, 800));
+        gridPanel.setMinimumSize(new Dimension(700, 800));
         gridPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         // Set boat placement background on the grid panel
         if (placementBackgroundImage != null) {
-            final Image bgImage = placementBackgroundImage.getScaledInstance(500, 500, Image.SCALE_SMOOTH);
+            final Image bgImage = placementBackgroundImage.getScaledInstance(700, 800, Image.SCALE_SMOOTH);
             gridPanel = new JPanel(new GridLayout(SIZE, SIZE, 0, 0)) {
                 @Override
                 protected void paintComponent(Graphics g) {
@@ -139,7 +143,9 @@ public class PlacementPanel extends JPanel {
                     g.drawImage(bgImage, 0, 0, getWidth(), getHeight(), null);
                 }
             };
-            gridPanel.setPreferredSize(new Dimension(500, 500));
+            gridPanel.setPreferredSize(new Dimension(700, 800));
+            gridPanel.setMaximumSize(new Dimension(700, 800));
+            gridPanel.setMinimumSize(new Dimension(700, 800));
             gridPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         }
         
@@ -147,7 +153,14 @@ public class PlacementPanel extends JPanel {
         
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
+                JPanel cellPanel = new JPanel(new BorderLayout());
+                cellPanel.setPreferredSize(new Dimension(70, 80));
+                cellPanel.setMaximumSize(new Dimension(70, 70));
+                cellPanel.setMinimumSize(new Dimension(70, 70));
+                cellPanel.setOpaque(false);
+                
                 JButton button = new JButton();
+                button.setPreferredSize(new Dimension(70, 80));
                 button.putClientProperty("row", row);
                 button.putClientProperty("col", col);
                 
@@ -169,8 +182,9 @@ public class PlacementPanel extends JPanel {
                     }
                 });
                 
+                cellPanel.add(button, BorderLayout.CENTER);
                 gridButtons[row][col] = button;
-                gridPanel.add(button);
+                gridPanel.add(cellPanel);
             }
         }
         
@@ -285,7 +299,7 @@ public class PlacementPanel extends JPanel {
     
     private void setButtonBackground(JButton button) {
         if (placementBackgroundImage != null) {
-            Image scaled = placementBackgroundImage.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+            Image scaled = placementBackgroundImage.getScaledInstance(70, 70, Image.SCALE_SMOOTH);
             button.setIcon(new ImageIcon(scaled));
         } else {
             button.setBackground(Cell.OCEAN_BLUE);

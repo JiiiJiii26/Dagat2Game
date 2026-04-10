@@ -35,7 +35,6 @@ public class Main {
         frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
-        frame.setMinimumSize(new Dimension(900, 700));
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setLocationRelativeTo(null);
 
@@ -361,30 +360,48 @@ public class Main {
 
     JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitPane.setBackground(new Color(25, 25, 112));
-    splitPane.setDividerLocation(700); 
+    splitPane.setDividerLocation(1400); 
+    splitPane.setResizeWeight(0.95);
 
     JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
     boardsPanel.setBackground(new Color(25, 25, 112));
     boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    boardsPanel.setPreferredSize(new Dimension(1500, 800));
+    boardsPanel.setMaximumSize(new Dimension(1500, 800));
+    boardsPanel.setMinimumSize(new Dimension(1500, 800));
 
     
-    JPanel playerPanel = new JPanel(new BorderLayout());
+    JPanel playerPanel = new JPanel();
+    playerPanel.setLayout(new BorderLayout());
     playerPanel.setBackground(new Color(25, 25, 112));
+    playerPanel.setPreferredSize(new Dimension(700, 800));
+    playerPanel.setMaximumSize(new Dimension(700, 800));
+    playerPanel.setMinimumSize(new Dimension(700, 800));
     JLabel playerLabel = new JLabel("YOUR FLEET", SwingConstants.CENTER);
     playerLabel.setFont(new Font("Arial", Font.BOLD, 18));
     playerLabel.setForeground(Color.WHITE);
     playerPanel.add(playerLabel, BorderLayout.NORTH);
     playerBoardPanel = new BoardPanel(true, playerBoard, true);
+    playerBoardPanel.setPreferredSize(new Dimension(700, 800));
+    playerBoardPanel.setMaximumSize(new Dimension(700, 800));
+    playerBoardPanel.setMinimumSize(new Dimension(700, 800));
     playerPanel.add(playerBoardPanel, BorderLayout.CENTER);
 
     
-    JPanel enemyPanel = new JPanel(new BorderLayout());
+    JPanel enemyPanel = new JPanel();
+    enemyPanel.setLayout(new BorderLayout());
     enemyPanel.setBackground(new Color(25, 25, 112));
+    enemyPanel.setPreferredSize(new Dimension(700, 800));
+    enemyPanel.setMaximumSize(new Dimension(700, 800));
+    enemyPanel.setMinimumSize(new Dimension(700, 800));
     JLabel enemyLabel = new JLabel("ENEMY WATERS", SwingConstants.CENTER);
     enemyLabel.setFont(new Font("Arial", Font.BOLD, 18));
     enemyLabel.setForeground(Color.WHITE);
     enemyPanel.add(enemyLabel, BorderLayout.NORTH);
     enemyBoardPanel = new BoardPanel(false, aiPlayer.getBoard(), false);
+    enemyBoardPanel.setPreferredSize(new Dimension(700, 800));
+    enemyBoardPanel.setMaximumSize(new Dimension(700, 800));
+    enemyBoardPanel.setMinimumSize(new Dimension(700, 800));
 
     enemyBoardPanel.setEnemyClickHandler(new BoardPanel.EnemyClickHandler() {
         @Override
