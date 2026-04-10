@@ -2,6 +2,8 @@ package gui;
 
 import game.ShotResult;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import javax.swing.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -24,8 +26,20 @@ public class BoardPanel extends JPanel {
     private Timer animationTimer;
     private ImageIcon carrierIcon;
     private Image carrierImageRaw;
+    private Image battleshipImageRaw;
+    private Image cruiserImageRaw;
+    private Image submarineImageRaw;
+    private Image destroyerImageRaw;
     private int carrierOffset = 0;
     private int carrierDirection = 1;
+    private int battleshipOffset = 0;
+    private int battleshipDirection = 1;
+    private int cruiserOffset = 0;
+    private int cruiserDirection = 1;
+    private int submarineOffset = 0;
+    private int submarineDirection = 1;
+    private int destroyerOffset = 0;
+    private int destroyerDirection = 1;
 
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
@@ -111,6 +125,118 @@ public class BoardPanel extends JPanel {
             repaint();
         });
         carrierTimer.start();
+
+        // Load battleship image
+        try {
+            java.io.File battleshipFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\battleship.png");
+            if (battleshipFile.exists()) {
+                Image img = javax.imageio.ImageIO.read(battleshipFile);
+                if (img != null) {
+                    battleshipImageRaw = img;
+                    System.out.println("✅ Battleship image loaded");
+                } else {
+                    System.out.println("⚠️ Battleship image is null after reading");
+                }
+            } else {
+                System.out.println("⚠️ Battleship file not found: " + battleshipFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to load battleship image: " + e.getMessage());
+        }
+
+        // Battleship bobbing animation (slightly different timing)
+        Timer battleshipTimer = new Timer(120, e -> {
+            battleshipOffset += battleshipDirection;
+            if (battleshipOffset > 2 || battleshipOffset < -2) {
+                battleshipDirection *= -1;
+            }
+            repaint();
+        });
+        battleshipTimer.start();
+
+        // Load cruiser image
+        try {
+            java.io.File cruiserFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\cruiser.png");
+            if (cruiserFile.exists()) {
+                Image img = javax.imageio.ImageIO.read(cruiserFile);
+                if (img != null) {
+                    cruiserImageRaw = img;
+                    System.out.println("✅ Cruiser image loaded");
+                } else {
+                    System.out.println("⚠️ Cruiser image is null after reading");
+                }
+            } else {
+                System.out.println("⚠️ Cruiser file not found: " + cruiserFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to load cruiser image: " + e.getMessage());
+        }
+
+        // Cruiser bobbing animation
+        Timer cruiserTimer = new Timer(110, e -> {
+            cruiserOffset += cruiserDirection;
+            if (cruiserOffset > 2 || cruiserOffset < -2) {
+                cruiserDirection *= -1;
+            }
+            repaint();
+        });
+        cruiserTimer.start();
+
+        // Load submarine image
+        try {
+            java.io.File submarineFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\submarine.png");
+            if (submarineFile.exists()) {
+                Image img = javax.imageio.ImageIO.read(submarineFile);
+                if (img != null) {
+                    submarineImageRaw = img;
+                    System.out.println("✅ Submarine image loaded");
+                } else {
+                    System.out.println("⚠️ Submarine image is null after reading");
+                }
+            } else {
+                System.out.println("⚠️ Submarine file not found: " + submarineFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to load submarine image: " + e.getMessage());
+        }
+
+        // Submarine bobbing animation
+        Timer submarineTimer = new Timer(130, e -> {
+            submarineOffset += submarineDirection;
+            if (submarineOffset > 2 || submarineOffset < -2) {
+                submarineDirection *= -1;
+            }
+            repaint();
+        });
+        submarineTimer.start();
+
+        // Load destroyer image
+        try {
+            java.io.File destroyerFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\destroyer.png");
+            if (destroyerFile.exists()) {
+                Image img = javax.imageio.ImageIO.read(destroyerFile);
+                if (img != null) {
+                    destroyerImageRaw = img;
+                    System.out.println("✅ Destroyer image loaded");
+                } else {
+                    System.out.println("⚠️ Destroyer image is null after reading");
+                }
+            } else {
+                System.out.println("⚠️ Destroyer file not found: " + destroyerFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to load destroyer image: " + e.getMessage());
+        }
+
+        // Destroyer bobbing animation
+        Timer destroyerTimer = new Timer(115, e -> {
+            destroyerOffset += destroyerDirection;
+            if (destroyerOffset > 2 || destroyerOffset < -2) {
+                destroyerDirection *= -1;
+            }
+            repaint();
+        });
+        destroyerTimer.start();
 
         initializeLayout();
     }
@@ -198,14 +324,298 @@ public class BoardPanel extends JPanel {
                             maxX = Math.max(maxX, pos.getX());
                             maxY = Math.max(maxY, pos.getY());
                         }
-                        int width = (maxY - minY + 1) * cellWidth;
-                        int height = (maxX - minX + 1) * cellHeight;
+                        // Determine ship orientation and swap dimensions for horizontal ships
+                        boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                        int shipWidth, shipHeight;
+                        // Make horizontal ships 30% wider, vertical ships 200% wider
+                        if (isHorizontal) {
+                            shipWidth = (maxY - minY + 1) * cellWidth;
+                            shipHeight = (int)(cellHeight * 1.3);
+                        } else {
+                            shipWidth = (int)(cellWidth * 1.7);
+                            shipHeight = (maxX - minX + 1) * cellHeight;
+                        }
                         int drawX = minY * cellWidth;
                         int drawY = minX * cellHeight + carrierOffset;
-                        Image scaledCarrier = carrierImageRaw.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-                        g.drawImage(scaledCarrier, drawX, drawY, null);
+                        
+                        // For vertical ships, center the image properly
+                        if (!isHorizontal && carrierImageRaw != null) {
+                            // Calculate offset to center the rotated image
+                            int extraWidth = shipWidth - cellWidth;
+                            int offsetX = extraWidth / 2;
+                            
+                            // Create rotated version of the image
+                            int srcW = carrierImageRaw.getWidth(null);
+                            int srcH = carrierImageRaw.getHeight(null);
+                            BufferedImage rotatedCarrier = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                            Graphics2D g2d = rotatedCarrier.createGraphics();
+                            g2d.translate(srcH / 2, srcW / 2);
+                            g2d.rotate(Math.PI / 2);
+                            g2d.drawImage(carrierImageRaw, -srcW / 2, -srcH / 2, null);
+                            g2d.dispose();
+                            
+                            // Scale to fit
+                            Image scaledRotated = rotatedCarrier.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                            g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
+                        } else if (carrierImageRaw != null) {
+                            // For horizontal ships, center vertically
+                            int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                            int offsetY = extraHeight / 2;
+                            int centeredDrawY = drawY - offsetY;
+                            
+                            Image scaledCarrier = carrierImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                            g.drawImage(scaledCarrier, drawX, centeredDrawY, null);
+                        }
                     }
                     break;
+                }
+            }
+            
+            // Draw battleship image
+            if (battleshipImageRaw != null && !board.getShips().isEmpty()) {
+                for (Ship ship : board.getShips()) {
+                    if ("Battleship".equals(ship.getName()) && !ship.isSunk()) {
+                        List<Ship.Coordinate> positions = ship.getPositions();
+                        if (positions.size() >= 2) {
+                            int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                            int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                            for (Ship.Coordinate pos : positions) {
+                                minX = Math.min(minX, pos.getX());
+                                minY = Math.min(minY, pos.getY());
+                                maxX = Math.max(maxX, pos.getX());
+                                maxY = Math.max(maxY, pos.getY());
+                            }
+                            // Determine ship orientation
+                            boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                            int shipWidth, shipHeight;
+                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            if (isHorizontal) {
+                                shipWidth = (maxY - minY + 1) * cellWidth;
+                                shipHeight = (int)(cellHeight * 1.3);
+                            } else {
+                                shipWidth = (int)(cellWidth * 1.7);
+                                shipHeight = (maxX - minX + 1) * cellHeight;
+                            }
+                            int drawX = minY * cellWidth;
+                            int drawY = minX * cellHeight + battleshipOffset;
+                            
+                            // For vertical ships, center the image properly
+                            if (!isHorizontal && battleshipImageRaw != null) {
+                                // Calculate offset to center the rotated image
+                                int extraWidth = shipWidth - cellWidth;
+                                int offsetX = extraWidth / 2;
+                                
+                                // Create rotated version of the image
+                                int srcW = battleshipImageRaw.getWidth(null);
+                                int srcH = battleshipImageRaw.getHeight(null);
+                                BufferedImage rotatedBattleship = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                                Graphics2D g2d = rotatedBattleship.createGraphics();
+                                g2d.translate(srcH / 2, srcW / 2);
+                                g2d.rotate(Math.PI / 2);
+                                g2d.drawImage(battleshipImageRaw, -srcW / 2, -srcH / 2, null);
+                                g2d.dispose();
+                                
+                                // Scale to fit
+                                Image scaledRotated = rotatedBattleship.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
+                            } else if (battleshipImageRaw != null) {
+                                // For horizontal ships, center vertically
+                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int offsetY = extraHeight / 2;
+                                int centeredDrawY = drawY - offsetY;
+                                
+                                Image scaledBattleship = battleshipImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledBattleship, drawX, centeredDrawY, null);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Draw cruiser image
+            if (cruiserImageRaw != null && board != null && !board.getShips().isEmpty()) {
+                for (Ship ship : board.getShips()) {
+                    if ("Cruiser".equals(ship.getName()) && !ship.isSunk()) {
+                        List<Ship.Coordinate> positions = ship.getPositions();
+                        if (positions.size() >= 2) {
+                            int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                            int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                            for (Ship.Coordinate pos : positions) {
+                                minX = Math.min(minX, pos.getX());
+                                minY = Math.min(minY, pos.getY());
+                                maxX = Math.max(maxX, pos.getX());
+                                maxY = Math.max(maxY, pos.getY());
+                            }
+                            // Determine ship orientation
+                            boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                            int shipWidth, shipHeight;
+                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            if (isHorizontal) {
+                                shipWidth = (maxY - minY + 1) * cellWidth;
+                                shipHeight = (int)(cellHeight * 1.3);
+                            } else {
+                                shipWidth = (int)(cellWidth * 1.7);
+                                shipHeight = (maxX - minX + 1) * cellHeight;
+                            }
+                            int drawX = minY * cellWidth;
+                            int drawY = minX * cellHeight + cruiserOffset;
+                            
+                            // For vertical ships, center the image properly
+                            if (!isHorizontal && cruiserImageRaw != null) {
+                                // Calculate offset to center the rotated image
+                                int extraWidth = shipWidth - cellWidth;
+                                int offsetX = extraWidth / 2;
+                                
+                                // Create rotated version of the image
+                                int srcW = cruiserImageRaw.getWidth(null);
+                                int srcH = cruiserImageRaw.getHeight(null);
+                                BufferedImage rotatedCruiser = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                                Graphics2D g2d = rotatedCruiser.createGraphics();
+                                g2d.translate(srcH / 2, srcW / 2);
+                                g2d.rotate(Math.PI / 2);
+                                g2d.drawImage(cruiserImageRaw, -srcW / 2, -srcH / 2, null);
+                                g2d.dispose();
+                                
+                                // Scale to fit
+                                Image scaledRotated = rotatedCruiser.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
+                            } else if (cruiserImageRaw != null) {
+                                // For horizontal ships, center vertically
+                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int offsetY = extraHeight / 2;
+                                int centeredDrawY = drawY - offsetY;
+                                
+                                Image scaledCruiser = cruiserImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledCruiser, drawX, centeredDrawY, null);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Draw submarine image
+            if (submarineImageRaw != null && board != null && !board.getShips().isEmpty()) {
+                for (Ship ship : board.getShips()) {
+                    if ("Submarine".equals(ship.getName()) && !ship.isSunk()) {
+                        List<Ship.Coordinate> positions = ship.getPositions();
+                        if (positions.size() >= 2) {
+                            int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                            int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                            for (Ship.Coordinate pos : positions) {
+                                minX = Math.min(minX, pos.getX());
+                                minY = Math.min(minY, pos.getY());
+                                maxX = Math.max(maxX, pos.getX());
+                                maxY = Math.max(maxY, pos.getY());
+                            }
+                            // Determine ship orientation
+                            boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                            int shipWidth, shipHeight;
+                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            if (isHorizontal) {
+                                shipWidth = (maxY - minY + 1) * cellWidth;
+                                shipHeight = (int)(cellHeight * 1.3);
+                            } else {
+                                shipWidth = (int)(cellWidth * 1.7);
+                                shipHeight = (maxX - minX + 1) * cellHeight;
+                            }
+                            int drawX = minY * cellWidth;
+                            int drawY = minX * cellHeight + submarineOffset;
+                            
+                            // For vertical ships, center the image properly
+                            if (!isHorizontal && submarineImageRaw != null) {
+                                // Calculate offset to center the rotated image
+                                int extraWidth = shipWidth - cellWidth;
+                                int offsetX = extraWidth / 2;
+                                
+                                // Create rotated version of the image
+                                int srcW = submarineImageRaw.getWidth(null);
+                                int srcH = submarineImageRaw.getHeight(null);
+                                BufferedImage rotatedSubmarine = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                                Graphics2D g2d = rotatedSubmarine.createGraphics();
+                                g2d.translate(srcH / 2, srcW / 2);
+                                g2d.rotate(Math.PI / 2);
+                                g2d.drawImage(submarineImageRaw, -srcW / 2, -srcH / 2, null);
+                                g2d.dispose();
+                                
+                                // Scale to fit
+                                Image scaledRotated = rotatedSubmarine.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
+                            } else if (submarineImageRaw != null) {
+                                // For horizontal ships, center vertically
+                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int offsetY = extraHeight / 2;
+                                int centeredDrawY = drawY - offsetY;
+                                
+                                Image scaledSubmarine = submarineImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledSubmarine, drawX, centeredDrawY, null);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Draw destroyer image
+            if (destroyerImageRaw != null && board != null && !board.getShips().isEmpty()) {
+                for (Ship ship : board.getShips()) {
+                    if ("Destroyer".equals(ship.getName()) && !ship.isSunk()) {
+                        List<Ship.Coordinate> positions = ship.getPositions();
+                        if (positions.size() >= 2) {
+                            int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                            int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                            for (Ship.Coordinate pos : positions) {
+                                minX = Math.min(minX, pos.getX());
+                                minY = Math.min(minY, pos.getY());
+                                maxX = Math.max(maxX, pos.getX());
+                                maxY = Math.max(maxY, pos.getY());
+                            }
+                            // Determine ship orientation
+                            boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                            int shipWidth, shipHeight;
+                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            if (isHorizontal) {
+                                shipWidth = (maxY - minY + 1) * cellWidth;
+                                shipHeight = (int)(cellHeight * 1.3);
+                            } else {
+                                shipWidth = (int)(cellWidth * 1.7);
+                                shipHeight = (maxX - minX + 1) * cellHeight;
+                            }
+                            int drawX = minY * cellWidth;
+                            int drawY = minX * cellHeight + destroyerOffset;
+                            
+                            // For vertical ships, center the image properly
+                            if (!isHorizontal && destroyerImageRaw != null) {
+                                // Calculate offset to center the rotated image
+                                int extraWidth = shipWidth - cellWidth;
+                                int offsetX = extraWidth / 2;
+                                
+                                // Create rotated version of the image
+                                int srcW = destroyerImageRaw.getWidth(null);
+                                int srcH = destroyerImageRaw.getHeight(null);
+                                BufferedImage rotatedDestroyer = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                                Graphics2D g2d = rotatedDestroyer.createGraphics();
+                                g2d.translate(srcH / 2, srcW / 2);
+                                g2d.rotate(Math.PI / 2);
+                                g2d.drawImage(destroyerImageRaw, -srcW / 2, -srcH / 2, null);
+                                g2d.dispose();
+                                
+                                // Scale to fit
+                                Image scaledRotated = rotatedDestroyer.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
+                            } else if (destroyerImageRaw != null) {
+                                // For horizontal ships, center vertically
+                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int offsetY = extraHeight / 2;
+                                int centeredDrawY = drawY - offsetY;
+                                
+                                Image scaledDestroyer = destroyerImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                g.drawImage(scaledDestroyer, drawX, centeredDrawY, null);
+                            }
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -274,6 +684,22 @@ public class BoardPanel extends JPanel {
                     button.setText("🦠");
                 } else if (cell.getShip() != null && "Carrier".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
                     // Make transparent so carrier image shows through from paintComponent
+                    button.setOpaque(false);
+                    button.setContentAreaFilled(false);
+                } else if (cell.getShip() != null && "Battleship".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                    // Make transparent so battleship image shows through from paintComponent
+                    button.setOpaque(false);
+                    button.setContentAreaFilled(false);
+                } else if (cell.getShip() != null && "Cruiser".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                    // Make transparent so cruiser image shows through from paintComponent
+                    button.setOpaque(false);
+                    button.setContentAreaFilled(false);
+                } else if (cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                    // Make transparent so submarine image shows through from paintComponent
+                    button.setOpaque(false);
+                    button.setContentAreaFilled(false);
+                } else if (cell.getShip() != null && "Destroyer".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                    // Make transparent so destroyer image shows through from paintComponent
                     button.setOpaque(false);
                     button.setContentAreaFilled(false);
                 } else {
