@@ -324,13 +324,12 @@ public class BoardPanel extends JPanel {
                             maxX = Math.max(maxX, pos.getX());
                             maxY = Math.max(maxY, pos.getY());
                         }
-                        // Determine ship orientation and swap dimensions for horizontal ships
                         boolean isHorizontal = (maxY - minY) > (maxX - minX);
                         int shipWidth, shipHeight;
-                        // Make horizontal ships 30% wider, vertical ships 200% wider
+                        // Make horizontal and vertical ships the same size
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.3);
+                            shipHeight = (int)(cellHeight * 1.7);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
@@ -359,7 +358,7 @@ public class BoardPanel extends JPanel {
                             g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
                         } else if (carrierImageRaw != null) {
                             // For horizontal ships, center vertically
-                            int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                            int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
                             int offsetY = extraHeight / 2;
                             int centeredDrawY = drawY - offsetY;
                             
@@ -388,10 +387,10 @@ public class BoardPanel extends JPanel {
                             // Determine ship orientation
                             boolean isHorizontal = (maxY - minY) > (maxX - minX);
                             int shipWidth, shipHeight;
-                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.3);
+                                shipHeight = (int)(cellHeight * 1.7);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -420,7 +419,7 @@ public class BoardPanel extends JPanel {
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
                             } else if (battleshipImageRaw != null) {
                                 // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
                                 int offsetY = extraHeight / 2;
                                 int centeredDrawY = drawY - offsetY;
                                 
@@ -450,10 +449,10 @@ public class BoardPanel extends JPanel {
                             // Determine ship orientation
                             boolean isHorizontal = (maxY - minY) > (maxX - minX);
                             int shipWidth, shipHeight;
-                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.3);
+                                shipHeight = (int)(cellHeight * 1.7);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -482,7 +481,7 @@ public class BoardPanel extends JPanel {
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
                             } else if (cruiserImageRaw != null) {
                                 // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
                                 int offsetY = extraHeight / 2;
                                 int centeredDrawY = drawY - offsetY;
                                 
@@ -512,10 +511,10 @@ public class BoardPanel extends JPanel {
                             // Determine ship orientation
                             boolean isHorizontal = (maxY - minY) > (maxX - minX);
                             int shipWidth, shipHeight;
-                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.3);
+                                shipHeight = (int)(cellHeight * 1.7);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -544,7 +543,7 @@ public class BoardPanel extends JPanel {
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
                             } else if (submarineImageRaw != null) {
                                 // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
                                 int offsetY = extraHeight / 2;
                                 int centeredDrawY = drawY - offsetY;
                                 
@@ -574,10 +573,10 @@ public class BoardPanel extends JPanel {
                             // Determine ship orientation
                             boolean isHorizontal = (maxY - minY) > (maxX - minX);
                             int shipWidth, shipHeight;
-                            // Make horizontal ships 30% wider, vertical ships 200% wider
+                            // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.3);
+                                shipHeight = (int)(cellHeight * 1.7);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -606,7 +605,7 @@ public class BoardPanel extends JPanel {
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
                             } else if (destroyerImageRaw != null) {
                                 // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.3) - cellHeight;
+                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
                                 int offsetY = extraHeight / 2;
                                 int centeredDrawY = drawY - offsetY;
                                 
