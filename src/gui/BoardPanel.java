@@ -40,6 +40,12 @@ public class BoardPanel extends JPanel {
     private int submarineDirection = 1;
     private int destroyerOffset = 0;
     private int destroyerDirection = 1;
+    private Image dmgCellImageRaw;
+    private int dmgCellOffset = 0;
+    private int dmgCellDirection = 1;
+    private List<Image> smokeFrames;
+    private int currentSmokeFrame = 0;
+    private Timer smokeAnimationTimer;
 
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
@@ -237,6 +243,62 @@ public class BoardPanel extends JPanel {
             repaint();
         });
         destroyerTimer.start();
+
+        // Load dmg_cell image
+        try {
+            java.io.File dmgCellFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\dmg_cell.png");
+            if (dmgCellFile.exists()) {
+                Image img = javax.imageio.ImageIO.read(dmgCellFile);
+                if (img != null) {
+                    dmgCellImageRaw = img;
+                    System.out.println("✅ Damage cell image loaded");
+                } else {
+                    System.out.println("⚠️ Damage cell image is null after reading");
+                }
+            } else {
+                System.out.println("⚠️ Damage cell file not found: " + dmgCellFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to load damage cell image: " + e.getMessage());
+        }
+
+        // Damage cell bobbing animation
+        Timer dmgCellTimer = new Timer(100, e -> {
+            dmgCellOffset += dmgCellDirection;
+            if (dmgCellOffset > 1 || dmgCellOffset < -1) {
+                dmgCellDirection *= -1;
+            }
+            repaint();
+        });
+        dmgCellTimer.start();
+
+        // Load smoke animation frames
+        smokeFrames = new ArrayList<>();
+        String smokeBasePath = "D:\\GameProj\\Battleship Game\\assets\\smk";
+        
+        for (int i = 1; i <= 4; i++) {
+            try {
+                String imagePath = smokeBasePath + i + ".png";
+                java.io.File file = new java.io.File(imagePath);
+                if (file.exists()) {
+                    Image img = javax.imageio.ImageIO.read(file);
+                    if (img != null) {
+                        smokeFrames.add(img);
+                    }
+                }
+            } catch (Exception e) {
+                // Silent fail
+            }
+        }
+        
+        // Smoke animation timer
+        if (!smokeFrames.isEmpty()) {
+            smokeAnimationTimer = new Timer(150, e -> {
+                currentSmokeFrame = (currentSmokeFrame + 1) % smokeFrames.size();
+                repaint();
+            });
+            smokeAnimationTimer.start();
+        }
 
         initializeLayout();
     }
@@ -617,6 +679,57 @@ public class BoardPanel extends JPanel {
                     }
                 }
             }
+            
+            // Draw damage cell image for hit cells with fire/smoke effect
+            if (dmgCellImageRaw != null && board != null) {
+                for (int row = 0; row < SIZE; row++) {
+                    for (int col = 0; col < SIZE; col++) {
+                        Cell cell = board.getCell(row, col);
+                        if (cell.getColor().equals(Cell.HIT_RED) || cell.getColor().equals(Cell.INFECTED_HIT)) {
+                            int cellDrawX = col * cellWidth;
+                            int cellDrawY = row * cellHeight + dmgCellOffset;
+                            
+                            // Draw the damage cell image
+                            Image scaledDmgCell = dmgCellImageRaw.getScaledInstance(cellWidth, cellHeight, Image.SCALE_SMOOTH);
+                            g.drawImage(scaledDmgCell, cellDrawX, cellDrawY, null);
+                            
+                            // Draw smoke animation frames
+                            if (!smokeFrames.isEmpty()) {
+                                Image smokeFrame = smokeFrames.get(currentSmokeFrame);
+                                int smokeWidth = cellWidth;
+                                int smokeHeight = cellHeight;
+                                Image scaledSmoke = smokeFrame.getScaledInstance(smokeWidth, smokeHeight, Image.SCALE_SMOOTH);
+                                // Draw smoke slightly above the damage cell
+                                g.drawImage(scaledSmoke, cellDrawX, cellDrawY - 5, null);
+                            } else {
+                                // Fallback: programmatic smoke if frames not loaded
+                                Graphics2D g2d = (Graphics2D) g;
+                                long time = System.currentTimeMillis();
+                                
+                                for (int i = 0; i < 3; i++) {
+                                    float offset = (float)((time / 500.0 + i * 0.7) % 1.0);
+                                    int smokeY = cellDrawY + cellHeight - (int)(offset * cellHeight);
+                                    int smokeX = cellDrawX + cellWidth / 2 + (int)(Math.sin(time / 200.0 + i) * cellWidth / 4);
+                                    int particleSize = 5 + (int)(offset * 10);
+                                    int alpha = (int)(150 * (1 - offset));
+                                    
+                                    g2d.setColor(new Color(100, 100, 100, alpha));
+                                    g2d.fillOval(smokeX - particleSize / 2, smokeY - particleSize / 2, particleSize, particleSize);
+                                    
+                                    if (offset < 0.3) {
+                                        int fireAlpha = (int)(200 * (1 - offset / 0.3));
+                                        g2d.setColor(new Color(255, 100 + (int)(offset * 200), 0, fireAlpha));
+                                        g2d.fillOval(smokeX - particleSize / 2, smokeY + particleSize / 2, particleSize * 2, particleSize * 2);
+                                    }
+                                }
+                                
+                                g2d.setColor(new Color(255, 50, 0, 80));
+                                g2d.fillOval(cellDrawX + 5, cellDrawY + cellHeight - 15, cellWidth - 10, 15);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -657,9 +770,8 @@ public class BoardPanel extends JPanel {
             } else {
                 button.setText("💥");
             }
-            button.setOpaque(true);
-            button.setContentAreaFilled(true);
-            button.setBackground(new Color(180, 50, 40, 200));
+            button.setOpaque(false);
+            button.setContentAreaFilled(false);
         } 
         else if (cellColor.equals(Cell.MISS_GRAY)) {
             button.setForeground(Color.WHITE);
