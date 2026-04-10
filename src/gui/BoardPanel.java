@@ -20,7 +20,12 @@ public class BoardPanel extends JPanel {
     private List<Image> oceanFrames;
     private int currentFrameIndex = 0;
     private Timer animationTimer;
-    
+    private ImageIcon carrierIcon;
+    private Image carrierImageRaw;
+    private final int CELL_SIZE = 90;
+    private int carrierOffset = 0;
+    private int carrierDirection = 1;
+
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
     }
@@ -70,6 +75,35 @@ public class BoardPanel extends JPanel {
             animationTimer.start();
         }
 
+        // Load carrier image
+        try {
+            java.io.File carrierFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\carrier.png");
+            if (carrierFile.exists()) {
+                Image img = javax.imageio.ImageIO.read(carrierFile);
+                if (img != null) {
+                    // Pre-scale to fit 90px cells (5 cells = 450px wide)
+                    carrierImageRaw = img.getScaledInstance(450, 90, Image.SCALE_SMOOTH);
+                    System.out.println("✅ Carrier image loaded and pre-scaled to 450x90");
+                } else {
+                    System.out.println("⚠️ Carrier image is null after reading");
+                }
+            } else {
+                System.out.println("⚠️ Carrier file not found: " + carrierFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Failed to load carrier image: " + e.getMessage());
+        }
+
+        // Carrier bobbing animation
+        Timer carrierTimer = new Timer(100, e -> {
+            carrierOffset += carrierDirection;
+            if (carrierOffset > 3 || carrierOffset < -3) {
+                carrierDirection *= -1;
+            }
+            repaint();
+        });
+        carrierTimer.start();
+
         setLayout(null);
         setPreferredSize(new Dimension(900, 900));
         setMinimumSize(new Dimension(900, 900));
@@ -78,7 +112,7 @@ public class BoardPanel extends JPanel {
         // Create grid buttons directly in this panel
         gridButtons = new JButton[SIZE][SIZE];
         
-        int cellSize = 90;
+        int cellSize = CELL_SIZE;
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 Cell cell = board.getCell(row, col);
@@ -93,6 +127,7 @@ public class BoardPanel extends JPanel {
     
     @Override
     protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
         // Draw the ocean background first
         if (!oceanFrames.isEmpty()) {
             Image img = oceanFrames.get(currentFrameIndex);
@@ -104,6 +139,32 @@ public class BoardPanel extends JPanel {
             // Fallback
             g.setColor(new Color(20, 40, 60));
             g.fillRect(0, 0, 900, 900);
+        }
+        
+        // Draw carrier image - spanning all 5 cells
+        if (showShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
+            for (Ship ship : board.getShips()) {
+                if ("Carrier".equals(ship.getName()) && !ship.isSunk()) {
+                    List<Ship.Coordinate> positions = ship.getPositions();
+                    if (positions.size() >= 2) {
+                        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                        for (Ship.Coordinate pos : positions) {
+                            minX = Math.min(minX, pos.getX());
+                            minY = Math.min(minY, pos.getY());
+                            maxX = Math.max(maxX, pos.getX());
+                            maxY = Math.max(maxY, pos.getY());
+                        }
+                        int width = (maxY - minY + 1) * CELL_SIZE;
+                        int height = (maxX - minX + 1) * CELL_SIZE;
+                        int drawX = minY * CELL_SIZE;
+                        int drawY = minX * CELL_SIZE + carrierOffset;
+                        Image scaledCarrier = carrierImageRaw.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                        g.drawImage(scaledCarrier, drawX, drawY, null);
+                    }
+                    break;
+                }
+            }
         }
     }
     
@@ -158,14 +219,24 @@ public class BoardPanel extends JPanel {
         } 
         else {
             if ((showShips || cell.isRevealed()) && cell.hasShip() && !cell.isFiredUpon()) {
-                button.setOpaque(true);
-                button.setContentAreaFilled(true);
-                button.setBackground(new Color(50, 150, 50, 200));
                 if (cell.getShip() != null && cell.getShip().isShielded()) {
+                    button.setOpaque(true);
+                    button.setContentAreaFilled(true);
+                    button.setBackground(new Color(50, 150, 50, 200));
                     button.setText("🛡️");
                 } else if (cell.getShip() != null && cell.getShip().isInfected()) {
+                    button.setOpaque(true);
+                    button.setContentAreaFilled(true);
+                    button.setBackground(new Color(50, 150, 50, 200));
                     button.setText("🦠");
+                } else if (cell.getShip() != null && "Carrier".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                    // Make transparent so carrier image shows through from paintComponent
+                    button.setOpaque(false);
+                    button.setContentAreaFilled(false);
                 } else {
+                    button.setOpaque(true);
+                    button.setContentAreaFilled(true);
+                    button.setBackground(new Color(50, 150, 50, 200));
                     button.setText("⛵");
                 }
                 button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));

@@ -1037,8 +1037,8 @@ private void createBattleUI(CampaignWave wave) {
     
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
-    leftPanel.setBackground(new Color(0, 50, 0, 120));
-    leftPanel.setPreferredSize(new Dimension(800, 800));
+    leftPanel.setPreferredSize(new Dimension(900, 900));
+    leftPanel.setMaximumSize(new Dimension(900, 900));
     leftPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
         "⚓ YOUR FLEET",
@@ -1084,8 +1084,8 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
-    rightPanel.setBackground(new Color(0, 50, 0, 120));
     rightPanel.setPreferredSize(new Dimension(900, 900));
+    rightPanel.setMaximumSize(new Dimension(900, 900));
     rightPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
         "🏴‍☠️ ENEMY WATERS",
