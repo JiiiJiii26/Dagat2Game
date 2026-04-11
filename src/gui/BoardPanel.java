@@ -16,8 +16,8 @@ public class BoardPanel extends JPanel {
     private JButton[][] gridButtons;
     private Board board;
     private final int SIZE = 10;
-    private int cellWidth = 90;   // CUSTOMIZABLE
-    private int cellHeight = 58;   // CUSTOMIZABLE
+    private int cellWidth = 90;
+    private int cellHeight = 58;
     private boolean isPlayerBoard;  
     private boolean showShips;  
     private PlayerClickHandler playerClickHandler;
@@ -55,7 +55,6 @@ public class BoardPanel extends JPanel {
         this.playerClickHandler = handler;
     }
     
-    // Constructor with custom cell size
     public BoardPanel(boolean isPlayerBoard, Board board, int cellWidth, int cellHeight) {
         this(isPlayerBoard, board, isPlayerBoard);
         this.cellWidth = cellWidth;
@@ -76,7 +75,6 @@ public class BoardPanel extends JPanel {
         this.board = board;
         this.showShips = showShips;  
 
-        // Load ocean floor JPG frames
         oceanFrames = new ArrayList<>();
         String basePath = "D:\\GameProj\\Battleship Game\\assets\\oceanfloor";
         
@@ -90,22 +88,19 @@ public class BoardPanel extends JPanel {
                         oceanFrames.add(img);
                     }
                 }
-            } catch (Exception e) {
-                // Silent fail
-            }
-        }
-        
-        // Start animation timer
-        if (!oceanFrames.isEmpty()) {
+} catch (Exception e) {
+             }
+         }
+         
+         if (!oceanFrames.isEmpty()) {
             animationTimer = new Timer(500, e -> {
                 currentFrameIndex = (currentFrameIndex + 1) % oceanFrames.size();
                 repaint();
             });
-            animationTimer.start();
-        }
+        animationTimer.start();
+    }
 
-        // Load carrier image
-        try {
+    try {
             java.io.File carrierFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\carrier.png");
             if (carrierFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(carrierFile);
@@ -122,7 +117,6 @@ public class BoardPanel extends JPanel {
             System.out.println("⚠️ Failed to load carrier image: " + e.getMessage());
         }
 
-        // Carrier bobbing animation
         Timer carrierTimer = new Timer(100, e -> {
             carrierOffset += carrierDirection;
             if (carrierOffset > 3 || carrierOffset < -3) {
@@ -132,7 +126,6 @@ public class BoardPanel extends JPanel {
         });
         carrierTimer.start();
 
-        // Load battleship image
         try {
             java.io.File battleshipFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\battleship.png");
             if (battleshipFile.exists()) {
@@ -150,7 +143,6 @@ public class BoardPanel extends JPanel {
             System.out.println("⚠️ Failed to load battleship image: " + e.getMessage());
         }
 
-        // Battleship bobbing animation (slightly different timing)
         Timer battleshipTimer = new Timer(120, e -> {
             battleshipOffset += battleshipDirection;
             if (battleshipOffset > 2 || battleshipOffset < -2) {
@@ -160,7 +152,6 @@ public class BoardPanel extends JPanel {
         });
         battleshipTimer.start();
 
-        // Load cruiser image
         try {
             java.io.File cruiserFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\cruiser.png");
             if (cruiserFile.exists()) {
@@ -178,7 +169,6 @@ public class BoardPanel extends JPanel {
             System.out.println("⚠️ Failed to load cruiser image: " + e.getMessage());
         }
 
-        // Cruiser bobbing animation
         Timer cruiserTimer = new Timer(110, e -> {
             cruiserOffset += cruiserDirection;
             if (cruiserOffset > 2 || cruiserOffset < -2) {
@@ -188,7 +178,6 @@ public class BoardPanel extends JPanel {
         });
         cruiserTimer.start();
 
-        // Load submarine image
         try {
             java.io.File submarineFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\submarine.png");
             if (submarineFile.exists()) {
@@ -206,7 +195,6 @@ public class BoardPanel extends JPanel {
             System.out.println("⚠️ Failed to load submarine image: " + e.getMessage());
         }
 
-        // Submarine bobbing animation
         Timer submarineTimer = new Timer(130, e -> {
             submarineOffset += submarineDirection;
             if (submarineOffset > 2 || submarineOffset < -2) {
@@ -216,7 +204,6 @@ public class BoardPanel extends JPanel {
         });
         submarineTimer.start();
 
-        // Load destroyer image
         try {
             java.io.File destroyerFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\destroyer.png");
             if (destroyerFile.exists()) {
@@ -234,7 +221,6 @@ public class BoardPanel extends JPanel {
             System.out.println("⚠️ Failed to load destroyer image: " + e.getMessage());
         }
 
-        // Destroyer bobbing animation
         Timer destroyerTimer = new Timer(115, e -> {
             destroyerOffset += destroyerDirection;
             if (destroyerOffset > 2 || destroyerOffset < -2) {
@@ -244,7 +230,6 @@ public class BoardPanel extends JPanel {
         });
         destroyerTimer.start();
 
-        // Load dmg_cell image
         try {
             java.io.File dmgCellFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\dmg_cell.png");
             if (dmgCellFile.exists()) {
@@ -262,7 +247,6 @@ public class BoardPanel extends JPanel {
             System.out.println("⚠️ Failed to load damage cell image: " + e.getMessage());
         }
 
-        // Damage cell bobbing animation
         Timer dmgCellTimer = new Timer(100, e -> {
             dmgCellOffset += dmgCellDirection;
             if (dmgCellOffset > 1 || dmgCellOffset < -1) {
@@ -272,7 +256,6 @@ public class BoardPanel extends JPanel {
         });
         dmgCellTimer.start();
 
-        // Load smoke animation frames
         smokeFrames = new ArrayList<>();
         String smokeBasePath = "D:\\GameProj\\Battleship Game\\assets\\smk";
         
@@ -287,11 +270,9 @@ public class BoardPanel extends JPanel {
                     }
                 }
             } catch (Exception e) {
-                // Silent fail
             }
         }
         
-        // Smoke animation timer
         if (!smokeFrames.isEmpty()) {
             smokeAnimationTimer = new Timer(150, e -> {
                 currentSmokeFrame = (currentSmokeFrame + 1) % smokeFrames.size();
@@ -311,7 +292,6 @@ public class BoardPanel extends JPanel {
         setMinimumSize(new Dimension(panelWidth, panelHeight));
         setBounds(0, 0, panelWidth, panelHeight);
         
-        // Create grid buttons
         gridButtons = new JButton[SIZE][SIZE];
         
         for (int row = 0; row < SIZE; row++) {
@@ -333,7 +313,6 @@ public class BoardPanel extends JPanel {
         repaint();
     }
     
-    // Setters for custom sizing after creation
     public void setCellSize(int width, int height) {
         this.cellWidth = width;
         this.cellHeight = height;
@@ -350,7 +329,6 @@ public class BoardPanel extends JPanel {
         reinitializeLayout();
     }
     
-    // Getters
     public int getCellWidth() { return cellWidth; }
     public int getCellHeight() { return cellHeight; }
     public int getBoardWidth() { return SIZE * cellWidth; }
@@ -359,20 +337,16 @@ public class BoardPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Draw the ocean background first
         if (!oceanFrames.isEmpty()) {
             Image img = oceanFrames.get(currentFrameIndex);
             if (img != null) {
-                // Draw scaled to fill the entire panel
                 g.drawImage(img, 0, 0, getBoardWidth(), getBoardHeight(), this);
             }
         } else {
-            // Fallback
             g.setColor(new Color(20, 40, 60));
             g.fillRect(0, 0, getBoardWidth(), getBoardHeight());
         }
         
-        // Draw carrier image - spanning ship cells
         if (showShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
             for (Ship ship : board.getShips()) {
                 if ("Carrier".equals(ship.getName()) && !ship.isSunk()) {
@@ -388,7 +362,6 @@ public class BoardPanel extends JPanel {
                         }
                         boolean isHorizontal = (maxY - minY) > (maxX - minX);
                         int shipWidth, shipHeight;
-                        // Make horizontal and vertical ships the same size
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
                             shipHeight = (int)(cellHeight * 1.7);
@@ -432,7 +405,6 @@ public class BoardPanel extends JPanel {
                 }
             }
             
-            // Draw battleship image
             if (battleshipImageRaw != null && !board.getShips().isEmpty()) {
                 for (Ship ship : board.getShips()) {
                     if ("Battleship".equals(ship.getName()) && !ship.isSunk()) {
@@ -446,10 +418,8 @@ public class BoardPanel extends JPanel {
                                 maxX = Math.max(maxX, pos.getX());
                                 maxY = Math.max(maxY, pos.getY());
                             }
-                            // Determine ship orientation
                             boolean isHorizontal = (maxY - minY) > (maxX - minX);
                             int shipWidth, shipHeight;
-                            // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
                                 shipHeight = (int)(cellHeight * 1.7);

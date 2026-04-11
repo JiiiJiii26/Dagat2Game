@@ -278,7 +278,6 @@ public class MultiplayerBattlePanel extends JPanel {
                 updateStatusMessage("Click on " + targetBoard + " to target " + skillName + "!", Color.YELLOW);
             }
         } else {
-            // FIX APPLIED HERE: Check turn state before and after skill
             boolean wasPlayer1Turn = game.isPlayer1Turn();
             boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
             if (success) {
@@ -314,7 +313,6 @@ public class MultiplayerBattlePanel extends JPanel {
         }
         
         if (waitingForShadowStepSource && currentSkillPlayer == playerNumber && shadowStepSourceX != -1) {
-            // FIX APPLIED HERE: Check turn state before and after shadow step
             boolean wasPlayer1Turn = game.isPlayer1Turn();
             boolean success = game.useShadowStep(playerNumber, shadowStepSourceX, shadowStepSourceY, row, col);
             if (success) {
@@ -346,7 +344,6 @@ public class MultiplayerBattlePanel extends JPanel {
     private void handleSkillTarget(int row, int col) {
         if (!waitingForSkillTarget) return;
         
-        // FIX APPLIED HERE: Check turn state before and after targeted skill
         boolean wasPlayer1Turn = game.isPlayer1Turn();
         boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
         

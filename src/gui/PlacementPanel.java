@@ -54,8 +54,7 @@ public class PlacementPanel extends JPanel {
         this.originalShipsToPlace = new ArrayList<>();
         this.shipsToPlace = new ArrayList<>();
         this.undoStack = new Stack<>();
-        
-        // Load boat placement background
+
         try {
             String imagePath = "D:\\GameProj\\Battleship Game\\assets\\boatPlacementbg.jpg";
             Image image = Toolkit.getDefaultToolkit().getImage(imagePath);
@@ -132,8 +131,7 @@ public class PlacementPanel extends JPanel {
         gridPanel.setMaximumSize(new Dimension(700, 800));
         gridPanel.setMinimumSize(new Dimension(700, 800));
         gridPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        // Set boat placement background on the grid panel
+
         if (placementBackgroundImage != null) {
             final Image bgImage = placementBackgroundImage.getScaledInstance(700, 800, Image.SCALE_SMOOTH);
             gridPanel = new JPanel(new GridLayout(SIZE, SIZE, 0, 0)) {
@@ -163,8 +161,7 @@ public class PlacementPanel extends JPanel {
                 button.setPreferredSize(new Dimension(70, 80));
                 button.putClientProperty("row", row);
                 button.putClientProperty("col", col);
-                
-                // Make cells transparent so background shows through
+
                 button.setOpaque(false);
                 button.setContentAreaFilled(false);
                 button.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 80), 1));
@@ -343,13 +340,11 @@ public class PlacementPanel extends JPanel {
             for (int col = 0; col < SIZE; col++) {
                 Cell cell = playerBoard.getCell(row, col);
                 if (cell.hasShip()) {
-                    // Show ship indicator
                     gridButtons[row][col].setOpaque(true);
                     gridButtons[row][col].setContentAreaFilled(true);
                     gridButtons[row][col].setBackground(new Color(50, 150, 50, 200));
                     gridButtons[row][col].setText("⛵");
                 } else {
-                    // Keep transparent to show background
                     gridButtons[row][col].setOpaque(false);
                     gridButtons[row][col].setContentAreaFilled(false);
                     gridButtons[row][col].setBackground(null);
@@ -358,7 +353,7 @@ public class PlacementPanel extends JPanel {
             }
         }
     }
-    
+
     private void handleGridClick(int row, int col) {
         if (currentShip == null) return;
         

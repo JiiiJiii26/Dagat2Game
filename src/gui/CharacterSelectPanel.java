@@ -15,21 +15,15 @@ import javax.swing.*;
  */
 public class CharacterSelectPanel extends JPanel {
 
-    // ------------------------------------------------------------------
-    // Colors and styling
-    // ------------------------------------------------------------------
     private static final Color OVERLAY_DIM = new Color(0, 0, 0, 200);
     private static final Color SLOT_HOVER  = new Color(255, 255, 255, 40);
     private static final Color TEXT_GOLD   = new Color(255, 215, 0); // Kept for button hover highlights
     
     private Font customFont;
 
-    // ------------------------------------------------------------------
-    // Data & logic
-    // ------------------------------------------------------------------
     private final ArrayList<CharacterData> roster = new ArrayList<>();
-    private int selectedIndex = -1; 
     private final CharacterSelectListener listener;
+    private int selectedIndex = -1; 
     private ImageCache imageCache;
 
     private BufferedImage selectionBg;
@@ -41,7 +35,6 @@ public class CharacterSelectPanel extends JPanel {
     private boolean hoverOnDeploy = false;
     private int hoverSlot = -1;
     
-    // Tracking modal state
     private boolean showModal = false;
     private boolean hoverOnPageBtn = false;
     private boolean showingSkills = false; 
@@ -57,9 +50,6 @@ public class CharacterSelectPanel extends JPanel {
     private static final double DEPLOY_BTN_W = 0.18;
     private static final double DEPLOY_BTN_H = 0.08;
 
-    // ------------------------------------------------------------------
-    // Constructor
-    // ------------------------------------------------------------------
     public CharacterSelectPanel(CharacterSelectListener listener) {
         this.listener = listener;
         buildRoster();
@@ -102,35 +92,27 @@ public class CharacterSelectPanel extends JPanel {
     }
 
     private void buildRoster() {
-        // MORGANA
         String morganaLore = "Once a naval navigator for the Royal Fleet, Morgana was betrayed by her crew and left to drown during a mutiny. The ocean depths embraced her, transforming her into a mystical siren who now sings to the sea itself. She returns to the surface not for revenge, but to protect the oceans she now calls home.";
         String morganaSkills = "HP: 2100 | Mana: 380\n\nSkill 1: Enchanting Melody\nEffect: Confuses enemy targeting - for 2 turns, enemy sees fake hit/miss indicators.\nMana Cost: 40 | Cooldown: 2 turns\n\nSkill 2: Whirlpool Trap\nEffect: Creates a whirlpool on a 2x2 area - enemy ships entering this area next turn are revealed. (Dmg: 50-100)\nMana Cost: 80 | Cooldown: 3 turns\n\nSkill 3: Storm Call\nEffect: Summons a tempest - floods 4 random enemy cells, making them unusable for 1 turn. (Dmg: 200-350)\nMana Cost: 300 | Cooldown: 4 turns\n\nPassive: Ocean's Embrace\nEffect: First hit each match is automatically dodged.";
 
-        // VALERIUS
         String valeriusLore = "A disgraced military engineer who specialized in coastal fortification. After his city was leveled by a naval bombardment he couldn't stop, Valerius went rogue. He built himself an exoskeleton from the scrap metal of sunken warships. Now, he offers his services to the highest bidder, acting as a one-man fortress that refuses to sink.";
         String valeriusSkills = "HP: 2400 | Mana: 320\n\nSkill 1: Radar Overload\nEffect: Jamming Pulse — Disables the enemy’s ability to use any skills for 2 turns.\nMana Cost: 50 | Cooldown: 3 turns\n\nSkill 2: Kinetic Barrier\nEffect: Hardened Hull — Covers a 3x3 area with an energy shield. Shots hit deal 0 damage for 1 turn.\nMana Cost: 90 | Cooldown: 4 turns\n\nSkill 3: Orbital Railgun\nEffect: Precise Strike — Fires a high-velocity slug. Deals massive damage and scratches 4 adjacent cells. (Dmg: 400-600)\nMana Cost: 280 | Cooldown: 5 turns\n\nPassive: Scrapper's Resolve\nEffect: Below 20% HP, gains permanent 10% damage reduction.";
 
-        // KAEL
         String kaelLore = "Kael grew up in the storm-ridden coasts where pirates and navy ships constantly clashed. Instead of brute force, he mastered stealth and strategy. Known as the “Tide Hunter,” he specializes in hiding fleets and striking enemies before they even know they’ve been located.";
         String kaelSkills = "HP: 2200 | Energy: 500 | Speed: 85\n\nSkill 1: Silent Drift\nEffect: Hide one boat for 2 turns (cannot be targeted unless revealed).\nEnergy Cost: 80 | Cooldown: 2 turns\n\nSkill 2: Sonar Pulse\nEffect: Reveal one hidden enemy boat for 1 turn. (Dmg: 150-250)\nEnergy Cost: 120 | Cooldown: 3 turns\n\nSkill 3: Depth Charge Barrage\nEffect: If enemy boat is hidden, deals bonus +200 damage. (Dmg: 400-600)\nEnergy Cost: 200 | Cooldown: 4 turns\n\nUltimate: Tempest Lock\nEffect: Hits all enemy boats in a selected area. Cannot miss. (Dmg: 700-900)\nEnergy Cost: 300 | Cooldown: 5 turns";
 
-        // JIJI
         String jijiLore = "A lazy child who keeps playing online games in his free time. Procrastinating to the max, he sleeps whenever a task is given. One day, his games gave him the powers to fight the sea. Gifting him the title of TechnoMancer... he's still lazy though.";
         String jijiSkills = "HP: 1950 | Mana: 450\n\nSkill 1: Data Leech\nEffect: Hacks enemy system - reveals 2 random enemy cells.\nMana Cost: 50 | Cooldown: 1 turn\n\nSkill 2: Overclock\nEffect: Enhances your next shot - fires twice in the same turn. (Dmg: 150-250 per shot)\nMana Cost: 120 | Cooldown: 3 turns\n\nSkill 3: System Overload\nEffect: Deploys a virus - disables one random enemy skill for 3 turns. (Dmg: 250-400)\nMana Cost: 400 | Cooldown: 5 turns\n\nPassive: Firewall\nEffect: Every 4 turns, creates a decoy signal - next enemy shot misses.";
 
-        // SELENE
         String seleneLore = "Born during a lunar eclipse, Selene has always been able to see fragments of the future. The Moon Goddess herself appeared to her in a dream, granting her the power to read the stars and predict her enemies' movements. Now she serves as the navy's secret weapon, though her cryptic warnings often confuse more than they help.";
         String seleneSkills = "HP: 1850 | Mana: 500\n\nSkill 1: Lunar Vision\nEffect: Peers into the future - reveals if the enemy's NEXT shot will hit or miss you.\nMana Cost: 60 | Cooldown: 2 turns\n\nSkill 2: Eclipse Binding\nEffect: Calls upon lunar gravity - traps enemy ships in place, cannot move next turn.\nMana Cost: 150 | Cooldown: 3 turns\n\nSkill 3: Crescent Blade\nEffect: Summons a blade of moonlight - cuts diagonally, hitting up to 4 cells. (Dmg: 200-350 per hit)\nMana Cost: 400 | Cooldown: 4 turns\n\nPassive: Moon's Blessing\nEffect: During night time (every 3 turns), your attacks have 20% chance to deal double damage.";
 
-        // SKYE
         String skyeLore = "Skye runs the largest cat rescue shelter in the Land of Dawn. With over 200 cats, her life is chaos wrapped in fur. When the ocean rose up threatening to flood her shelter, her cats didn't run - they fought back. Now they follow her into battle, proving that cats really are plotting to take over the world... starting with the sea.";
         String skyeSkills = "HP: 2050 | Mana: 440\n\nSkill 1: Cat Swarm\nEffect: Summons a horde of cats to confuse the enemy - randomizes 3 of their ship positions.\nMana Cost: 70 | Cooldown: 3 turns\n\nSkill 2: Laser Pointer Distraction\nEffect: Dangles a laser pointer - they waste their turn chasing it instead of shooting.\nMana Cost: 50 | Cooldown: 2 turns\n\nSkill 3: Catnip Explosion\nEffect: Blasts enemy with catnip - ships become distracted and deal 50% less damage next turn. (Dmg: 200-350)\nMana Cost: 380 | Cooldown: 4 turns\n\nPassive: Nine Lives\nEffect: First 3 hits that would sink a ship instead leave it at 1 HP.";
 
-        // AERIS
         String aerisLore = "Aeris was born into hardship, raised in a poor family where survival required discipline and sacrifice. Working long hours while attending class, Aeris learned to adapt quickly and manage multiple responsibilities at once. Every struggle strengthened his resolve. Instead of being defeated by pressure, he uses it to grow stronger, turning setbacks into power.";
         String aerisSkills = "HP: 2600 | Mana: 600\n\nSkill 1: Adaptive Instinct\nEffect: Reduces incoming damage by 30% for 3 turns. If hit twice in a row, next attack gains +150 damage.\nMana Cost: 120 | Cooldown: 2 turns\n\nSkill 2: Multitask Overdrive\nEffect: Perform two actions in one turn (attack + defend or reveal + attack). Gains +20 speed.\nMana Cost: 180 | Cooldown: 3 turns\n\nSkill 3: Relentless Ascent\nEffect: Damage increases based on missing HP. Below 40% HP, immune to stun for 2 turns. (Dmg: 500-800)\nMana Cost: 250 | Cooldown: 4 turns";
 
-        // FLUE
         String flueLore = "Flue is a systems architect obsessed with optimization. He didn't just design the naval command network—he coded its foundational logic. This dedication to efficiency isn't limited to software; he applies the same rigorous structure to his physical life. Recognizing that a flawless simulation requires flawless hardware, he built this untraceable avatar with unparalleled resilience.";
         String flueSkills = "HP: 2200 | Mana: 350\n\nSkill 1: Corruption.EXE\nEffect: Deals damage and silences (prevents skill use) the target for 2 turns. (Dmg: 150-200)\nMana Cost: 45 | Cooldown: 2 turns\n\nSkill 2: Optimized.Fortification.GRID\nEffect: Shields a 2x2 area. Shots landing in this area have a 50% chance to deal 0 damage for 1 turn.\nMana Cost: 80 | Cooldown: 3 turns\n\nSkill 3: Kernel.Decimation.REQ\nEffect: Massive damage to a target cell. Applies permanent debuff reducing enemy skill damage & accuracy by 10%.\nMana Cost: 300 | Cooldown: 5 turns\n\nPassive: Lone.Resolve.CFG\nEffect: Gains 15% permanent damage reduction if no allied shields are active.";
 
@@ -185,9 +167,6 @@ public class CharacterSelectPanel extends JPanel {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Geometry Calculations
-    // ------------------------------------------------------------------
     private Rectangle[] getCarouselRects(int imgX, int imgY, int imgW, int imgH) {
         Rectangle[] rects = new Rectangle[roster.size()];
         int mainBoxX = imgX + (int) (0.093 * imgW); 
@@ -244,9 +223,6 @@ public class CharacterSelectPanel extends JPanel {
         return new Rectangle(modalRect.x + modalRect.width - btnW - padding, modalRect.y + modalRect.height - btnH - padding, btnW, btnH);
     }
 
-    // ------------------------------------------------------------------
-    // Handle mouse events
-    // ------------------------------------------------------------------
     private void handleClick(Point p) {
         if (selectionBg == null) return;
         Rectangle bgRect = getScaledBackgroundRect(getSize(), selectionBg);
@@ -370,15 +346,11 @@ public class CharacterSelectPanel extends JPanel {
         return new Rectangle(x, y, w, h);
     }
 
-    // ------------------------------------------------------------------
-    // Painting
-    // ------------------------------------------------------------------
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
         
-        // 🛠️ CRITICAL FIX: Turn OFF text anti-aliasing to make pixel fonts crisp and blocky!
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -426,7 +398,6 @@ public class CharacterSelectPanel extends JPanel {
         
         String name = roster.get(selectedIndex).getDisplayName();
         
-        // Use Font.PLAIN to prevent synthetic bolding from stretching the pixel font
         float fontSize = 28f;
         g2.setFont(customFont.deriveFont(Font.PLAIN, fontSize));
         FontMetrics fm = g2.getFontMetrics();
@@ -440,16 +411,10 @@ public class CharacterSelectPanel extends JPanel {
         int textX = boxX + (boxW - textWidth) / 2 + 35;
         int textY = boxY + ((boxH - fm.getHeight()) / 2) + fm.getAscent();
         
-        // ---------------------------------------------------------
-        // REDESIGNED TEXT STYLE
-        // ---------------------------------------------------------
-        
-        // 1. Deep solid black drop shadow for legibility
         g2.setColor(Color.BLACK);
         g2.drawString(name, textX + 2, textY + 2);
-        g2.drawString(name, textX + 3, textY + 3); // Thicker blocky shadow
+        g2.drawString(name, textX + 3, textY + 3);
         
-        // 2. Crisp metallic white/silver face text instead of bright yellow
         g2.setColor(new Color(240, 245, 250));
         g2.drawString(name, textX, textY);
     }
@@ -561,12 +526,11 @@ public class CharacterSelectPanel extends JPanel {
         int padding = 35; 
         int currentY = modal.y + 45; 
         
-        g2.setFont(customFont.deriveFont(Font.PLAIN, 22f)); // Changed to PLAIN
+        g2.setFont(customFont.deriveFont(Font.PLAIN, 22f));
         String title = showingSkills ? "STATS & SKILLS" : "CHARACTER LORE";
         
         g2.setColor(Color.BLACK);
         g2.drawString(title, modal.x + padding + 2, currentY + 2);
-        // Made the modal title a metallic silver to match the bottom name text
         g2.setColor(new Color(240, 245, 250)); 
         g2.drawString(title, modal.x + padding, currentY);
         
@@ -673,9 +637,6 @@ public class CharacterSelectPanel extends JPanel {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Inner Classes
-    // ------------------------------------------------------------------
     private static class CharacterData {
         final GameCharacter character;
         final String imageKey;

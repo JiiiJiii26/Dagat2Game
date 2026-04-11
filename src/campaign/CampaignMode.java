@@ -560,7 +560,6 @@ private class WaveBackgroundPanel extends JPanel {
                 break;
             case 1: 
                 if (enemyKael.hasEnoughEnergy(150)) {
-                    // Get a random cell that hasn't been fired upon
                     int[] target = getRandomUnfiredCellForEnemySkill();
                     int x = target[0];
                     int y = target[1];
