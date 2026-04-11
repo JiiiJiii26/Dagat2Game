@@ -222,39 +222,49 @@ public void onShipSunk() {
         
         overclockTargets.clear();
         System.out.println("⚡ Chain reaction hit " + triggered + " cells!");
-        return triggered > 0;
+return triggered > 0;
     }
-    
-    
-    
-    
-    
-   public boolean useSystemOverload(Board enemyBoard) {
+
+    public boolean useSystemOverload(Board enemyBoard) {
+        return useSystemOverload(enemyBoard, -1, -1);
+    }
+
+
+    public boolean useSystemOverload(Board enemyBoard, int targetX, int targetY) {
     if (systemOverloadCooldown > 0) {
         System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
         return false;
     }
-    
+
     if (!hasEnoughMana(400)) {
         System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
         return false;
     }
-    
-    
-    ArrayList<Ship> availableShips = new ArrayList<>();
-    for (Ship ship : enemyBoard.getShips()) {
-        if (!ship.isSunk() && !ship.isFullyRevealed()) {
-            availableShips.add(ship);
+
+    Ship targetShip = null;
+
+    if (targetX >= 0 && targetY >= 0) {
+        Cell targetCell = enemyBoard.getCell(targetX, targetY);
+        if (targetCell.hasShip() && !targetCell.isFiredUpon()) {
+            targetShip = targetCell.getShip();
         }
     }
-    
-    if (availableShips.isEmpty()) {
-        System.out.println("⚠️ No available ships to target!");
-        return false;
+
+    if (targetShip == null || targetShip.isSunk() || targetShip.isFullyRevealed()) {
+        ArrayList<Ship> availableShips = new ArrayList<>();
+        for (Ship ship : enemyBoard.getShips()) {
+            if (!ship.isSunk() && !ship.isFullyRevealed()) {
+                availableShips.add(ship);
+            }
+        }
+
+        if (availableShips.isEmpty()) {
+            System.out.println("⚠️ No available ships to target!");
+            return false;
+        }
+
+        targetShip = availableShips.get(random.nextInt(availableShips.size()));
     }
-    
-    
-    Ship targetShip = availableShips.get(random.nextInt(availableShips.size()));
     
     
     if (overclockActive) {
@@ -309,18 +319,16 @@ public void onShipSunk() {
             int y = pos.getY();
             Cell cell = enemyBoard.getCell(x, y);
             
-            if (!cell.isFiredUpon() && !cell.isRevealed()) {
-                cell.setRevealed(true);
-                revealedCells++;
-                revealReport.append("   • (" + x + "," + y + ") revealed!\n");
-            }
+            cell.setRevealed(true);
+            revealedCells++;
+            revealReport.append("   • (" + x + "," + y + ") revealed!\n");
         }
         
         targetShip.setFullyRevealed(true);
         System.out.println(revealReport.toString());
         System.out.println("💻 " + targetShip.getName() + " has been FULLY REVEALED!");
         System.out.println("   " + revealedCells + " ship segments are now visible!");
-        
+
         systemOverloadCooldown = 5;
         return true;
     }

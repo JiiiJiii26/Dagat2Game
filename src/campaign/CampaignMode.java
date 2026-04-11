@@ -1502,8 +1502,8 @@ private void executeSkill(int targetX, int targetY) {
                     shouldEndTurn = false; 
                     break;
                 case 3:
-                    System.out.println("Using System Overload");
-                    success = jiji.useSystemOverload(enemyBoard);
+                    System.out.println("Using System Overload at (" + targetX + "," + targetY + ")");
+                    success = jiji.useSystemOverload(enemyBoard, targetX, targetY);
                     shouldEndTurn = true;
                     break;
                 default:

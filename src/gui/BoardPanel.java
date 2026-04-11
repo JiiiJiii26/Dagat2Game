@@ -46,6 +46,10 @@ public class BoardPanel extends JPanel {
     private List<Image> smokeFrames;
     private int currentSmokeFrame = 0;
     private Timer smokeAnimationTimer;
+    private List<Image> subDestroyFrames;
+    private int currentSubDestroyFrame = 0;
+    private Timer subDestroyTimer;
+    private boolean subDestroyAnimationPlayed = false;
 
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
@@ -281,6 +285,49 @@ public class BoardPanel extends JPanel {
             smokeAnimationTimer.start();
         }
 
+        subDestroyFrames = new ArrayList<>();
+        String subDestroyBasePath = "D:\\GameProj\\Battleship Game\\assets\\subdestroy";
+        
+        for (int i = 1; i <= 3; i++) {
+            try {
+                String imagePath = subDestroyBasePath + i + ".png";
+                java.io.File file = new java.io.File(imagePath);
+                if (file.exists()) {
+                    Image img = javax.imageio.ImageIO.read(file);
+                    if (img != null) {
+                        subDestroyFrames.add(img);
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+        
+        if (!subDestroyFrames.isEmpty()) {
+            subDestroyTimer = new Timer(300, e -> {
+                boolean hasSunkSubmarine = false;
+                if (board != null) {
+                    for (Ship ship : board.getShips()) {
+                        if ("Submarine".equals(ship.getName()) && ship.isSunk()) {
+                            hasSunkSubmarine = true;
+                            break;
+                        }
+                    }
+                }
+                
+                System.out.println("DEBUG Timer: hasSunkSubmarine=" + hasSunkSubmarine + ", played=" + subDestroyAnimationPlayed + ", frame=" + currentSubDestroyFrame);
+                
+                if (hasSunkSubmarine && !subDestroyAnimationPlayed) {
+                    currentSubDestroyFrame++;
+                    if (currentSubDestroyFrame >= subDestroyFrames.size()) {
+                        subDestroyAnimationPlayed = true;
+                        subDestroyTimer.stop();
+                    }
+                    repaint();
+                }
+            });
+            subDestroyTimer.start();
+        }
+
         initializeLayout();
     }
     
@@ -334,6 +381,14 @@ public class BoardPanel extends JPanel {
     public int getBoardWidth() { return SIZE * cellWidth; }
     public int getBoardHeight() { return SIZE * cellHeight; }
     
+    private boolean hasAnyRevealedShips() {
+        if (board == null) return false;
+        for (Ship ship : board.getShips()) {
+            if (ship.isFullyRevealed()) return true;
+        }
+        return false;
+    }
+    
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -347,9 +402,11 @@ public class BoardPanel extends JPanel {
             g.fillRect(0, 0, getBoardWidth(), getBoardHeight());
         }
         
-        if (showShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
+        boolean canShowShips = showShips || (board != null && !board.getShips().isEmpty() && hasAnyRevealedShips());
+        
+        if (canShowShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
             for (Ship ship : board.getShips()) {
-                if ("Carrier".equals(ship.getName()) && !ship.isSunk()) {
+                if ("Carrier".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
                     List<Ship.Coordinate> positions = ship.getPositions();
                     if (positions.size() >= 2) {
                         int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
@@ -407,7 +464,7 @@ public class BoardPanel extends JPanel {
             
             if (battleshipImageRaw != null && !board.getShips().isEmpty()) {
                 for (Ship ship : board.getShips()) {
-                    if ("Battleship".equals(ship.getName()) && !ship.isSunk()) {
+                    if ("Battleship".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
                         List<Ship.Coordinate> positions = ship.getPositions();
                         if (positions.size() >= 2) {
                             int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
@@ -467,7 +524,7 @@ public class BoardPanel extends JPanel {
             // Draw cruiser image
             if (cruiserImageRaw != null && board != null && !board.getShips().isEmpty()) {
                 for (Ship ship : board.getShips()) {
-                    if ("Cruiser".equals(ship.getName()) && !ship.isSunk()) {
+                    if ("Cruiser".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
                         List<Ship.Coordinate> positions = ship.getPositions();
                         if (positions.size() >= 2) {
                             int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
@@ -529,7 +586,7 @@ public class BoardPanel extends JPanel {
             // Draw submarine image
             if (submarineImageRaw != null && board != null && !board.getShips().isEmpty()) {
                 for (Ship ship : board.getShips()) {
-                    if ("Submarine".equals(ship.getName()) && !ship.isSunk()) {
+                    if ("Submarine".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
                         List<Ship.Coordinate> positions = ship.getPositions();
                         if (positions.size() >= 2) {
                             int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
@@ -591,7 +648,7 @@ public class BoardPanel extends JPanel {
             // Draw destroyer image
             if (destroyerImageRaw != null && board != null && !board.getShips().isEmpty()) {
                 for (Ship ship : board.getShips()) {
-                    if ("Destroyer".equals(ship.getName()) && !ship.isSunk()) {
+                    if ("Destroyer".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
                         List<Ship.Coordinate> positions = ship.getPositions();
                         if (positions.size() >= 2) {
                             int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
@@ -655,7 +712,13 @@ public class BoardPanel extends JPanel {
                 for (int row = 0; row < SIZE; row++) {
                     for (int col = 0; col < SIZE; col++) {
                         Cell cell = board.getCell(row, col);
-                        if (cell.getColor().equals(Cell.HIT_RED) || cell.getColor().equals(Cell.INFECTED_HIT)) {
+                        
+                        boolean isSubmarineSunkWithAnimationDone = false;
+                        if (cell.hasShip() && cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && cell.getShip().isSunk() && subDestroyAnimationPlayed) {
+                            isSubmarineSunkWithAnimationDone = true;
+                        }
+                        
+                        if (!isSubmarineSunkWithAnimationDone && (cell.getColor().equals(Cell.HIT_RED) || cell.getColor().equals(Cell.INFECTED_HIT))) {
                             int cellDrawX = col * cellWidth;
                             int cellDrawY = row * cellHeight + dmgCellOffset;
                             
@@ -701,6 +764,55 @@ public class BoardPanel extends JPanel {
                 }
             }
         }
+        
+        // Draw destruction animation for submarine (works for both player and enemy boards)
+        if (!subDestroyFrames.isEmpty() && board != null && !board.getShips().isEmpty()) {
+            System.out.println("DEBUG: subDestroyFrames.size=" + subDestroyFrames.size() + ", currentSubDestroyFrame=" + currentSubDestroyFrame);
+            for (Ship ship : board.getShips()) {
+                System.out.println("DEBUG: Checking ship " + ship.getName() + ", isSunk=" + ship.isSunk());
+                if ("Submarine".equals(ship.getName()) && ship.isSunk()) {
+                    List<Ship.Coordinate> positions = ship.getPositions();
+                    if (positions.size() >= 2) {
+                        int frameIndex = Math.min(currentSubDestroyFrame, subDestroyFrames.size() - 1);
+                        Image currentFrame = subDestroyFrames.get(frameIndex);
+                        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                        for (Ship.Coordinate pos : positions) {
+                            minX = Math.min(minX, pos.getX());
+                            minY = Math.min(minY, pos.getY());
+                            maxX = Math.max(maxX, pos.getX());
+                            maxY = Math.max(maxY, pos.getY());
+                        }
+                        boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                        int shipWidth, shipHeight;
+                        if (isHorizontal) {
+                            shipWidth = (maxY - minY + 1) * cellWidth;
+                            shipHeight = (int)(cellHeight * 1.7);
+                        } else {
+                            shipWidth = (int)(cellWidth * 1.7);
+                            shipHeight = (maxX - minX + 1) * cellHeight;
+                        }
+                        
+                        Image scaledFrame = currentFrame.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                        
+                        if (!isHorizontal) {
+                            int srcW = currentFrame.getWidth(null);
+                            int srcH = currentFrame.getHeight(null);
+                            BufferedImage rotated = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                            Graphics2D g2d = rotated.createGraphics();
+                            g2d.translate(srcH / 2, srcW / 2);
+                            g2d.rotate(Math.PI / 2);
+                            g2d.drawImage(currentFrame, -srcW / 2, -srcH / 2, null);
+                            g2d.dispose();
+                            scaledFrame = rotated.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                        }
+                        
+                        g.drawImage(scaledFrame, minY * cellWidth, minX * cellHeight, null);
+                    }
+                    break;
+                }
+            }
+        }
     }
     
     private JButton createCellButton(int row, int col, Cell cell) {
@@ -735,10 +847,21 @@ public class BoardPanel extends JPanel {
         
         if (cellColor.equals(Cell.HIT_RED) || cellColor.equals(Cell.INFECTED_HIT)) {
             button.setForeground(Color.WHITE);
-            if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
-                button.setText("💀");
+            
+            boolean isSubmarineSunkWithAnimationDone = false;
+            if (cell.hasShip() && cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && cell.getShip().isSunk() && subDestroyAnimationPlayed) {
+                isSubmarineSunkWithAnimationDone = true;
+            }
+            
+            if (isSubmarineSunkWithAnimationDone) {
+                button.setBorder(null);
             } else {
-                button.setText("💥");
+                button.setBorder(BorderFactory.createLineBorder(new Color(255, 0, 0), 3));
+                if (cell.hasShip() && cell.getShip() != null && cell.getShip().isSunk()) {
+                    button.setText("💀");
+                } else {
+                    button.setText("💥");
+                }
             }
             button.setOpaque(false);
             button.setContentAreaFilled(false);
@@ -763,23 +886,23 @@ public class BoardPanel extends JPanel {
                     button.setContentAreaFilled(true);
                     button.setBackground(new Color(50, 150, 50, 200));
                     button.setText("🦠");
-                } else if (cell.getShip() != null && "Carrier".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                } else if (cell.getShip() != null && "Carrier".equals(cell.getShip().getName()) && !cell.getShip().isSunk() && (showShips || cell.getShip().isFullyRevealed())) {
                     // Make transparent so carrier image shows through from paintComponent
                     button.setOpaque(false);
                     button.setContentAreaFilled(false);
-                } else if (cell.getShip() != null && "Battleship".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                } else if (cell.getShip() != null && "Battleship".equals(cell.getShip().getName()) && !cell.getShip().isSunk() && (showShips || cell.getShip().isFullyRevealed())) {
                     // Make transparent so battleship image shows through from paintComponent
                     button.setOpaque(false);
                     button.setContentAreaFilled(false);
-                } else if (cell.getShip() != null && "Cruiser".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                } else if (cell.getShip() != null && "Cruiser".equals(cell.getShip().getName()) && !cell.getShip().isSunk() && (showShips || cell.getShip().isFullyRevealed())) {
                     // Make transparent so cruiser image shows through from paintComponent
                     button.setOpaque(false);
                     button.setContentAreaFilled(false);
-                } else if (cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                } else if (cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && !cell.getShip().isSunk() && (showShips || cell.getShip().isFullyRevealed())) {
                     // Make transparent so submarine image shows through from paintComponent
                     button.setOpaque(false);
                     button.setContentAreaFilled(false);
-                } else if (cell.getShip() != null && "Destroyer".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                } else if (cell.getShip() != null && "Destroyer".equals(cell.getShip().getName()) && !cell.getShip().isSunk() && (showShips || cell.getShip().isFullyRevealed())) {
                     // Make transparent so destroyer image shows through from paintComponent
                     button.setOpaque(false);
                     button.setContentAreaFilled(false);
