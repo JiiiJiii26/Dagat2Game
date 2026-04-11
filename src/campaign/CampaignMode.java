@@ -25,7 +25,7 @@ import java.io.File;
 
 public class CampaignMode {
    
-    private boolean testMode = true;  
+    private boolean testMode = false;  
     private String testEnemyName = "Kael";
 
     private JPanel jijiPortraitContainer;
@@ -1036,14 +1036,18 @@ private class WaveBackgroundPanel extends JPanel {
         if (currentSkillPanel != null) currentSkillPanel.updateUI();
     });
     
-    waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
+    waveLabel = new JLabel(String.format("WAVE %d/%d - VS %s", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
     waveLabel.setFont(new Font("Arial", Font.BOLD, 18));
     waveLabel.setForeground(Color.YELLOW);
     
+    JPanel waveLabelPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+    waveLabelPanel.setOpaque(false);
+    waveLabelPanel.add(waveLabel);
+    
     JPanel centerTopPanel = new JPanel(new BorderLayout());
     centerTopPanel.setOpaque(false);
-    centerTopPanel.add(waveLabel, BorderLayout.NORTH);
+    centerTopPanel.add(waveLabelPanel, BorderLayout.NORTH);
     
     JPanel timerPanel = new JPanel(new GridLayout(1, 1, 0, 5));
     timerPanel.setOpaque(false);
@@ -1281,6 +1285,7 @@ mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
     JPanel statusBarPanel = new JPanel();
     statusBarPanel.setOpaque(false);
     statusBarPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+    ((FlowLayout) statusBarPanel.getLayout()).setAlignment(FlowLayout.CENTER);
     
     statusLabel = new JLabel("YOUR TURN - Click on enemy waters to fire!", SwingConstants.CENTER);
     statusLabel.setFont(new Font("Arial", Font.BOLD, 16));

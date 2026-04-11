@@ -50,6 +50,10 @@ public class BoardPanel extends JPanel {
     private int currentSubDestroyFrame = 0;
     private Timer subDestroyTimer;
     private boolean subDestroyAnimationPlayed = false;
+    private Image destroyerDmgImage;
+    private int currentDestroyerDmgFrame = 0;
+    private Timer destroyerDmgTimer;
+    private boolean destroyerDmgAnimationPlayed = false;
 
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
@@ -314,8 +318,6 @@ public class BoardPanel extends JPanel {
                     }
                 }
                 
-                System.out.println("DEBUG Timer: hasSunkSubmarine=" + hasSunkSubmarine + ", played=" + subDestroyAnimationPlayed + ", frame=" + currentSubDestroyFrame);
-                
                 if (hasSunkSubmarine && !subDestroyAnimationPlayed) {
                     currentSubDestroyFrame++;
                     if (currentSubDestroyFrame >= subDestroyFrames.size()) {
@@ -326,6 +328,39 @@ public class BoardPanel extends JPanel {
                 }
             });
             subDestroyTimer.start();
+        }
+        
+        try {
+            String imagePath = "D:\\GameProj\\Battleship Game\\assets\\destroyerdmg.jpg";
+            java.io.File file = new java.io.File(imagePath);
+            if (file.exists()) {
+                destroyerDmgImage = javax.imageio.ImageIO.read(file);
+            }
+        } catch (Exception e) {
+        }
+        
+        if (destroyerDmgImage != null) {
+            destroyerDmgTimer = new Timer(300, e -> {
+                boolean hasSunkDestroyer = false;
+                if (board != null) {
+                    for (Ship ship : board.getShips()) {
+                        if ("Destroyer".equals(ship.getName()) && ship.isSunk()) {
+                            hasSunkDestroyer = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (hasSunkDestroyer && !destroyerDmgAnimationPlayed) {
+                    currentDestroyerDmgFrame++;
+                    if (currentDestroyerDmgFrame >= 1) {
+                        destroyerDmgAnimationPlayed = true;
+                        destroyerDmgTimer.stop();
+                    }
+                    repaint();
+                }
+            });
+            destroyerDmgTimer.start();
         }
 
         initializeLayout();
@@ -714,11 +749,15 @@ public class BoardPanel extends JPanel {
                         Cell cell = board.getCell(row, col);
                         
                         boolean isSubmarineSunkWithAnimationDone = false;
+                        boolean isDestroyerSunkWithAnimationDone = false;
                         if (cell.hasShip() && cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && cell.getShip().isSunk() && subDestroyAnimationPlayed) {
                             isSubmarineSunkWithAnimationDone = true;
                         }
+                        if (cell.hasShip() && cell.getShip() != null && "Destroyer".equals(cell.getShip().getName()) && cell.getShip().isSunk() && destroyerDmgAnimationPlayed) {
+                            isDestroyerSunkWithAnimationDone = true;
+                        }
                         
-                        if (!isSubmarineSunkWithAnimationDone && (cell.getColor().equals(Cell.HIT_RED) || cell.getColor().equals(Cell.INFECTED_HIT))) {
+                        if ((!isSubmarineSunkWithAnimationDone && !isDestroyerSunkWithAnimationDone) && (cell.getColor().equals(Cell.HIT_RED) || cell.getColor().equals(Cell.INFECTED_HIT))) {
                             int cellDrawX = col * cellWidth;
                             int cellDrawY = row * cellHeight + dmgCellOffset;
                             
@@ -767,9 +806,7 @@ public class BoardPanel extends JPanel {
         
         // Draw destruction animation for submarine (works for both player and enemy boards)
         if (!subDestroyFrames.isEmpty() && board != null && !board.getShips().isEmpty()) {
-            System.out.println("DEBUG: subDestroyFrames.size=" + subDestroyFrames.size() + ", currentSubDestroyFrame=" + currentSubDestroyFrame);
             for (Ship ship : board.getShips()) {
-                System.out.println("DEBUG: Checking ship " + ship.getName() + ", isSunk=" + ship.isSunk());
                 if ("Submarine".equals(ship.getName()) && ship.isSunk()) {
                     List<Ship.Coordinate> positions = ship.getPositions();
                     if (positions.size() >= 2) {
@@ -807,7 +844,146 @@ public class BoardPanel extends JPanel {
                             scaledFrame = rotated.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
                         }
                         
-                        g.drawImage(scaledFrame, minY * cellWidth, minX * cellHeight, null);
+                        // Add floating movement effect
+                        long time = System.currentTimeMillis();
+                        float floatOffset = (float) Math.sin(time / 500.0) * 3;
+                        int drawX = minY * cellWidth;
+                        int drawY = minX * cellHeight + (int) floatOffset;
+                        
+                        // Draw smoke and fire effects
+                        Graphics2D g2d = (Graphics2D) g;
+                        for (int i = 0; i < 5; i++) {
+                            float offset = (float) ((time / 400.0 + i * 0.6) % 1.0);
+                            int smokeY = drawY + shipHeight - (int)(offset * shipHeight * 0.8f);
+                            int smokeX = drawX + shipWidth / 2 + (int)(Math.sin(time / 300.0 + i) * shipWidth / 3);
+                            int particleSize = 4 + (int)(offset * 12);
+                            int alpha = (int)(180 * (1 - offset));
+                            
+                            g2d.setColor(new Color(80, 80, 80, alpha));
+                            g2d.fillOval(smokeX - particleSize / 2, smokeY - particleSize / 2, particleSize, particleSize);
+                            
+                            if (offset < 0.4) {
+                                int fireAlpha = (int)(255 * (1 - offset / 0.4));
+                                g2d.setColor(new Color(255, 80 + (int)(offset * 100), 0, fireAlpha));
+                                g2d.fillOval(smokeX - particleSize / 3, smokeY + particleSize / 2, particleSize * 2, particleSize * 2);
+                            }
+                        }
+                        
+                        // Add bubbling effect
+                        for (int i = 0; i < 3; i++) {
+                            float bubbleOffset = (float) ((time / 600.0 + i * 0.8) % 1.0);
+                            int bubbleY = drawY + shipHeight - (int)(bubbleOffset * shipHeight);
+                            int bubbleX = drawX + (i + 1) * shipWidth / 4 + (int)(Math.sin(time / 400.0 + i * 2) * 10);
+                            int bubbleSize = 3 + (int)(bubbleOffset * 5);
+                            int bubbleAlpha = (int)(150 * (1 - bubbleOffset));
+                            g2d.setColor(new Color(200, 230, 255, bubbleAlpha));
+                            g2d.fillOval(bubbleX, bubbleY, bubbleSize, bubbleSize);
+                        }
+                        
+                        g.drawImage(scaledFrame, drawX, drawY, null);
+                        
+                        // Draw smoke animation frames on top of the destroyed submarine
+                        if (!smokeFrames.isEmpty()) {
+                            Image smokeFrame = smokeFrames.get(currentSmokeFrame);
+                            int smokeWidth = (int)(shipWidth * 0.6f);
+                            int smokeHeight = (int)(shipHeight * 0.6f);
+                            Image scaledSmoke = smokeFrame.getScaledInstance(smokeWidth, smokeHeight, Image.SCALE_SMOOTH);
+                            int smokeX = drawX + (shipWidth - smokeWidth) / 2;
+                            int smokeY = drawY - smokeHeight / 4;
+                            g.drawImage(scaledSmoke, smokeX, smokeY, null);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // Draw destruction animation for destroyer
+        if (destroyerDmgImage != null && board != null && !board.getShips().isEmpty()) {
+            for (Ship ship : board.getShips()) {
+                if ("Destroyer".equals(ship.getName()) && ship.isSunk()) {
+                    List<Ship.Coordinate> positions = ship.getPositions();
+                    if (positions.size() >= 2) {
+                        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                        for (Ship.Coordinate pos : positions) {
+                            minX = Math.min(minX, pos.getX());
+                            minY = Math.min(minY, pos.getY());
+                            maxX = Math.max(maxX, pos.getX());
+                            maxY = Math.max(maxY, pos.getY());
+                        }
+                        boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                        int shipWidth, shipHeight;
+                        if (isHorizontal) {
+                            shipWidth = (maxY - minY + 1) * cellWidth;
+                            shipHeight = (int)(cellHeight * 1.7);
+                        } else {
+                            shipWidth = (int)(cellWidth * 1.7);
+                            shipHeight = (maxX - minX + 1) * cellHeight;
+                        }
+                        
+                        Image scaledFrame = destroyerDmgImage.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                        
+                        if (!isHorizontal) {
+                            int srcW = destroyerDmgImage.getWidth(null);
+                            int srcH = destroyerDmgImage.getHeight(null);
+                            BufferedImage rotated = new BufferedImage(srcH, srcW, BufferedImage.TYPE_INT_ARGB);
+                            Graphics2D g2d = rotated.createGraphics();
+                            g2d.translate(srcH / 2, srcW / 2);
+                            g2d.rotate(Math.PI / 2);
+                            g2d.drawImage(destroyerDmgImage, -srcW / 2, -srcH / 2, null);
+                            g2d.dispose();
+                            scaledFrame = rotated.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                        }
+                        
+                        // Add floating movement effect
+                        long time = System.currentTimeMillis();
+                        float floatOffset = (float) Math.sin(time / 500.0) * 3;
+                        int drawX = minY * cellWidth;
+                        int drawY = minX * cellHeight + (int) floatOffset;
+                        
+                        // Draw smoke and fire effects
+                        Graphics2D g2d = (Graphics2D) g;
+                        for (int i = 0; i < 5; i++) {
+                            float offset = (float) ((time / 400.0 + i * 0.6) % 1.0);
+                            int smokeY = drawY + shipHeight - (int)(offset * shipHeight * 0.8f);
+                            int smokeX = drawX + shipWidth / 2 + (int)(Math.sin(time / 300.0 + i) * shipWidth / 3);
+                            int particleSize = 4 + (int)(offset * 12);
+                            int alpha = (int)(180 * (1 - offset));
+                            
+                            g2d.setColor(new Color(80, 80, 80, alpha));
+                            g2d.fillOval(smokeX - particleSize / 2, smokeY - particleSize / 2, particleSize, particleSize);
+                            
+                            if (offset < 0.4) {
+                                int fireAlpha = (int)(255 * (1 - offset / 0.4));
+                                g2d.setColor(new Color(255, 80 + (int)(offset * 100), 0, fireAlpha));
+                                g2d.fillOval(smokeX - particleSize / 3, smokeY + particleSize / 2, particleSize * 2, particleSize * 2);
+                            }
+                        }
+                        
+                        // Add bubbles
+                        for (int i = 0; i < 3; i++) {
+                            float bubbleOffset = (float) ((time / 600.0 + i * 0.8) % 1.0);
+                            int bubbleY = drawY + shipHeight - (int)(bubbleOffset * shipHeight);
+                            int bubbleX = drawX + (i + 1) * shipWidth / 4 + (int)(Math.sin(time / 400.0 + i * 2) * 10);
+                            int bubbleSize = 3 + (int)(bubbleOffset * 5);
+                            int bubbleAlpha = (int)(150 * (1 - bubbleOffset));
+                            g2d.setColor(new Color(200, 230, 255, bubbleAlpha));
+                            g2d.fillOval(bubbleX, bubbleY, bubbleSize, bubbleSize);
+                        }
+                        
+                        g.drawImage(scaledFrame, drawX, drawY, null);
+                        
+                        // Draw smoke animation frames on top of the destroyed destroyer
+                        if (!smokeFrames.isEmpty()) {
+                            Image smokeFrame = smokeFrames.get(currentSmokeFrame);
+                            int smokeWidth = (int)(shipWidth * 0.6f);
+                            int smokeHeight = (int)(shipHeight * 0.6f);
+                            Image scaledSmoke = smokeFrame.getScaledInstance(smokeWidth, smokeHeight, Image.SCALE_SMOOTH);
+                            int smokeX = drawX + (shipWidth - smokeWidth) / 2;
+                            int smokeY = drawY - smokeHeight / 4;
+                            g.drawImage(scaledSmoke, smokeX, smokeY, null);
+                        }
                     }
                     break;
                 }
@@ -849,11 +1025,15 @@ public class BoardPanel extends JPanel {
             button.setForeground(Color.WHITE);
             
             boolean isSubmarineSunkWithAnimationDone = false;
+            boolean isDestroyerSunkWithAnimationDone = false;
             if (cell.hasShip() && cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && cell.getShip().isSunk() && subDestroyAnimationPlayed) {
                 isSubmarineSunkWithAnimationDone = true;
             }
+            if (cell.hasShip() && cell.getShip() != null && "Destroyer".equals(cell.getShip().getName()) && cell.getShip().isSunk() && destroyerDmgAnimationPlayed) {
+                isDestroyerSunkWithAnimationDone = true;
+            }
             
-            if (isSubmarineSunkWithAnimationDone) {
+            if (isSubmarineSunkWithAnimationDone || isDestroyerSunkWithAnimationDone) {
                 button.setBorder(null);
             } else {
                 button.setBorder(BorderFactory.createLineBorder(new Color(255, 0, 0), 3));
