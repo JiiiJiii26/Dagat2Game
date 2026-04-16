@@ -90,13 +90,13 @@ public class PlacementPanel extends JPanel {
         rainTimer.start();
         
         currentRainFrame = 0;
-        rainAnimationTimer = new Timer(1000, e -> {
+        rainAnimationTimer = new Timer(10000, e -> {
             currentRainFrame = (currentRainFrame + 1) % 4;
             repaint();
         });
         rainAnimationTimer.start();
         
-        // Create ripple effect data
+        
         ripples = new java.util.ArrayList<>();
         for (int i = 0; i < 20; i++) {
             ripples.add(new int[] {(int)(Math.random() * 1200), (int)(Math.random() * 1200), (int)(Math.random() * 30 + 10), 0});
@@ -126,10 +126,10 @@ public class PlacementPanel extends JPanel {
         
         setLayout(new BorderLayout());
         
-        // Make the main panel paint the background
+        
         setBackground(new Color(20, 40, 60));
         
-        // Create control panel (transparent to show background)
+        
         controlPanel = createControlPanel();
         createGridPanel();
         
@@ -146,7 +146,7 @@ public class PlacementPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         
-        // Draw animated background (shipPlacementbg as first frame, then rain1-3)
+        
         if (rainImages != null && rainImages[currentRainFrame] != null) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.drawImage(rainImages[currentRainFrame], 0, 0, getWidth(), getHeight(), this);
@@ -158,7 +158,7 @@ public class PlacementPanel extends JPanel {
             g.fillRect(0, 0, getWidth(), getHeight());
         }
         
-        // Draw rain effect on top
+        
         if (rainDrops != null) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setStroke(new BasicStroke(1.5f));
@@ -168,7 +168,7 @@ public class PlacementPanel extends JPanel {
             }
         }
         
-        // Draw ripple effect
+        
         if (ripples != null) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setStroke(new BasicStroke(1));
@@ -183,7 +183,7 @@ public class PlacementPanel extends JPanel {
     }
     
     private void loadImages() {
-        // Load background image
+        
         try {
             String imagePath = "D:\\GameProj\\Battleship Game\\assets\\shipPlacementbg.jpg";
             Image image = Toolkit.getDefaultToolkit().getImage(imagePath);
@@ -198,10 +198,10 @@ public class PlacementPanel extends JPanel {
             System.out.println("⚠️ Could not load background: " + e.getMessage());
         }
         
-        // Load rain animation frames
-        rainImages = new Image[4];
-        String[] rainFileNames = {"shipPlacementbg.jpg", "rain1.jpg", "rain2.jpg", "rain3.jpg"};
-        for (int i = 0; i < 4; i++) {
+        
+        rainImages = new Image[3];
+        String[] rainFileNames = { "rain1.jpg", "rain2.jpg", "rain3.jpg"};
+        for (int i = 0; i < 3; i++) {
             try {
                 java.io.File rainFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\" + rainFileNames[i]);
                 if (rainFile.exists()) {
@@ -213,7 +213,7 @@ public class PlacementPanel extends JPanel {
             }
         }
         
-        // Load ship images
+        
         try {
             java.io.File carrierFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\carrier.png");
             if (carrierFile.exists()) {
@@ -267,7 +267,7 @@ public class PlacementPanel extends JPanel {
     
     private JPanel createControlPanel() {
         JPanel topPanel = new JPanel();
-        topPanel.setOpaque(false); // Make transparent to show background
+        topPanel.setOpaque(false); 
         instructionLabel = new JLabel("Place your Carrier (5 cells) - Click to place");
         instructionLabel.setFont(new Font("Arial", Font.BOLD, 22));
         instructionLabel.setForeground(Color.YELLOW);
@@ -277,7 +277,7 @@ public class PlacementPanel extends JPanel {
         topPanel.add(instructionLabel);
         
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setOpaque(false); // Make transparent to show background
+        buttonPanel.setOpaque(false); 
         
         rotateButton = new JButton("🔄 Rotate");
         rotateButton.setFont(new Font("Arial", Font.BOLD, 18));
@@ -323,7 +323,7 @@ public class PlacementPanel extends JPanel {
         
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new BorderLayout());
-        controlPanel.setOpaque(false); // Make transparent to show background
+        controlPanel.setOpaque(false); 
         controlPanel.add(topPanel, BorderLayout.NORTH);
         controlPanel.add(buttonPanel, BorderLayout.SOUTH);
         
@@ -334,24 +334,24 @@ public class PlacementPanel extends JPanel {
         int gridWidth = SIZE * CELL_WIDTH;
         int gridHeight = SIZE * CELL_HEIGHT;
         
-        // Create grid panel with transparent background
+        
         gridPanel = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                // Don't draw background here - let the parent panel show through
+                
                 
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setStroke(new BasicStroke(2));
                 
-                // Draw grid lines
+                
                 g2d.setColor(new Color(255, 255, 255, 200));
                 for (int i = 0; i <= SIZE; i++) {
                     g2d.drawLine(0, i * CELL_HEIGHT, gridWidth, i * CELL_HEIGHT);
                     g2d.drawLine(i * CELL_WIDTH, 0, i * CELL_WIDTH, gridHeight);
                 }
                 
-                // Draw placed ships
+                
                 drawPlacedShips(g2d);
             }
         };
@@ -359,10 +359,10 @@ public class PlacementPanel extends JPanel {
         gridPanel.setPreferredSize(new Dimension(gridWidth, gridHeight));
         gridPanel.setMinimumSize(new Dimension(gridWidth, gridHeight));
         gridPanel.setMaximumSize(new Dimension(gridWidth, gridHeight));
-        gridPanel.setOpaque(false); // Make transparent to show background
+        gridPanel.setOpaque(false); 
         gridPanel.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 4));
         
-        // Create clickable buttons overlay
+        
         gridButtons = new JButton[SIZE][SIZE];
         
         for (int row = 0; row < SIZE; row++) {
@@ -449,7 +449,7 @@ public class PlacementPanel extends JPanel {
             
             g.drawImage(scaledImg, x, y, width, height, null);
             
-            // Draw gold border around the ship
+            
             g.setColor(new Color(255, 215, 0, 200));
             g.setStroke(new BasicStroke(3));
             g.drawRect(x, y, width, height);
