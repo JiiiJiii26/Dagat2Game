@@ -30,7 +30,11 @@ public class Cell {
         this.hasShip = false;
         this.isFiredUpon = false;
         this.ship = null;
-         this.isPlayerBoard = false; 
+        this.isRevealed = false;
+        this.isPlayerBoard = false;
+        this.isMiss = false;
+        this.isHit = false;
+        this.hasBeenFired = false;
     }
         public void setRevealed(boolean revealed) {
         this.isRevealed = revealed;

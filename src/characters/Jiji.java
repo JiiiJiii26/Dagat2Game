@@ -27,6 +27,9 @@ public class Jiji extends GameCharacter {
     private int firewallTurns = 0;
     private int turnsSinceLastFirewall = 0;
     
+    private boolean isDamaged = false;
+private int turnsSinceDamage = 0;
+private static final int DAMAGE_DISPLAY_DURATION = 2;
     
     private ArrayList<String> revealedCells = new ArrayList<>();
     
@@ -64,6 +67,38 @@ public class Jiji extends GameCharacter {
             System.out.println("💰 Jiji spent " + cost + " mana. Remaining: " + currentMana);
         }
     }
+    public boolean isDamaged() { return isDamaged; }
+public void setDamaged(boolean damaged) { 
+    this.isDamaged = damaged;
+    if (!damaged) {
+        turnsSinceDamage = 0;
+    }
+}
+
+
+public void updateDamageState() {
+    if (isDamaged) {
+        turnsSinceDamage++;
+        System.out.println("Jiji damaged turns: " + turnsSinceDamage + "/" + DAMAGE_DISPLAY_DURATION);
+        if (turnsSinceDamage >= DAMAGE_DISPLAY_DURATION) {
+            isDamaged = false;
+            turnsSinceDamage = 0;
+            System.out.println("😺 Jiji recovered!");
+        }
+    }
+}
+
+
+
+public void onShipDamaged() {
+    isDamaged = true;
+    turnsSinceDamage = 0;
+}
+public void onShipSunk() {
+    isDamaged = true;
+    turnsSinceDamage = 0;
+    System.out.println("💢 JIJI's ship was sunk! Entering damaged state!");
+}
     
     public void regenerateMana(int amount) {
         currentMana += amount;
@@ -187,39 +222,49 @@ public class Jiji extends GameCharacter {
         
         overclockTargets.clear();
         System.out.println("⚡ Chain reaction hit " + triggered + " cells!");
-        return triggered > 0;
+return triggered > 0;
     }
-    
-    
-    
-    
-    
-   public boolean useSystemOverload(Board enemyBoard) {
+
+    public boolean useSystemOverload(Board enemyBoard) {
+        return useSystemOverload(enemyBoard, -1, -1);
+    }
+
+
+    public boolean useSystemOverload(Board enemyBoard, int targetX, int targetY) {
     if (systemOverloadCooldown > 0) {
         System.out.println("⏳ System Overload is on cooldown for " + systemOverloadCooldown + " more turns");
         return false;
     }
-    
+
     if (!hasEnoughMana(400)) {
         System.out.println("⚠️ Not enough mana! Need 400 mana, have " + currentMana);
         return false;
     }
-    
-    
-    ArrayList<Ship> availableShips = new ArrayList<>();
-    for (Ship ship : enemyBoard.getShips()) {
-        if (!ship.isSunk() && !ship.isFullyRevealed()) {
-            availableShips.add(ship);
+
+    Ship targetShip = null;
+
+    if (targetX >= 0 && targetY >= 0) {
+        Cell targetCell = enemyBoard.getCell(targetX, targetY);
+        if (targetCell.hasShip() && !targetCell.isFiredUpon()) {
+            targetShip = targetCell.getShip();
         }
     }
-    
-    if (availableShips.isEmpty()) {
-        System.out.println("⚠️ No available ships to target!");
-        return false;
+
+    if (targetShip == null || targetShip.isSunk() || targetShip.isFullyRevealed()) {
+        ArrayList<Ship> availableShips = new ArrayList<>();
+        for (Ship ship : enemyBoard.getShips()) {
+            if (!ship.isSunk() && !ship.isFullyRevealed()) {
+                availableShips.add(ship);
+            }
+        }
+
+        if (availableShips.isEmpty()) {
+            System.out.println("⚠️ No available ships to target!");
+            return false;
+        }
+
+        targetShip = availableShips.get(random.nextInt(availableShips.size()));
     }
-    
-    
-    Ship targetShip = availableShips.get(random.nextInt(availableShips.size()));
     
     
     if (overclockActive) {
@@ -274,18 +319,16 @@ public class Jiji extends GameCharacter {
             int y = pos.getY();
             Cell cell = enemyBoard.getCell(x, y);
             
-            if (!cell.isFiredUpon() && !cell.isRevealed()) {
-                cell.setRevealed(true);
-                revealedCells++;
-                revealReport.append("   • (" + x + "," + y + ") revealed!\n");
-            }
+            cell.setRevealed(true);
+            revealedCells++;
+            revealReport.append("   • (" + x + "," + y + ") revealed!\n");
         }
         
         targetShip.setFullyRevealed(true);
         System.out.println(revealReport.toString());
         System.out.println("💻 " + targetShip.getName() + " has been FULLY REVEALED!");
         System.out.println("   " + revealedCells + " ship segments are now visible!");
-        
+
         systemOverloadCooldown = 5;
         return true;
     }

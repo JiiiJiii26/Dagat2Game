@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.awt.*;
+import java.io.File;
 
 import characters.*;
 import gui.BoardPanel;
@@ -18,11 +19,17 @@ import models.Cell;
 import models.Ship;
 import game.ShotResult;
 import main.Main;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 
 public class CampaignMode {
    
     private boolean testMode = false;  
-    private String testEnemyName = "Skye";
+    private String testEnemyName = "Kael";
+
+    private JPanel jijiPortraitContainer;
+    private JLabel jijiDamageOverlay;
 
     private Image oceanBackground;
     private Image scaledOceanBackground;
@@ -62,7 +69,8 @@ private boolean currentSkillTargetsOwnBoard = false;
 private boolean currentSkillRequiresDirection = false;
 private boolean currentSkillDirectionHorizontal = true;
 
-private TimerPanel turnTimer;
+    private TimerPanel turnTimer;
+    private TimerPanel enemyTurnTimer;
 private boolean timerEnabled = true;
 
 private JLabel playerShipLabel;
@@ -92,9 +100,17 @@ private SkillPanel currentSkillPanel;
     
     
     private boolean waitingForSeleneCrescent = false;
+    private boolean jijiAttackAnimationPlaying = false;
+    private boolean jijiAttackPlayedThisTurn = false;
+    private boolean jijiDamagedAnimationPlaying = false;
     private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
     
     private Timer seleneUpdateTimer; 
+    
+    
+             
+    private JLabel jijiLargePortraitLabel;  
+       
 
     private void loadOceanBackground() {
     try {
@@ -544,8 +560,9 @@ private class WaveBackgroundPanel extends JPanel {
                 break;
             case 1: 
                 if (enemyKael.hasEnoughEnergy(150)) {
-                    int x = enemyRandom.nextInt(10);
-                    int y = enemyRandom.nextInt(10);
+                    int[] target = getRandomUnfiredCellForEnemySkill();
+                    int x = target[0];
+                    int y = target[1];
                     boolean horizontal = enemyRandom.nextBoolean();
                     int destroyed = enemyKael.useShadowBlade(playerBoard, x, y, horizontal);
                     if (destroyed > 0) {
@@ -555,8 +572,10 @@ private class WaveBackgroundPanel extends JPanel {
                 break;
             case 2: 
                 if (enemyKael.hasEnoughEnergy(200)) {
-                    int x = enemyRandom.nextInt(8);
-                    int y = enemyRandom.nextInt(8);
+                    // Get a random cell that hasn't been fired upon
+                    int[] target = getRandomUnfiredCellForEnemySkill();
+                    int x = Math.min(target[0], 8);
+                    int y = Math.min(target[1], 8);
                     int destroyed = enemyKael.useShadowDomain(playerBoard, x, y);
                     if (destroyed > 0) {
                         showEnemySkillMessage("Kael's shadow domain destroyed " + destroyed + " cells!");
@@ -945,7 +964,7 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
  
-private void createBattleUI(CampaignWave wave) {
+ private void createBattleUI(CampaignWave wave) {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
 
@@ -998,13 +1017,50 @@ private void createBattleUI(CampaignWave wave) {
         updateStatusLabel("⏰ TIME'S UP! Auto-ending turn...", Color.RED);
         endTurn();
     });
-    topPanel.add(turnTimer, BorderLayout.CENTER);
     
-    waveLabel = new JLabel(String.format("⚔️ WAVE %d/%d - VS %s ⚔️", 
+    enemyTurnTimer = new TimerPanel(10, () -> {
+        System.out.println("⏰ ENEMY TIME'S UP! Switching to player...");
+        updateStatusLabel("⏰ Enemy took too long! Your turn!", Color.GREEN);
+        playerTurn = true;
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
+        if (turnTimer != null) {
+            turnTimer.setTimerLabel("Your Turn");
+            turnTimer.setVisible(true);
+            turnTimer.startTimer();
+        }
+        onPlayerTurnStart();
+        cancelAllSkillTargeting();
+        if (currentSkillPanel != null) currentSkillPanel.updateUI();
+    });
+    
+    waveLabel = new JLabel(String.format("WAVE %d/%d - VS %s", 
         currentWaveIndex + 1, waves.size(), currentEnemy.getName()));
     waveLabel.setFont(new Font("Arial", Font.BOLD, 18));
     waveLabel.setForeground(Color.YELLOW);
-    topPanel.add(waveLabel, BorderLayout.EAST);
+    
+    JPanel waveLabelPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+    waveLabelPanel.setOpaque(false);
+    waveLabelPanel.add(waveLabel);
+    
+    JPanel centerTopPanel = new JPanel(new BorderLayout());
+    centerTopPanel.setOpaque(false);
+    centerTopPanel.add(waveLabelPanel, BorderLayout.NORTH);
+    
+    JPanel timerPanel = new JPanel(new GridLayout(1, 1, 0, 5));
+    timerPanel.setOpaque(false);
+    turnTimer.setUseCustomLabel(true);
+    turnTimer.setTimerLabel("Your Turn");
+    turnTimer.setVisible(true);
+    enemyTurnTimer.setUseCustomLabel(true);
+    enemyTurnTimer.setTimerLabel("Enemy Turn");
+    enemyTurnTimer.setVisible(false);
+    timerPanel.add(turnTimer);
+    timerPanel.add(enemyTurnTimer);
+    centerTopPanel.add(timerPanel, BorderLayout.CENTER);
+    topPanel.add(centerTopPanel, BorderLayout.CENTER);
     
     JPanel mainContentPanel = new JPanel(new BorderLayout());
     mainContentPanel.setOpaque(false);
@@ -1015,10 +1071,15 @@ private void createBattleUI(CampaignWave wave) {
     
     JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
     boardsPanel.setOpaque(false);
+    boardsPanel.setPreferredSize(new Dimension(1500, 700));
+    boardsPanel.setMaximumSize(new Dimension(1500, 700));
+    boardsPanel.setMinimumSize(new Dimension(1500, 700));
     
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
-    leftPanel.setBackground(new Color(0, 50, 0, 120));
+    leftPanel.setPreferredSize(new Dimension(700, 700));
+    leftPanel.setMaximumSize(new Dimension(700, 700));
+    leftPanel.setMinimumSize(new Dimension(700, 700));
     leftPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
         "⚓ YOUR FLEET",
@@ -1028,23 +1089,32 @@ private void createBattleUI(CampaignWave wave) {
         new Color(0, 255, 0, 200)
     ));
     
-    JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-    charInfoPanel.setOpaque(false);
+   JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+charInfoPanel.setOpaque(false);
+
+
+if (playerCharacter instanceof Jiji) {
     JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
+    charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+    charNameLabel.setForeground(Color.CYAN);
+    charInfoPanel.add(charNameLabel);
+    System.out.println("✅ Jiji - text only at top, no portrait");
+} else {
     
+    JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
     Icon playerPortrait = getCharacterPortrait(playerCharacter);
-    
-    if (playerPortrait != null && !(playerCharacter instanceof Jiji)) {
+    if (playerPortrait != null) {
         charNameLabel.setIcon(playerPortrait);
         charNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
         charNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
-    } else {
-        charNameLabel.setText(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
     }
     charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
     charNameLabel.setForeground(Color.CYAN);
     charInfoPanel.add(charNameLabel);
-    leftPanel.add(charInfoPanel, BorderLayout.NORTH);
+}
+
+leftPanel.add(charInfoPanel, BorderLayout.NORTH);
+
     
     leftPanel.add(playerBoardPanel, BorderLayout.CENTER);
     
@@ -1055,7 +1125,9 @@ private void createBattleUI(CampaignWave wave) {
     
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
-    rightPanel.setBackground(new Color(0, 50, 0, 120));
+    rightPanel.setPreferredSize(new Dimension(700, 700));
+    rightPanel.setMaximumSize(new Dimension(700, 700));
+    rightPanel.setMinimumSize(new Dimension(700, 700));
     rightPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
         "🏴‍☠️ ENEMY WATERS",
@@ -1142,7 +1214,15 @@ private void createBattleUI(CampaignWave wave) {
                     options[0]);
                 
                 if (choice < 0) {
-                    if (turnTimer != null && timerEnabled) turnTimer.startTimer();
+                    if (enemyTurnTimer != null) {
+                        enemyTurnTimer.stopTimer();
+                        enemyTurnTimer.setVisible(false);
+                    }
+                    if (turnTimer != null && timerEnabled) {
+                        turnTimer.setTimerLabel("Your Turn");
+                        turnTimer.setVisible(true);
+                        turnTimer.startTimer();
+                    }
                     return; 
                 }
                 currentSkillDirectionHorizontal = (choice == 0);
@@ -1158,42 +1238,54 @@ private void createBattleUI(CampaignWave wave) {
     });
     
     
-    JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
-    combinedBottomPanel.setOpaque(false);
-    combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
-    combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
+   JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
+combinedBottomPanel.setOpaque(false);
+combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
+combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
 
-    
-    if (playerCharacter instanceof Jiji) {
-        Icon portrait = getCharacterPortrait(playerCharacter);
-        if (portrait != null) {
-            
-            Image img = ((ImageIcon) portrait).getImage();
-            Image scaled = img.getScaledInstance(200, 200, Image.SCALE_DEFAULT);
-            
-            JLabel portraitLabel = new JLabel(new ImageIcon(scaled));
-            portraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
-            
-            JPanel westWrapper = new JPanel(new BorderLayout());
-            westWrapper.setOpaque(false);
-            westWrapper.add(portraitLabel, BorderLayout.CENTER);
-            
-            JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
-            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            nameTag.setForeground(new Color(100, 200, 255)); 
-            westWrapper.add(nameTag, BorderLayout.SOUTH);
-            
-            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
-        }
+// JIJI LARGE PORTRAIT - Bottom Left
+if (playerCharacter instanceof Jiji) {
+    Icon portrait = getCharacterPortrait(playerCharacter);
+    if (portrait != null) {
+        Image img = ((ImageIcon) portrait).getImage();
+        Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
+        
+        jijiLargePortraitLabel = new JLabel(new ImageIcon(scaled));
+        jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
+        jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        
+        JPanel westWrapper = new JPanel(new BorderLayout());
+        westWrapper.setOpaque(false);
+        westWrapper.setPreferredSize(new Dimension(250, 220));
+        westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
+        
+        JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
+        nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        nameTag.setForeground(new Color(100, 200, 255)); 
+        westWrapper.add(nameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+        System.out.println("✅ Jiji large portrait created at bottom left");
+    } else {
+        System.out.println("⚠️ Could not load Jiji portrait");
     }
+} else {
+    // For non-Jiji characters, add an empty panel to maintain layout
+    JPanel emptyPanel = new JPanel();
+    emptyPanel.setOpaque(false);
+    emptyPanel.setPreferredSize(new Dimension(200, 220));
+    combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
+}
 
-    combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
-    mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
+combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
+mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
     
     
     JPanel statusBarPanel = new JPanel();
     statusBarPanel.setOpaque(false);
     statusBarPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+    ((FlowLayout) statusBarPanel.getLayout()).setAlignment(FlowLayout.CENTER);
     
     statusLabel = new JLabel("YOUR TURN - Click on enemy waters to fire!", SwingConstants.CENTER);
     statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
@@ -1213,182 +1305,416 @@ private void createBattleUI(CampaignWave wave) {
     frame.repaint();
     
     if (playerTurn && timerEnabled && turnTimer != null) {
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
+        turnTimer.setTimerLabel("Your Turn");
+        turnTimer.setVisible(true);
         turnTimer.startTimer();
     }
     
     System.out.println("✅ Battle UI created with Timer!");
 }
+
+
+private void refreshJijiPortrait() {
+    System.out.println("🔄 Refreshing Jiji portrait - Damaged state: " + ((Jiji)playerCharacter).isDamaged());
+    
+    if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
+        Jiji jiji = (Jiji) playerCharacter;
+        int portraitWidth = jiji.isDamaged() ? 500 : 250;
+        
+        Icon newPortrait = getCharacterPortrait(playerCharacter);
+        if (newPortrait != null) {
+            Image img = ((ImageIcon) newPortrait).getImage();
+            Image scaled = img.getScaledInstance(portraitWidth, 200, Image.SCALE_DEFAULT);
+            jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
+            jijiLargePortraitLabel.repaint();
+            jijiLargePortraitLabel.revalidate();
+            System.out.println("✅ Jiji portrait refreshed - width: " + portraitWidth);
+            
+            // Add visual feedback when damaged - only trigger once
+            if (jiji.isDamaged() && !jijiDamagedAnimationPlaying) {
+                jijiDamagedAnimationPlaying = true;
+                System.out.println("💢 Starting damaged animation once!");
+                
+                // Flash red border when damaged - cast to JComponent to use setBorder
+                java.awt.Component parent = jijiLargePortraitLabel.getParent();
+                if (parent instanceof JComponent) {
+                    JComponent jparent = (JComponent) parent;
+                    jparent.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    // Remove border after 1 second
+                    Timer borderTimer = new Timer(1000, e -> {
+                        if (jijiLargePortraitLabel != null) {
+                            java.awt.Component parent2 = jijiLargePortraitLabel.getParent();
+                            if (parent2 instanceof JComponent) {
+                                ((JComponent) parent2).setBorder(null);
+                            }
+                        }
+                    });
+                    borderTimer.setRepeats(false);
+                    borderTimer.start();
+                }
+                
+                // Add a visual flash effect when Jiji gets damaged
+                if (frame.getContentPane() instanceof WaveBackgroundPanel) {
+                    ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
+                }
+                
+                // Reset damaged animation flag when Jiji recovers
+                javax.swing.Timer recoveryTimer = new javax.swing.Timer(2500, e -> {
+                    if (!jiji.isDamaged()) {
+                        jijiDamagedAnimationPlaying = false;
+                        System.out.println("🔄 Jiji recovered, damaged animation can play again");
+                    }
+                });
+                recoveryTimer.setRepeats(false);
+                recoveryTimer.start();
+            }
+        } else {
+            System.out.println("⚠️ newPortrait is NULL!");
+        }
+    } else {
+        System.out.println("⚠️ Cannot refresh - jijiLargePortraitLabel is null or not Jiji");
+    }
+}
+
+private void showJijiAttackAnimation() {
+    System.out.println("⚔️ showJijiAttackAnimation called!");
+    
+    // Only play once per turn and if not already playing
+    if (jijiAttackAnimationPlaying || jijiAttackPlayedThisTurn) {
+        System.out.println("⏭️ Attack animation already played this turn or playing, skipping...");
+        return;
+    }
+    
+    if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
+        String attackPath = "assets/jiji_attack.gif";
+        File attackFile = new File(attackPath);
+        System.out.println("Attack file exists: " + attackFile.exists());
+        if (attackFile.exists()) {
+            jijiAttackAnimationPlaying = true;
+            jijiAttackPlayedThisTurn = true;
+            ImageIcon attackIcon = new ImageIcon(attackPath);
+            Image img = attackIcon.getImage();
+            Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
+            jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
+            System.out.println("✅ Attack animation set!");
+            
+            // Play animation longer (3 seconds) before returning to normal
+            javax.swing.Timer attackTimer = new javax.swing.Timer(3000, e -> {
+                jijiAttackAnimationPlaying = false;
+                refreshJijiPortrait();
+            });
+            attackTimer.setRepeats(false);
+            attackTimer.start();
+        }
+    }
+}
+
+private void animateDamagedShake() {
+    if (jijiLargePortraitLabel == null) return;
+    
+    // Store original position
+    java.awt.Point originalPos = jijiLargePortraitLabel.getLocation();
+    Timer shakeTimer = new Timer(50, new ActionListener() {
+        int shakes = 0;
+        int maxShakes = 10;
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (shakes >= maxShakes) {
+                // Reset position
+                jijiLargePortraitLabel.setLocation(originalPos);
+                ((Timer)e.getSource()).stop();
+                return;
+            }
+            
+            // Random offset for shaking
+            int offsetX = (int)(Math.random() * 8) - 4;
+            int offsetY = (int)(Math.random() * 8) - 4;
+            jijiLargePortraitLabel.setLocation(originalPos.x + offsetX, originalPos.y + offsetY);
+            shakes++;
+        }
+    });
+    shakeTimer.start();
+}
+
+// Helper method to get a random cell that hasn't been fired upon yet
+private int[] getRandomUnfiredCell() {
+    // First, collect all cells that haven't been fired upon yet
+    java.util.ArrayList<int[]> availableCells = new java.util.ArrayList<>();
+    
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (!playerBoard.isCellFiredUpon(i, j)) {
+                availableCells.add(new int[]{i, j});
+            }
+        }
+    }
+    
+    // If there are no available cells (all have been fired upon), return a random cell as fallback
+    if (availableCells.isEmpty()) {
+        System.out.println("⚠️ No available cells! All have been fired upon!");
+        return new int[]{random.nextInt(10), random.nextInt(10)};
+    }
+    
+    // Pick a random cell from the available ones
+    int randomIndex = random.nextInt(availableCells.size());
+    int[] selected = availableCells.get(randomIndex);
+    System.out.println("🎯 Enemy AI selected cell (" + selected[0] + "," + selected[1] + 
+                       ") - " + availableCells.size() + " cells remaining");
+    return selected;
+}
+
+// Helper method for enemy skills to target unfired cells
+private int[] getRandomUnfiredCellForEnemySkill() {
+    java.util.ArrayList<int[]> availableCells = new java.util.ArrayList<>();
+    
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (!playerBoard.isCellFiredUpon(i, j)) {
+                availableCells.add(new int[]{i, j});
+            }
+        }
+    }
+    
+    if (availableCells.isEmpty()) {
+        return new int[]{random.nextInt(10), random.nextInt(10)};
+    }
+    
+    return availableCells.get(random.nextInt(availableCells.size()));
+}
+
 private void executeSkill(int targetX, int targetY) {
     System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
     boolean shouldEndTurn = true;
     
-    if (playerCharacter instanceof Jiji) {
-        Jiji jiji = (Jiji) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Data Leech");
-                success = jiji.useDataLeech(enemyBoard);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Overclock");
-                success = jiji.useOverclock();
-                shouldEndTurn = false; 
-                break;
-            case 3:
-                System.out.println("Using System Overload");
-                success = jiji.useSystemOverload(enemyBoard);
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Kael) {
-        Kael kael = (Kael) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                
-                break;
-            case 2:
-                System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ")");
-                int destroyed = kael.useShadowBlade(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Shadow Domain at (" + targetX + "," + targetY + ")");
-                destroyed = kael.useShadowDomain(enemyBoard, targetX, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Valerius) {
-        Valerius valerius = (Valerius) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Radar Overload");
-                success = valerius.useRadarOverload();
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Precision Strike");
-                if (valerius.usePrecisionStrike()) {
-                    int destroyed = valerius.applyPrecisionStrike(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
+    try {
+        if (playerCharacter instanceof Jiji) {
+            Jiji jiji = (Jiji) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Data Leech");
+                    success = jiji.useDataLeech(enemyBoard);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Overclock");
+                    success = jiji.useOverclock();
+                    shouldEndTurn = false; 
+                    break;
+                case 3:
+                    System.out.println("Using System Overload at (" + targetX + "," + targetY + ")");
+                    success = jiji.useSystemOverload(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    System.out.println("⚠️ Unknown Jiji skill number: " + currentSkillNumber);
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Kael) {
+            Kael kael = (Kael) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    
+                    
+                    System.out.println("⚠️ Shadow Step should not be in executeSkill!");
+                    success = false;
+                    shouldEndTurn = false;
+                    break;
+                case 2:
+                    System.out.println("Using Shadow Blade at (" + targetX + "," + targetY + ")");
+                    int destroyed = kael.useShadowBlade(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
                     success = destroyed > 0;
                     shouldEndTurn = true;
-                }
-                break;
-            case 3:
-                System.out.println("Using Fortress Mode");
-                success = valerius.useFortressMode();
-                shouldEndTurn = true;
-                break;
+                    break;
+                case 3:
+                    System.out.println("Using Shadow Domain at (" + targetX + "," + targetY + ")");
+                    destroyed = kael.useShadowDomain(enemyBoard, targetX, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    System.out.println("⚠️ Unknown Kael skill number: " + currentSkillNumber);
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Valerius) {
+            Valerius valerius = (Valerius) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Radar Overload");
+                    success = valerius.useRadarOverload();
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Precision Strike");
+                    if (valerius.usePrecisionStrike()) {
+                        int destroyed = valerius.applyPrecisionStrike(enemyBoard, targetX, targetY, currentSkillDirectionHorizontal);
+                        success = destroyed > 0;
+                        shouldEndTurn = true;
+                    } else {
+                        success = false;
+                        shouldEndTurn = false;
+                    }
+                    break;
+                case 3:
+                    System.out.println("Using Fortress Mode");
+                    success = valerius.useFortressMode();
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Skye) {
+            Skye skye = (Skye) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Catnip Explosion at (" + targetX + "," + targetY + ")");
+                    int destroyed = skye.useCatnipExplosion(enemyBoard, targetX, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Laser Pointer");
+                    success = skye.useLaserPointer();
+                    shouldEndTurn = false; 
+                    if (success) {
+                        System.out.println("🔴 Laser Pointer used - Enemy will skip their next turn!");
+                    }
+                    break;
+                case 3:
+                    System.out.println("Using Nine Lives at (" + targetX + "," + targetY + ")");
+                    success = skye.useNineLives(playerBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Morgana) {
+            Morgana morgana = (Morgana) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Enchanting Melody");
+                    success = morgana.useEnchantingMelody();
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Whirlpool Trap at (" + targetX + "," + targetY + ")");
+                    success = morgana.useWhirlpoolTrap(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 3:
+                    System.out.println("Using Tidal Wave");
+                    int flooded = morgana.useTidalWave(enemyBoard);
+                    success = flooded > 0;
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Aeris) {
+            Aeris aeris = (Aeris) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Adaptive Instinct");
+                    success = aeris.useAdaptiveInstinct(playerBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Multitask Overdrive");
+                    success = aeris.useMultitaskOverdrive();
+                    shouldEndTurn = false; 
+                    break;
+                case 3:
+                    System.out.println("Using Relentless Ascent at column " + targetY);
+                    int destroyed = aeris.useRelentlessAscent(enemyBoard, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Selene) {
+            Selene selene = (Selene) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Lunar Reveal at (" + targetX + "," + targetY + ")");
+                    success = selene.useLunarReveal(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Crescent Strike at (" + targetX + "," + targetY + ")");
+                    int destroyed = selene.useCrescentStrike(enemyBoard, targetX, targetY);
+                    success = destroyed > 0;
+                    shouldEndTurn = true;
+                    break;
+                case 3:
+                    System.out.println("Using Starfall Link");
+                    success = selene.useStarfallLink(enemyBoard);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else if (playerCharacter instanceof Flue) {
+            Flue flue = (Flue) playerCharacter;
+            switch(currentSkillNumber) {
+                case 1:
+                    System.out.println("Using Corruption.EXE at (" + targetX + "," + targetY + ")");
+                    success = flue.useCorruption(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 2:
+                    System.out.println("Using Fortification.GRID at (" + targetX + "," + targetY + ")");
+                    success = flue.useFortification(playerBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                case 3:
+                    System.out.println("Using Kernel.Decimation.REQ at (" + targetX + "," + targetY + ")");
+                    success = flue.useKernelDecimation(enemyBoard, targetX, targetY);
+                    shouldEndTurn = true;
+                    break;
+                default:
+                    success = false;
+                    shouldEndTurn = false;
+            }
+        } else {
+            System.out.println("⚠️ Unknown character type for skill execution");
+            success = false;
+            shouldEndTurn = false;
         }
-    } else if (playerCharacter instanceof Skye) {
-        Skye skye = (Skye) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Catnip Explosion at (" + targetX + "," + targetY + ")");
-                int destroyed = skye.useCatnipExplosion(enemyBoard, targetX, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Laser Pointer");
-                success = skye.useLaserPointer();
-                shouldEndTurn = false; 
-                if (success) {
-                    System.out.println("🔴 Laser Pointer used - Enemy will skip their next turn!");
-                }
-                break;
-            case 3:
-                System.out.println("Using Nine Lives at (" + targetX + "," + targetY + ")");
-                success = skye.useNineLives(playerBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Morgana) {
-        Morgana morgana = (Morgana) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Enchanting Melody");
-                success = morgana.useEnchantingMelody();
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Whirlpool Trap at (" + targetX + "," + targetY + ")");
-                success = morgana.useWhirlpoolTrap(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Tidal Wave");
-                int flooded = morgana.useTidalWave(enemyBoard);
-                success = flooded > 0;
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Aeris) {
-        Aeris aeris = (Aeris) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Adaptive Instinct");
-                success = aeris.useAdaptiveInstinct(playerBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Multitask Overdrive");
-                success = aeris.useMultitaskOverdrive();
-                shouldEndTurn = false; 
-                break;
-            case 3:
-                System.out.println("Using Relentless Ascent at column " + targetY);
-                int destroyed = aeris.useRelentlessAscent(enemyBoard, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Selene) {
-        Selene selene = (Selene) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Lunar Reveal at (" + targetX + "," + targetY + ")");
-                success = selene.useLunarReveal(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Crescent Strike at (" + targetX + "," + targetY + ")");
-                int destroyed = selene.useCrescentStrike(enemyBoard, targetX, targetY);
-                success = destroyed > 0;
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Starfall Link");
-                success = selene.useStarfallLink(enemyBoard);
-                shouldEndTurn = true;
-                break;
-        }
-    } else if (playerCharacter instanceof Flue) {
-        Flue flue = (Flue) playerCharacter;
-        switch(currentSkillNumber) {
-            case 1:
-                System.out.println("Using Corruption.EXE at (" + targetX + "," + targetY + ")");
-                success = flue.useCorruption(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 2:
-                System.out.println("Using Fortification.GRID at (" + targetX + "," + targetY + ")");
-                success = flue.useFortification(playerBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-            case 3:
-                System.out.println("Using Kernel.Decimation.REQ at (" + targetX + "," + targetY + ")");
-                success = flue.useKernelDecimation(enemyBoard, targetX, targetY);
-                shouldEndTurn = true;
-                break;
-        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        updateStatusLabel("❌ Skill error: " + e.getMessage(), Color.RED);
+        success = false;
+        shouldEndTurn = false;
+        
+        waitingForSkillTarget = false;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        currentSkillTargetsOwnBoard = false;
+        currentSkillRequiresDirection = false;
     }
     
     if (success) {
-        updateStatusLabel("✨ " + currentSkillName + " used successfully!", Color.GREEN);
+        String skillNameCopy = currentSkillName;
+        waitingForSkillTarget = false;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        currentSkillTargetsOwnBoard = false;
+        currentSkillRequiresDirection = false;
+        
+        updateStatusLabel("✨ " + skillNameCopy + " used successfully!", Color.GREEN);
         if (frame.getContentPane() instanceof WaveBackgroundPanel) {
             ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(new Color(255, 255, 255));
             ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(10);
@@ -1399,12 +1725,22 @@ private void executeSkill(int targetX, int targetY) {
             currentSkillPanel.updateUI();
         }
         
-        if (currentSkillName.equals("Laser Pointer")) {
+        if (skillNameCopy.equals("Laser Pointer")) {
             updateStatusLabel("🔴 Enemy will skip their next turn! You get another turn!", Color.GREEN);
         }
         
         if (shouldEndTurn) {
             playerTurn = false;
+            
+            if (turnTimer != null) {
+                turnTimer.stopTimer();
+                turnTimer.setVisible(false);
+            }
+            if (enemyTurnTimer != null) {
+                enemyTurnTimer.setTimerLabel("Enemy Turn");
+                enemyTurnTimer.setVisible(true);
+                enemyTurnTimer.startTimer();
+            }
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
@@ -1412,23 +1748,38 @@ private void executeSkill(int targetX, int targetY) {
             refreshUI();
             updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
             
+            if (enemyTurnTimer != null) {
+                enemyTurnTimer.stopTimer();
+                enemyTurnTimer.setVisible(false);
+            }
             if (turnTimer != null && timerEnabled) {
+                turnTimer.setTimerLabel("Your Turn");
+                turnTimer.setVisible(true);
+                turnTimer.stopTimer();
                 turnTimer.startTimer();
             }
         }
     } else {
-        updateStatusLabel("❌ Failed to use " + currentSkillName + "! Check mana/cooldown.", Color.RED);
+        String failedSkillName = currentSkillName;
+        waitingForSkillTarget = false;
+        currentSkillNumber = 0;
+        currentSkillName = "";
+        currentSkillTargetsOwnBoard = false;
+        currentSkillRequiresDirection = false;
         
+        updateStatusLabel("❌ Failed to use " + failedSkillName + "! Check mana/cooldown.", Color.RED);
+        
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
         if (turnTimer != null && timerEnabled && playerTurn) {
+            turnTimer.setTimerLabel("Your Turn");
+            turnTimer.setVisible(true);
+            turnTimer.stopTimer();
             turnTimer.startTimer();
         }
     }
-    
-    waitingForSkillTarget = false;
-    currentSkillNumber = 0;
-    currentSkillName = "";
-    currentSkillTargetsOwnBoard = false;
-    currentSkillRequiresDirection = false;
 }
 
 private String getShipCountText(Board board) {
@@ -1443,6 +1794,7 @@ private String getShipCountText(Board board) {
     int remaining = total - sunk;
     return "🚢 Ships: " + remaining + "/" + total;
 }
+
 private void updateShipCounters() {
     if (playerShipLabel != null) {
         playerShipLabel.setText(getShipCountText(playerBoard));
@@ -1485,7 +1837,15 @@ private void setupClickHandlers() {
                 refreshBoardsOnly();
                 
                 playerTurn = false;
-                if (turnTimer != null) turnTimer.stopTimer();
+                if (turnTimer != null) {
+                    turnTimer.stopTimer();
+                    turnTimer.setVisible(false);
+                }
+                if (enemyTurnTimer != null) {
+                    enemyTurnTimer.setTimerLabel("Enemy Turn");
+                    enemyTurnTimer.setVisible(true);
+                    enemyTurnTimer.startTimer();
+                }
                 Timer timer = new Timer(1200, e -> enemyTurn());
                 timer.setRepeats(false);
                 timer.start();
@@ -1505,9 +1865,10 @@ private void setupClickHandlers() {
     
     
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-        System.out.println("Enemy board clicked at: " + row + "," + col);
+        System.out.println("🔍 ENEMY BOARD CLICKED at (" + row + "," + col + ") - waitingForSkillTarget=" + waitingForSkillTarget + " targetsOwnBoard=" + currentSkillTargetsOwnBoard);
         
         if (waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
+            System.out.println("🎯 Executing skill target!");
             if (turnTimer != null) turnTimer.stopTimer();
             executeSkill(row, col);
             return;
@@ -1748,26 +2109,44 @@ private void setupClickHandlers() {
         return "🎮";
     }
 
-    /**
-     * Helper to load animated GIFs for character portraits.
-     * Looks for assets/[charactername]_idle.gif
-     */
-    private Icon getCharacterPortrait(GameCharacter character) {
-        try {
-            String name = character.getName().split(" ")[0].toLowerCase();
-            
-            String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
-            
-            for (String path : possiblePaths) {
-                if (new java.io.File(path).exists()) {
-                    return new ImageIcon(path);
+   
+ private Icon getCharacterPortrait(GameCharacter character) {
+    try {
+        String name = character.getName().split(" ")[0].toLowerCase();
+        System.out.println("🔍 Loading portrait for: " + name);
+        
+        // Check for Jiji's damaged state
+        if (character instanceof Jiji) {
+            Jiji jiji = (Jiji) character;
+            System.out.println("🔍 Jiji damaged state: " + jiji.isDamaged());
+            if (jiji.isDamaged()) {
+                String damagedPath = "assets/jiji_whenDamaged.gif";
+                File damagedFile = new File(damagedPath);
+                if (damagedFile.exists()) {
+                    System.out.println("💢 Jiji damaged! Using damaged animation from: " + damagedPath);
+                    return new ImageIcon(damagedPath);
+                } else {
+                    System.out.println("⚠️ Damaged GIF not found at: " + damagedFile.getAbsolutePath());
                 }
             }
-        } catch (Exception e) {
-            System.out.println("⚠️ Could not load portrait for " + character.getName());
         }
-        return null;
+        
+        // Normal idle animation
+        String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
+        
+        for (String path : possiblePaths) {
+            File file = new File(path);
+            if (file.exists()) {
+                System.out.println("✅ Loading portrait from: " + path);
+                return new ImageIcon(path);
+            }
+        }
+        System.out.println("⚠️ No portrait found for: " + name);
+    } catch (Exception e) {
+        System.out.println("⚠️ Could not load portrait: " + e.getMessage());
     }
+    return null;
+}
     
     private JPanel createBoardsPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 2, 10, 0));
@@ -1817,7 +2196,15 @@ private void setupClickHandlers() {
             refreshBoardsOnly();
             
             playerTurn = false;
-            if (turnTimer != null) turnTimer.stopTimer();
+            if (turnTimer != null) {
+                turnTimer.stopTimer();
+                turnTimer.setVisible(false);
+            }
+            if (enemyTurnTimer != null) {
+                enemyTurnTimer.setTimerLabel("Enemy Turn");
+                enemyTurnTimer.setVisible(true);
+                enemyTurnTimer.startTimer();
+            }
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
@@ -1897,7 +2284,7 @@ private void setupClickHandlers() {
         return panel;
     }
     
-   private void handlePlayerAttack(int row, int col) {
+ private void handlePlayerAttack(int row, int col) {
     if (enemyBoard.isCellFiredUpon(row, col)) {
         updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
         
@@ -1932,6 +2319,9 @@ private void setupClickHandlers() {
         updateStatusLabel("💥 HIT! Enemy ship damaged!", Color.GREEN);
         if (frame.getContentPane() instanceof WaveBackgroundPanel) {
             ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(15);
+        }
+        if (playerCharacter instanceof Jiji && result == ShotResult.SUNK) {
+            showJijiAttackAnimation();
         }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
@@ -1971,6 +2361,15 @@ private void setupClickHandlers() {
     }
     
     playerTurn = false;
+    if (turnTimer != null) {
+        turnTimer.stopTimer();
+        turnTimer.setVisible(false);
+    }
+    if (enemyTurnTimer != null) {
+        enemyTurnTimer.setTimerLabel("Enemy Turn");
+        enemyTurnTimer.setVisible(true);
+        enemyTurnTimer.startTimer();
+    }
     
     for (int i = 3; i > 0; i--) {
         final int count = i;
@@ -1985,7 +2384,11 @@ private void setupClickHandlers() {
     timer.setRepeats(false);
     timer.start();
 }
- private void enemyTurn() {
+
+private void enemyTurn() {
+    if (enemyTurnTimer != null) {
+        enemyTurnTimer.setVisible(true);
+    }
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
     if (playerCharacter instanceof Flue) {
@@ -2004,6 +2407,15 @@ private void setupClickHandlers() {
             if (skye.shouldSkipEnemyTurn()) {
                 updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
                 playerTurn = true;
+                if (enemyTurnTimer != null) {
+                    enemyTurnTimer.stopTimer();
+                    enemyTurnTimer.setVisible(false);
+                }
+                if (turnTimer != null) {
+                    turnTimer.setTimerLabel("Your Turn");
+                    turnTimer.setVisible(true);
+                    turnTimer.startTimer();
+                }
                 onPlayerTurnStart();
                 
                 
@@ -2014,8 +2426,10 @@ private void setupClickHandlers() {
             }
         }
 
-        int x = random.nextInt(10);
-        int y = random.nextInt(10);
+        // Get a random unused cell instead of just random
+        int[] coordinates = getRandomUnfiredCell();
+        int x = coordinates[0];
+        int y = coordinates[1];
         
         useEnemySkill();
 
@@ -2044,7 +2458,37 @@ private void setupClickHandlers() {
         
         updateStatusLabel("🎯 Enemy firing at (" + x + "," + y + ")!", Color.ORANGE);
         
+        // Track ship count before the attack to detect if a ship gets sunk
+        int shipsBeforeAttack = 0;
+        if (playerCharacter instanceof Jiji) {
+            for (Ship ship : playerBoard.getShips()) {
+                if (!ship.isSunk()) {
+                    shipsBeforeAttack++;
+                }
+            }
+            System.out.println("Ships before attack: " + shipsBeforeAttack);
+        }
+        
         ShotResult result = playerBoard.fire(x, y);
+        
+        // Check if Jiji had a ship sunk by this attack
+        if (playerCharacter instanceof Jiji) {
+            int shipsAfterAttack = 0;
+            for (Ship ship : playerBoard.getShips()) {
+                if (!ship.isSunk()) {
+                    shipsAfterAttack++;
+                }
+            }
+            System.out.println("Ships after attack: " + shipsAfterAttack);
+            
+            // If a ship was sunk (ships decreased), trigger damaged animation
+            if (shipsAfterAttack < shipsBeforeAttack) {
+                Jiji jiji = (Jiji) playerCharacter;
+                jiji.onShipSunk();
+                refreshJijiPortrait();
+                updateStatusLabel("💀 JIJI's ship was SUNK! Jiji is damaged!", Color.RED);
+            }
+        }
         
         if (playerCharacter instanceof Jiji && ((Jiji) playerCharacter).checkFirewall(x, y, result)) {
             updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
@@ -2079,6 +2523,11 @@ private void setupClickHandlers() {
         }
         
         playerTurn = true;
+        if (turnTimer != null) {
+            turnTimer.setTimerLabel("Your Turn");
+            turnTimer.setVisible(true);
+            turnTimer.startTimer();
+        }
         onPlayerTurnStart();
         cancelAllSkillTargeting();
         
@@ -2307,9 +2756,24 @@ private void setupClickHandlers() {
         return "YOUR TURN - Click on enemy waters to fire!";
     }
     
-  private void onPlayerTurnStart() {
+ private void onPlayerTurnStart() {
     System.out.println("🔄 Player turn started! Checking conditions...");
 
+    // Reset Jiji attack animation flag for new turn
+    jijiAttackPlayedThisTurn = false;
+    
+    if (playerCharacter instanceof Jiji) {
+        Jiji jiji = (Jiji) playerCharacter;
+        boolean wasDamaged = jiji.isDamaged();
+        jiji.updateDamageState();
+        
+        
+        if (wasDamaged && !jiji.isDamaged()) {
+            System.out.println("😺 Jiji recovered! Returning to idle animation");
+            refreshJijiPortrait();
+            updateStatusLabel("😺 Jiji has recovered from the damage!", Color.GREEN);
+        }
+    }
 
      if (playerCharacter instanceof Flue) {
         Flue flue = (Flue) playerCharacter;
@@ -2358,6 +2822,13 @@ private void setupClickHandlers() {
 
     
     if (timerEnabled && turnTimer != null) {
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.stopTimer();
+            enemyTurnTimer.setVisible(false);
+        }
+        turnTimer.setTimerLabel("Your Turn");
+        turnTimer.setVisible(true);
+        turnTimer.stopTimer(); 
         turnTimer.startTimer();
     }
 }
@@ -2386,6 +2857,12 @@ private void endTurn() {
         if (confirm != JOptionPane.YES_OPTION) {
             
             if (timerEnabled && turnTimer != null) {
+                if (enemyTurnTimer != null) {
+                    enemyTurnTimer.stopTimer();
+                    enemyTurnTimer.setVisible(false);
+                }
+                turnTimer.setTimerLabel("Your Turn");
+                turnTimer.setVisible(true);
                 turnTimer.startTimer();
             }
             return;
@@ -2398,6 +2875,15 @@ private void endTurn() {
     
     
     playerTurn = false;
+    if (turnTimer != null) {
+        turnTimer.stopTimer();
+        turnTimer.setVisible(false);
+    }
+    if (enemyTurnTimer != null) {
+        enemyTurnTimer.setTimerLabel("Enemy Turn");
+        enemyTurnTimer.setVisible(true);
+        enemyTurnTimer.startTimer();
+    }
     
     
     if (currentSkillPanel != null) {
