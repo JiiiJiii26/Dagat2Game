@@ -69,7 +69,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         initializeUI();
     }
 
-    // Map each character class directly to its portrait file
     private ImageIcon loadPortrait(GameCharacter character) {
         String base = System.getProperty("user.dir") + File.separator + "assets" + File.separator;
         String filename = null;
@@ -97,7 +96,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         int w = getWidth();
         int h = getHeight();
 
-        // 1. Draw blurred GIF background
         BufferedImage frame = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D fg = frame.createGraphics();
         fg.drawImage(gifIcon.getImage(), 0, 0, w, h, this);
@@ -108,7 +106,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
 
         Graphics2D g2 = (Graphics2D) g;
 
-        // 2. Draw dark overlay
         g2.setColor(new Color(0, 0, 0, 90));
         g2.fillRect(0, 0, w, h);
 
@@ -117,67 +114,64 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         int portraitH = h;
         int portraitW = 800;
 
-        // 3. P1 portrait — LEFT side, fully opaque
         if (p1PortraitIcon != null) {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g2.drawImage(p1PortraitIcon.getImage(), 0, 0, portraitW, portraitH, this);
         }
 
-        // 4. P2 portrait — RIGHT side, fully opaque
         if (p2PortraitIcon != null) {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g2.drawImage(p2PortraitIcon.getImage(), w - portraitW, 0, portraitW, portraitH, this);
         }
 
-        // Reset composite
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
     }
 
     private void initializeUI() {
         setLayout(null);
 
-        JButton backButton = new JButton("Back");
-        backButton.setBounds(10, 10, 80, 30);
+        // Back button — top left, small and unobtrusive
+        JButton backButton = new JButton("← Back");
+        backButton.setBounds(10, 10, 90, 28);
+        backButton.setFont(new Font("Arial", Font.PLAIN, 12));
         backButton.addActionListener(e -> {
             if (listener != null) listener.onBackToMenu();
         });
         add(backButton);
 
-        JLabel p1Label = new JLabel("Player 1", SwingConstants.LEFT);
-        p1Label.setForeground(Color.WHITE);
-        p1Label.setFont(new Font("Arial", Font.BOLD, 18));
-        p1Label.setBounds(100, 10, 200, 30);
-        add(p1Label);
-
-        JLabel p2Label = new JLabel("Player 2", SwingConstants.LEFT);
-        p2Label.setForeground(Color.WHITE);
-        p2Label.setFont(new Font("Arial", Font.BOLD, 18));
-        p2Label.setBounds(1000, 10, 200, 30);
-        add(p2Label);
-
         int BOX_W  = 180;
         int BOX_H  = 200;
         int GAP_X  = 6;
         int startX = 200;
-        int p1RowY = 530;
-        int p2RowY = p1RowY + BOX_H + 8;
+        int p1RowY = 500;
+        int p2RowY = p1RowY + BOX_H + 30;
 
-        player1SelectedLabel = new JLabel("No character selected", SwingConstants.LEFT);
-        player1SelectedLabel.setForeground(Color.YELLOW);
-        player1SelectedLabel.setFont(new Font("Arial", Font.BOLD, 13));
-        player1SelectedLabel.setBounds(startX, p1RowY - 22, 500, 20);
+        // P1 header banner — sits directly above P1 row
+        JPanel p1Banner = createPlayerBanner("PLAYER 1", new Color(0, 180, 220, 180));
+        p1Banner.setBounds(startX, p1RowY - 38, 300, 32);
+        add(p1Banner);
+
+        // P1 selected name — right of the P1 banner
+        player1SelectedLabel = createSelectedLabel();
+        player1SelectedLabel.setBounds(startX + 310, p1RowY - 38, 400, 32);
         add(player1SelectedLabel);
 
-        player2SelectedLabel = new JLabel("No character selected", SwingConstants.LEFT);
-        player2SelectedLabel.setForeground(Color.YELLOW);
-        player2SelectedLabel.setFont(new Font("Arial", Font.BOLD, 13));
-        player2SelectedLabel.setBounds(startX, p2RowY - 22, 500, 20);
+        // P2 header banner — sits directly above P2 row
+        JPanel p2Banner = createPlayerBanner("PLAYER 2", new Color(220, 100, 0, 180));
+        p2Banner.setBounds(startX, p2RowY - 38, 300, 32);
+        add(p2Banner);
+
+        // P2 selected name — right of the P2 banner
+        player2SelectedLabel = createSelectedLabel();
+        player2SelectedLabel.setBounds(startX + 310, p2RowY - 38, 400, 32);
         add(player2SelectedLabel);
 
+        // Confirm button — bottom center, styled
         int totalW = 8 * BOX_W + 7 * GAP_X;
-        confirmButton = new JButton("Start Battle!");
+        confirmButton = new JButton("START BATTLE");
         confirmButton.setEnabled(false);
-        confirmButton.setBounds(startX + totalW / 2 - 80, p2RowY + BOX_H + 10, 160, 35);
+        confirmButton.setFont(new Font("Arial", Font.BOLD, 14));
+        confirmButton.setBounds(startX + totalW / 2 - 90, p2RowY + BOX_H + 14, 180, 38);
         confirmButton.addActionListener(e -> {
             if (player1Character != null && player2Character != null) {
                 listener.onCharactersSelected(player1Character, player2Character);
@@ -185,6 +179,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         });
         add(confirmButton);
 
+        // Cards
         for (int i = 0; i < characters.size(); i++) {
             int x = startX + i * (BOX_W + GAP_X);
 
@@ -196,6 +191,47 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             card2.setBounds(x, p2RowY, BOX_W, BOX_H);
             add(card2);
         }
+    }
+
+    // Semi-transparent colored banner with player label
+    private JPanel createPlayerBanner(String text, Color color) {
+        JPanel banner = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+            }
+        };
+        banner.setOpaque(false);
+
+        JLabel label = new JLabel(text, SwingConstants.CENTER);
+        label.setForeground(Color.WHITE);
+        label.setFont(new Font("Arial", Font.BOLD, 15));
+        banner.add(label, BorderLayout.CENTER);
+
+        return banner;
+    }
+
+    // Semi-transparent dark label for selected character name
+    private JLabel createSelectedLabel() {
+        JLabel label = new JLabel("— choose a character", SwingConstants.LEFT) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(new Color(0, 0, 0, 120));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        label.setOpaque(false);
+        label.setForeground(new Color(255, 220, 50));
+        label.setFont(new Font("Arial", Font.ITALIC, 13));
+        label.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        return label;
     }
 
     private ImageIcon loadCharacterImage(GameCharacter character) {
@@ -264,13 +300,13 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
                     }
                 }
                 card.setBorder(BorderFactory.createLineBorder(
-                    playerNumber == 1 ? Color.CYAN : Color.ORANGE, 2));
+                    playerNumber == 1 ? new Color(0, 200, 255) : new Color(255, 120, 0), 3));
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (!isCharacterSelected(character, playerNumber)) {
-                    card.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+                    card.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
                 }
             }
 
@@ -290,12 +326,12 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             player1Character = character;
             p1PortraitIcon = loadPortrait(character);
             if (player1SelectedLabel != null)
-                player1SelectedLabel.setText("P1 Selected: " + character.getName());
+                player1SelectedLabel.setText("  " + character.getName());
         } else {
             player2Character = character;
             p2PortraitIcon = loadPortrait(character);
             if (player2SelectedLabel != null)
-                player2SelectedLabel.setText("P2 Selected: " + character.getName());
+                player2SelectedLabel.setText("  " + character.getName());
         }
         confirmButton.setEnabled(player1Character != null && player2Character != null);
         repaint();
