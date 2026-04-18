@@ -7,7 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import javax.imageio.ImageIO;
 
 import characters.*;
 import gui.BoardPanel;
@@ -25,7 +27,7 @@ import java.io.File;
 
 public class CampaignMode {
    
-    private boolean testMode = false;  
+    private boolean testMode = true;  
     private String testEnemyName = "Kael";
 
     private JPanel jijiPortraitContainer;
@@ -103,6 +105,28 @@ private SkillPanel currentSkillPanel;
     private boolean jijiAttackAnimationPlaying = false;
     private boolean jijiAttackPlayedThisTurn = false;
     private boolean jijiDamagedAnimationPlaying = false;
+    private ImageIcon[] jijiIdleFrames = new ImageIcon[4];
+    private Timer idleAnimationTimer;
+    private int currentCycleSlot = 0;
+    private int slotCounter = 0;
+    private static final int[] CYCLE_DURATIONS = {18,36,18,36,18,36,18,36,18,36,54,72};
+    private static final int[] SLOT_FRAME_MAP = {0,1,0,1,0,1,0,1,0,1,2,3};
+    // Subtle sway offsets per slot (px) - gentle side-to-side motion
+    private static final int[] SLOT_OFFSET_X = {0, 1, -1, 1, -1, 1, 0, 1, -1, 1, 0, 0};
+
+    // Damaged animation frames (4 PNGs)
+    private ImageIcon[] jijiDamagedFrames = new ImageIcon[4];
+    private Timer damagedAnimationTimer;
+    private int currentDamagedFrame = 0;
+    private int damagedFrameCounter = 0;
+    private static final int[] DAMAGED_FRAME_DURATIONS = {6, 6, 6, 12}; // ticks (~0.5s cycle)
+
+    // Attack animation frames (4 PNGs)
+    private ImageIcon[] jijiAttackFrames = new ImageIcon[4];
+    private Timer attackAnimationTimer;
+    private int currentAttackFrame = 0;
+    private int attackFrameCounter = 0;
+    private static final int[] ATTACK_FRAME_DURATIONS = {4, 4, 4, 8}; // ticks (~0.4s total)
     private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
     
     private Timer seleneUpdateTimer; 
@@ -702,6 +726,10 @@ private class WaveBackgroundPanel extends JPanel {
         
         initializePossibleEnemies();
         generateRandomWaves();
+        // Pre-load Jiji animation frames
+        initJijiIdleFrames();
+        initJijiDamagedFrames();
+        initJijiAttackFrames();
     }
     
     public void refreshSkillPanels() {
@@ -964,9 +992,13 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
  
- private void createBattleUI(CampaignWave wave) {
-    frame.getContentPane().removeAll();
-    frame.setLayout(new BorderLayout());
+  private void createBattleUI(CampaignWave wave) {
+     // Stop any existing Jiji animations from previous battle
+     stopIdleAnimation();
+     stopDamagedAnimation();
+     
+     frame.getContentPane().removeAll();
+     frame.setLayout(new BorderLayout());
 
     WaveBackgroundPanel backgroundPanel = new WaveBackgroundPanel();
     backgroundPanel.setLayout(new BorderLayout());
@@ -1247,13 +1279,15 @@ combinedBottomPanel.setPreferredSize(new Dimension(800, 180));
 if (playerCharacter instanceof Jiji) {
     Icon portrait = getCharacterPortrait(playerCharacter);
     if (portrait != null) {
-        Image img = ((ImageIcon) portrait).getImage();
-        Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
-        
-        jijiLargePortraitLabel = new JLabel(new ImageIcon(scaled));
+        // Pre-rendered frames are already 250x200, no need to re-scale
+        jijiLargePortraitLabel = new JLabel(portrait);
         jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
         jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
         jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        // Lock label to icon size to prevent BorderLayout stretch
+        jijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+        System.out.println("✅ Jiji portrait label created - icon: " + 
+            portrait.getIconWidth() + "x" + portrait.getIconHeight());
         
         JPanel westWrapper = new JPanel(new BorderLayout());
         westWrapper.setOpaque(false);
@@ -1267,6 +1301,25 @@ if (playerCharacter instanceof Jiji) {
         
         combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
         System.out.println("✅ Jiji large portrait created at bottom left");
+        
+        // Initialize animation frames
+        initJijiIdleFrames();
+        initJijiDamagedFrames();
+        // Start appropriate animation based on damage state
+        Jiji jiji = (Jiji) playerCharacter;
+        if (jiji.isDamaged()) {
+            if (jijiDamagedFrames[0] != null) {
+                startDamagedAnimation();
+            } else {
+                System.out.println("⚠️ Damaged frames not available, showing static");
+            }
+        } else {
+            if (jijiIdleFrames[0] != null) {
+                startIdleAnimation();
+            } else {
+                System.out.println("⚠️ Idle frames failed to load, keeping static portrait");
+            }
+        }
     } else {
         System.out.println("⚠️ Could not load Jiji portrait");
     }
@@ -1323,16 +1376,32 @@ private void refreshJijiPortrait() {
     
     if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
         Jiji jiji = (Jiji) playerCharacter;
-        int portraitWidth = jiji.isDamaged() ? 500 : 250;
+        int portraitWidth = 250; // both idle and damaged use same base width
         
         Icon newPortrait = getCharacterPortrait(playerCharacter);
         if (newPortrait != null) {
-            Image img = ((ImageIcon) newPortrait).getImage();
-            Image scaled = img.getScaledInstance(portraitWidth, 200, Image.SCALE_DEFAULT);
-            jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
+            // Skip re-scaling for pre-rendered Jiji frames (already 250x200)
+            boolean isPreRendered = (playerCharacter instanceof Jiji) &&
+                (newPortrait == jijiIdleFrames[0] || newPortrait == jijiDamagedFrames[0]);
+            if (isPreRendered) {
+                jijiLargePortraitLabel.setIcon(newPortrait);
+            } else {
+                Image img = ((ImageIcon) newPortrait).getImage();
+                Image scaled = img.getScaledInstance(portraitWidth, 200, Image.SCALE_SMOOTH);
+                jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
+            }
             jijiLargePortraitLabel.repaint();
             jijiLargePortraitLabel.revalidate();
             System.out.println("✅ Jiji portrait refreshed - width: " + portraitWidth);
+            
+            // Switch animation based on damage state
+            if (jiji.isDamaged()) {
+                stopIdleAnimation();
+                startDamagedAnimation();
+            } else {
+                stopDamagedAnimation();
+                startIdleAnimation();
+            }
             
             // Add visual feedback when damaged - only trigger once
             if (jiji.isDamaged() && !jijiDamagedAnimationPlaying) {
@@ -1380,6 +1449,277 @@ private void refreshJijiPortrait() {
     }
 }
 
+private void initJijiIdleFrames() {
+    // Load all 4 idle frames and scale them centered (no offset) with smooth quality
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/jiji_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    jijiIdleFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (250x200), centered
+                int targetW = 250;
+                int targetH = 200;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                jijiIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading frame " + (i+1) + ": " + e.getMessage());
+                jijiIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Idle frame missing: " + f.getAbsolutePath());
+            jijiIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Frame " + i + " " + (jijiIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void startIdleAnimation() {
+    // Ensure damaged animation is not running
+    stopDamagedAnimation();
+    if (idleAnimationTimer != null && idleAnimationTimer.isRunning()) {
+        idleAnimationTimer.stop();
+    }
+    if (jijiIdleFrames[0] == null || jijiLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start idle - frames:" + (jijiIdleFrames[0]!=null) + " label:" + jijiLargePortraitLabel);
+        return;
+    }
+    currentCycleSlot = 0;
+    slotCounter = 0;
+    final int tickMs = 16; // ~60 FPS base tick
+    idleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (jijiLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Jiji)) {
+                stopIdleAnimation();
+                return;
+            }
+            slotCounter++;
+            int slotTicks = CYCLE_DURATIONS[currentCycleSlot];
+            if (slotCounter >= slotTicks) {
+                slotCounter = 0;
+                int prevSlot = currentCycleSlot;
+                currentCycleSlot = (currentCycleSlot + 1) % CYCLE_DURATIONS.length;
+                if (currentCycleSlot == 0) {
+                    System.out.println("🔄 Idle cycle completed, restarting");
+                }
+                int frameIdx = SLOT_FRAME_MAP[currentCycleSlot];
+                ImageIcon baseFrame = jijiIdleFrames[frameIdx];
+                if (baseFrame != null) {
+                    // Apply subtle per-slot horizontal sway
+                    int offsetX = SLOT_OFFSET_X[currentCycleSlot];
+                    if (offsetX != 0) {
+                        BufferedImage shifted = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D g = shifted.createGraphics();
+                        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                        g.drawImage(baseFrame.getImage(), offsetX, 0, null);
+                        g.dispose();
+                        jijiLargePortraitLabel.setIcon(new ImageIcon(shifted));
+                    } else {
+                        jijiLargePortraitLabel.setIcon(baseFrame);
+                    }
+                } else {
+                    jijiLargePortraitLabel.setIcon(jijiIdleFrames[0]);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Idle timer error: " + ex.getMessage());
+            ex.printStackTrace();
+            stopIdleAnimation();
+        }
+    });
+    idleAnimationTimer.start();
+    jijiLargePortraitLabel.setIcon(jijiIdleFrames[SLOT_FRAME_MAP[0]]);
+    System.out.println("▶️ Jiji idle animation started (12-slot pattern)");
+}
+
+private void stopIdleAnimation() {
+    if (idleAnimationTimer != null && idleAnimationTimer.isRunning()) {
+        idleAnimationTimer.stop();
+        currentCycleSlot = 0;
+        slotCounter = 0;
+        System.out.println("⏹️ Jiji idle animation stopped");
+    }
+}
+
+private void initJijiDamagedFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/jiji_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ Damaged frame " + (i+1) + " failed to load");
+                    jijiDamagedFrames[i] = null;
+                    continue;
+                }
+                System.out.println("   Damaged frame " + (i+1) + " raw: " + base.getWidth() + "x" + base.getHeight());
+                Image scaled = base.getScaledInstance(250, 200, Image.SCALE_SMOOTH);
+                jijiDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded damaged frame " + (i + 1) + " → 250x200");
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading damaged frame " + (i+1) + ": " + e.getMessage());
+                jijiDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Damaged frame missing: " + f.getAbsolutePath());
+            jijiDamagedFrames[i] = null;
+        }
+    }
+}
+
+private void startDamagedAnimation() {
+    stopIdleAnimation();
+    if (damagedAnimationTimer != null && damagedAnimationTimer.isRunning()) {
+        damagedAnimationTimer.stop();
+    }
+    if (jijiDamagedFrames[0] == null || jijiLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start damaged - frames:" + (jijiDamagedFrames[0]!=null));
+        return;
+    }
+    currentDamagedFrame = 0;
+    damagedFrameCounter = 0;
+    final int tickMs = 16;
+    damagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (jijiLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Jiji)) {
+                stopDamagedAnimation();
+                return;
+            }
+            damagedFrameCounter++;
+            int frameTicks = DAMAGED_FRAME_DURATIONS[currentDamagedFrame];
+            if (damagedFrameCounter >= frameTicks) {
+                damagedFrameCounter = 0;
+                currentDamagedFrame = (currentDamagedFrame + 1) % jijiDamagedFrames.length;
+                ImageIcon frame = jijiDamagedFrames[currentDamagedFrame];
+                if (frame != null) {
+                    jijiLargePortraitLabel.setIcon(frame);
+                } else {
+                    jijiLargePortraitLabel.setIcon(jijiDamagedFrames[0]);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Damaged timer error: " + ex.getMessage());
+            stopDamagedAnimation();
+        }
+    });
+    damagedAnimationTimer.start();
+    // Set initial frame directly (already 250x200 from init)
+    jijiLargePortraitLabel.setIcon(jijiDamagedFrames[0]);
+    System.out.println("💢 Jiji damaged animation started (250px width)");
+}
+
+private void stopDamagedAnimation() {
+    if (damagedAnimationTimer != null && damagedAnimationTimer.isRunning()) {
+        damagedAnimationTimer.stop();
+        currentDamagedFrame = 0;
+        damagedFrameCounter = 0;
+        System.out.println("⏹️ Jiji damaged animation stopped");
+    }
+}
+
+private void initJijiAttackFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/jiji_attack" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ Attack frame " + (i+1) + " failed to load");
+                    jijiAttackFrames[i] = null;
+                    continue;
+                }
+                Image scaled = base.getScaledInstance(250, 200, Image.SCALE_SMOOTH);
+                jijiAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading attack frame " + (i+1) + ": " + e.getMessage());
+                jijiAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Attack frame missing: " + f.getAbsolutePath());
+            jijiAttackFrames[i] = null;
+        }
+    }
+}
+
+private void startAttackAnimation() {
+    // Stop all other Jiji animations
+    stopIdleAnimation();
+    stopDamagedAnimation();
+    if (attackAnimationTimer != null && attackAnimationTimer.isRunning()) {
+        attackAnimationTimer.stop();
+    }
+    if (jijiAttackFrames[0] == null || jijiLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start attack - frames:" + (jijiAttackFrames[0]!=null));
+        return;
+    }
+    currentAttackFrame = 0;
+    attackFrameCounter = 0;
+    final int tickMs = 16;
+    attackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (jijiLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Jiji)) {
+                stopAttackAnimation();
+                return;
+            }
+            attackFrameCounter++;
+            int frameTicks = ATTACK_FRAME_DURATIONS[currentAttackFrame];
+            if (attackFrameCounter >= frameTicks) {
+                attackFrameCounter = 0;
+                currentAttackFrame = (currentAttackFrame + 1) % jijiAttackFrames.length;
+                ImageIcon frame = jijiAttackFrames[currentAttackFrame];
+                if (frame != null) {
+                    jijiLargePortraitLabel.setIcon(frame);
+                } else {
+                    jijiLargePortraitLabel.setIcon(jijiAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle/damaged
+                if (currentAttackFrame == jijiAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopAttackAnimation();
+                    jijiAttackAnimationPlaying = false;
+                    jijiAttackPlayedThisTurn = true;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        refreshJijiPortrait();
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Attack timer error: " + ex.getMessage());
+            stopAttackAnimation();
+        }
+    });
+    attackAnimationTimer.start();
+    jijiLargePortraitLabel.setIcon(jijiAttackFrames[0]);
+    System.out.println("⚔️ Jiji attack animation started");
+}
+
+private void stopAttackAnimation() {
+    if (attackAnimationTimer != null && attackAnimationTimer.isRunning()) {
+        attackAnimationTimer.stop();
+        currentAttackFrame = 0;
+        attackFrameCounter = 0;
+        System.out.println("⏹️ Jiji attack animation stopped");
+    }
+}
+
 private void showJijiAttackAnimation() {
     System.out.println("⚔️ showJijiAttackAnimation called!");
     
@@ -1390,25 +1730,13 @@ private void showJijiAttackAnimation() {
     }
     
     if (playerCharacter instanceof Jiji && jijiLargePortraitLabel != null) {
-        String attackPath = "assets/jiji_attack.gif";
-        File attackFile = new File(attackPath);
-        System.out.println("Attack file exists: " + attackFile.exists());
-        if (attackFile.exists()) {
+        if (jijiAttackFrames[0] != null) {
             jijiAttackAnimationPlaying = true;
+            startAttackAnimation();
+        } else {
+            System.out.println("⚠️ Attack frames not loaded, skipping attack animation");
+            jijiAttackAnimationPlaying = false;
             jijiAttackPlayedThisTurn = true;
-            ImageIcon attackIcon = new ImageIcon(attackPath);
-            Image img = attackIcon.getImage();
-            Image scaled = img.getScaledInstance(250, 200, Image.SCALE_DEFAULT);
-            jijiLargePortraitLabel.setIcon(new ImageIcon(scaled));
-            System.out.println("✅ Attack animation set!");
-            
-            // Play animation longer (3 seconds) before returning to normal
-            javax.swing.Timer attackTimer = new javax.swing.Timer(3000, e -> {
-                jijiAttackAnimationPlaying = false;
-                refreshJijiPortrait();
-            });
-            attackTimer.setRepeats(false);
-            attackTimer.start();
         }
     }
 }
@@ -2110,43 +2438,67 @@ private void setupClickHandlers() {
     }
 
    
- private Icon getCharacterPortrait(GameCharacter character) {
-    try {
-        String name = character.getName().split(" ")[0].toLowerCase();
-        System.out.println("🔍 Loading portrait for: " + name);
-        
+  private Icon getCharacterPortrait(GameCharacter character) {
+     try {
+         String name = character.getName().split(" ")[0].toLowerCase();
+         System.out.println("🔍 Loading portrait for: " + name);
+
         // Check for Jiji's damaged state
         if (character instanceof Jiji) {
             Jiji jiji = (Jiji) character;
             System.out.println("🔍 Jiji damaged state: " + jiji.isDamaged());
             if (jiji.isDamaged()) {
-                String damagedPath = "assets/jiji_whenDamaged.gif";
-                File damagedFile = new File(damagedPath);
-                if (damagedFile.exists()) {
-                    System.out.println("💢 Jiji damaged! Using damaged animation from: " + damagedPath);
-                    return new ImageIcon(damagedPath);
+                // Use pre-rendered damaged frames if available
+                if (jijiDamagedFrames[0] != null) {
+                    System.out.println("💢 Jiji damaged! Returning damaged frame 0");
+                    return jijiDamagedFrames[0];
                 } else {
-                    System.out.println("⚠️ Damaged GIF not found at: " + damagedFile.getAbsolutePath());
+                    // Fallback to legacy GIF
+                    String damagedPath = "assets/jiji_whenDamaged.gif";
+                    File damagedFile = new File(damagedPath);
+                    if (damagedFile.exists()) {
+                        System.out.println("💢 Fallback: Using damaged GIF");
+                        return new ImageIcon(damagedPath);
+                    } else {
+                        System.out.println("⚠️ Damaged GIF not found at: " + damagedFile.getAbsolutePath());
+                    }
                 }
             }
         }
-        
-        // Normal idle animation
-        String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
-        
-        for (String path : possiblePaths) {
-            File file = new File(path);
-            if (file.exists()) {
-                System.out.println("✅ Loading portrait from: " + path);
-                return new ImageIcon(path);
-            }
-        }
-        System.out.println("⚠️ No portrait found for: " + name);
-    } catch (Exception e) {
-        System.out.println("⚠️ Could not load portrait: " + e.getMessage());
-    }
-    return null;
-}
+
+         // Normal idle - Jiji uses pre-rendered 4-frame animation (frame 0 as base)
+         if (character instanceof Jiji) {
+             if (jijiIdleFrames[0] != null) {
+                 System.out.println("✅ Returning pre-rendered Jiji idle frame 0");
+                 return jijiIdleFrames[0];
+             } else {
+                 // Fallback: try raw PNG or legacy GIF
+                 String[] fallback = {"assets/jiji_idle1.png", "assets/jiji.gif", "assets/jiji_idle.gif"};
+                 for (String path : fallback) {
+                     File file = new File(path);
+                     if (file.exists()) {
+                         System.out.println("✅ Fallback: Loading " + path);
+                         return new ImageIcon(path);
+                     }
+                 }
+             }
+         }
+
+         // Default for other characters
+         String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
+         for (String path : possiblePaths) {
+             File file = new File(path);
+             if (file.exists()) {
+                 System.out.println("✅ Loading portrait from: " + path);
+                 return new ImageIcon(path);
+             }
+         }
+         System.out.println("⚠️ No portrait found for: " + name);
+     } catch (Exception e) {
+         System.out.println("⚠️ Could not load portrait: " + e.getMessage());
+     }
+     return null;
+ }
     
     private JPanel createBoardsPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 2, 10, 0));
