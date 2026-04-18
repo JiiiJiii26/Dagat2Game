@@ -27,7 +27,7 @@ import java.io.File;
 
 public class CampaignMode {
    
-    private boolean testMode = true;  
+    private boolean testMode = false;  
     private String testEnemyName = "Kael";
 
     private JPanel jijiPortraitContainer;
