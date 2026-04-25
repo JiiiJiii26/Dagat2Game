@@ -27,8 +27,8 @@ import java.io.File;
 
 public class CampaignMode {
    
-    private boolean testMode = false;  
-    private String testEnemyName = "Kael";
+    private boolean testMode = true;  
+    private String testEnemyName = "Jiji";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -992,13 +992,13 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
  
-  private void createBattleUI(CampaignWave wave) {
-     // Stop any existing Jiji animations from previous battle
-     stopIdleAnimation();
-     stopDamagedAnimation();
-     
-     frame.getContentPane().removeAll();
-     frame.setLayout(new BorderLayout());
+ private void createBattleUI(CampaignWave wave) {
+    // Stop any existing Jiji animations from previous battle
+    stopIdleAnimation();
+    stopDamagedAnimation();
+    
+    frame.getContentPane().removeAll();
+    frame.setLayout(new BorderLayout());
 
     WaveBackgroundPanel backgroundPanel = new WaveBackgroundPanel();
     backgroundPanel.setLayout(new BorderLayout());
@@ -1102,11 +1102,10 @@ private class WaveBackgroundPanel extends JPanel {
     boardsWrapper.setOpaque(false);
     
     JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+    boardsPanel.setPreferredSize(new Dimension(1500, 0));  // Width fixed, height flexible
     boardsPanel.setOpaque(false);
-    boardsPanel.setPreferredSize(new Dimension(1500, 700));
-    boardsPanel.setMaximumSize(new Dimension(1500, 700));
-    boardsPanel.setMinimumSize(new Dimension(1500, 700));
     
+    // ========== LEFT PANEL (Player) - UNCHANGED ==========
     JPanel leftPanel = new JPanel(new BorderLayout());
     leftPanel.setOpaque(false);
     leftPanel.setPreferredSize(new Dimension(700, 700));
@@ -1121,33 +1120,29 @@ private class WaveBackgroundPanel extends JPanel {
         new Color(0, 255, 0, 200)
     ));
     
-   JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-charInfoPanel.setOpaque(false);
+    JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+    charInfoPanel.setOpaque(false);
 
-
-if (playerCharacter instanceof Jiji) {
-    JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
-    charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-    charNameLabel.setForeground(Color.CYAN);
-    charInfoPanel.add(charNameLabel);
-    System.out.println("✅ Jiji - text only at top, no portrait");
-} else {
-    
-    JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
-    Icon playerPortrait = getCharacterPortrait(playerCharacter);
-    if (playerPortrait != null) {
-        charNameLabel.setIcon(playerPortrait);
-        charNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-        charNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
+    if (playerCharacter instanceof Jiji) {
+        JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
+        charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        charNameLabel.setForeground(Color.CYAN);
+        charInfoPanel.add(charNameLabel);
+        System.out.println("✅ Jiji - text only at top, no portrait");
+    } else {
+        JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
+        Icon playerPortrait = getCharacterPortrait(playerCharacter);
+        if (playerPortrait != null) {
+            charNameLabel.setIcon(playerPortrait);
+            charNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+            charNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
+        }
+        charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        charNameLabel.setForeground(Color.CYAN);
+        charInfoPanel.add(charNameLabel);
     }
-    charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-    charNameLabel.setForeground(Color.CYAN);
-    charInfoPanel.add(charNameLabel);
-}
 
-leftPanel.add(charInfoPanel, BorderLayout.NORTH);
-
-    
+    leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     leftPanel.add(playerBoardPanel, BorderLayout.CENTER);
     
     playerShipLabel = new JLabel(getShipCountText(playerBoard), SwingConstants.CENTER);
@@ -1155,44 +1150,52 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     playerShipLabel.setForeground(Color.WHITE);
     leftPanel.add(playerShipLabel, BorderLayout.SOUTH);
     
+    // ========== RIGHT PANEL (Enemy) - FIXED ==========
     JPanel rightPanel = new JPanel(new BorderLayout());
     rightPanel.setOpaque(false);
     rightPanel.setPreferredSize(new Dimension(700, 700));
     rightPanel.setMaximumSize(new Dimension(700, 700));
     rightPanel.setMinimumSize(new Dimension(700, 700));
+    
+    // Create FRESH enemy character panel for NORTH
+    JPanel enemyTopPanel = new JPanel(new BorderLayout());
+    enemyTopPanel.setOpaque(false);
+    
+    // Get just the first name (e.g., "Jiji" instead of "Jiji - The Lazy Technomancer")
+   JLabel enemyNameLabel = new JLabel(currentEnemy.getName(), SwingConstants.CENTER);
+    enemyNameLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    enemyNameLabel.setForeground(Color.ORANGE);
+    enemyTopPanel.add(enemyNameLabel, BorderLayout.CENTER);
+    
+    // Create a container for the board AND ship counter (to avoid white line)
+    JPanel boardContainer = new JPanel(new BorderLayout());
+    boardContainer.setOpaque(false);
+    
+    // Add board to CENTER of container
+    boardContainer.add(enemyBoardPanel, BorderLayout.CENTER);
+    
+    // Add ship counter to SOUTH of container (inside the border)
+    JLabel freshEnemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
+    freshEnemyShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    freshEnemyShipLabel.setForeground(Color.WHITE);
+    freshEnemyShipLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+    boardContainer.add(freshEnemyShipLabel, BorderLayout.SOUTH);
+    
+    this.enemyShipLabel = freshEnemyShipLabel;
+    
+    // Assemble right panel
+    rightPanel.add(enemyTopPanel, BorderLayout.NORTH);
+    rightPanel.add(boardContainer, BorderLayout.CENTER);  // Board + ship counter together
+    
+    // Set the border on rightPanel
     rightPanel.setBorder(BorderFactory.createTitledBorder(
         BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
-        "🏴‍☠️ ENEMY WATERS",
+        String.format("Enemy Waters"),
         TitledBorder.CENTER,
         TitledBorder.TOP,
         new Font("Arial", Font.BOLD, 16),
         new Color(255, 0, 0, 200)
     ));
-    
-    JPanel enemyCharPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-    enemyCharPanel.setOpaque(false);
-
-    Icon enemyPortrait = getCharacterPortrait(currentEnemy);
-    JLabel enemyNameLabel = new JLabel(currentEnemy.getName());
-
-    if (enemyPortrait != null) {
-        enemyNameLabel.setIcon(enemyPortrait);
-        enemyNameLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-        enemyNameLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
-    } else {
-        enemyNameLabel.setText(getCharacterEmoji(currentEnemy) + " " + currentEnemy.getName());
-    }
-    enemyNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-    enemyNameLabel.setForeground(Color.ORANGE);
-    enemyCharPanel.add(enemyNameLabel);
-    rightPanel.add(enemyCharPanel, BorderLayout.NORTH);
-    
-    rightPanel.add(enemyBoardPanel, BorderLayout.CENTER);
-    
-    enemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
-    enemyShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
-    enemyShipLabel.setForeground(Color.WHITE);
-    rightPanel.add(enemyShipLabel, BorderLayout.SOUTH);
     
     boardsPanel.add(leftPanel);
     boardsPanel.add(rightPanel);
@@ -1203,8 +1206,8 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
     gbc.anchor = GridBagConstraints.CENTER;
-    gbc.fill = GridBagConstraints.BOTH;  
-    gbc.insets = new Insets(20, 20, 20, 20);  
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.insets = new Insets(20, 20, 20, 20);
     boardsWrapper.add(boardsPanel, gbc);
 
     mainContentPanel.add(boardsWrapper, BorderLayout.CENTER);
@@ -1269,71 +1272,64 @@ leftPanel.add(charInfoPanel, BorderLayout.NORTH);
         }
     });
     
-    
-   JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
-combinedBottomPanel.setOpaque(false);
-combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
-combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
+    JPanel combinedBottomPanel = new JPanel(new BorderLayout(30, 0));
+    combinedBottomPanel.setOpaque(false);
+    combinedBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 60, 10, 60));
+    combinedBottomPanel.setPreferredSize(new Dimension(800, 180));   
 
-// JIJI LARGE PORTRAIT - Bottom Left
-if (playerCharacter instanceof Jiji) {
-    Icon portrait = getCharacterPortrait(playerCharacter);
-    if (portrait != null) {
-        // Pre-rendered frames are already 250x200, no need to re-scale
-        jijiLargePortraitLabel = new JLabel(portrait);
-        jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
-        jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-        jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-        // Lock label to icon size to prevent BorderLayout stretch
-        jijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
-        System.out.println("✅ Jiji portrait label created - icon: " + 
-            portrait.getIconWidth() + "x" + portrait.getIconHeight());
-        
-        JPanel westWrapper = new JPanel(new BorderLayout());
-        westWrapper.setOpaque(false);
-        westWrapper.setPreferredSize(new Dimension(250, 220));
-        westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
-        
-        JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
-        nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-        nameTag.setForeground(new Color(100, 200, 255)); 
-        westWrapper.add(nameTag, BorderLayout.SOUTH);
-        
-        combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
-        System.out.println("✅ Jiji large portrait created at bottom left");
-        
-        // Initialize animation frames
-        initJijiIdleFrames();
-        initJijiDamagedFrames();
-        // Start appropriate animation based on damage state
-        Jiji jiji = (Jiji) playerCharacter;
-        if (jiji.isDamaged()) {
-            if (jijiDamagedFrames[0] != null) {
-                startDamagedAnimation();
+    // JIJI LARGE PORTRAIT - Bottom Left
+    if (playerCharacter instanceof Jiji) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            jijiLargePortraitLabel = new JLabel(portrait);
+            jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
+            jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            jijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+            System.out.println("✅ Jiji portrait label created - icon: " + 
+                portrait.getIconWidth() + "x" + portrait.getIconHeight());
+            
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.setPreferredSize(new Dimension(250, 220));
+            westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
+            
+            JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255)); 
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+            
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+            System.out.println("✅ Jiji large portrait created at bottom left");
+            
+            initJijiIdleFrames();
+            initJijiDamagedFrames();
+            Jiji jiji = (Jiji) playerCharacter;
+            if (jiji.isDamaged()) {
+                if (jijiDamagedFrames[0] != null) {
+                    startDamagedAnimation();
+                } else {
+                    System.out.println("⚠️ Damaged frames not available, showing static");
+                }
             } else {
-                System.out.println("⚠️ Damaged frames not available, showing static");
+                if (jijiIdleFrames[0] != null) {
+                    startIdleAnimation();
+                } else {
+                    System.out.println("⚠️ Idle frames failed to load, keeping static portrait");
+                }
             }
         } else {
-            if (jijiIdleFrames[0] != null) {
-                startIdleAnimation();
-            } else {
-                System.out.println("⚠️ Idle frames failed to load, keeping static portrait");
-            }
+            System.out.println("⚠️ Could not load Jiji portrait");
         }
     } else {
-        System.out.println("⚠️ Could not load Jiji portrait");
+        JPanel emptyPanel = new JPanel();
+        emptyPanel.setOpaque(false);
+        emptyPanel.setPreferredSize(new Dimension(200, 220));
+        combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
     }
-} else {
-    // For non-Jiji characters, add an empty panel to maintain layout
-    JPanel emptyPanel = new JPanel();
-    emptyPanel.setOpaque(false);
-    emptyPanel.setPreferredSize(new Dimension(200, 220));
-    combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
-}
 
-combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
-mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
-    
+    combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
+    mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
     
     JPanel statusBarPanel = new JPanel();
     statusBarPanel.setOpaque(false);
@@ -2285,6 +2281,8 @@ private void setupClickHandlers() {
         
         return panel;
     }
+
+
     
     private void addSeleneSkills(JPanel panel, boolean isPlayer) {
         Selene selene = (Selene) playerCharacter;
@@ -2506,6 +2504,7 @@ private void setupClickHandlers() {
         
         playerBoardPanel = new BoardPanel(true, playerBoard, true);
         enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
+     
         
     
         playerBoardPanel.setPlayerClickHandler((row, col) -> {
