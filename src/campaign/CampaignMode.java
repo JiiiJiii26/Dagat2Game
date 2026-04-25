@@ -134,13 +134,14 @@ private Timer seleneUpdateTimer;
 
 private ImageIcon[] kaelIdleFrames = new ImageIcon[5];
 private Timer kaelIdleAnimationTimer;
-private int currentKaelIdleFrame = 0;
+private int kaelIdleSequenceIndex = 0;
 private int kaelIdleFrameCounter = 0;
 private boolean kaelIdleAnimationPlaying = false;
+private static final int[] KAEL_IDLE_SEQUENCE = {0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,1,3,4};
 
 private ImageIcon[] enemyKaelIdleFrames = new ImageIcon[5];
 private Timer enemyKaelIdleAnimationTimer;
-private int enemyCurrentKaelIdleFrame = 0;
+private int enemyKaelIdleSequenceIndex = 0;
 private int enemyKaelIdleFrameCounter = 0;
 private boolean enemyKaelIdleAnimationPlaying = false;
 
@@ -1390,13 +1391,13 @@ boardsPanel.add(rightPanel); // Board + ship counter together
             kaelLargePortraitLabel.setToolTipText("Kael: \"Shadows bend to my will.\"");
             kaelLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
             kaelLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            kaelLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+            kaelLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
             System.out.println("✅ Kael portrait label created - icon: " +
                 portrait.getIconWidth() + "x" + portrait.getIconHeight());
 
             JPanel westWrapper = new JPanel(new BorderLayout());
             westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(250, 220));
+            westWrapper.setPreferredSize(new Dimension(150, 140));
             westWrapper.add(kaelLargePortraitLabel, BorderLayout.CENTER);
 
             JLabel nameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
@@ -1418,7 +1419,7 @@ boardsPanel.add(rightPanel); // Board + ship counter together
     } else {
         JPanel emptyPanel = new JPanel();
         emptyPanel.setOpaque(false);
-        emptyPanel.setPreferredSize(new Dimension(200, 220));
+        emptyPanel.setPreferredSize(new Dimension(150, 140));
         combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
     }
 
@@ -1473,13 +1474,13 @@ boardsPanel.add(rightPanel); // Board + ship counter together
             enemyKaelLargePortraitLabel.setToolTipText("Enemy Kael: \"You cannot escape the shadows.\"");
             enemyKaelLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
             enemyKaelLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            enemyKaelLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+            enemyKaelLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
             System.out.println("✅ Enemy Kael portrait label created - icon: " +
                 enemyPortrait.getIconWidth() + "x" + enemyPortrait.getIconHeight());
 
             JPanel eastWrapper = new JPanel(new BorderLayout());
             eastWrapper.setOpaque(false);
-            eastWrapper.setPreferredSize(new Dimension(250, 220));
+            eastWrapper.setPreferredSize(new Dimension(150, 140));
             eastWrapper.add(enemyKaelLargePortraitLabel, BorderLayout.CENTER);
 
             JLabel enemyNameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
@@ -1501,7 +1502,7 @@ boardsPanel.add(rightPanel); // Board + ship counter together
     } else {
         JPanel emptyPanelEast = new JPanel();
         emptyPanelEast.setOpaque(false);
-        emptyPanelEast.setPreferredSize(new Dimension(200, 220));
+        emptyPanelEast.setPreferredSize(new Dimension(150, 140));
         combinedBottomPanel.add(emptyPanelEast, BorderLayout.EAST);
     }
 
@@ -1636,8 +1637,8 @@ private void initJijiIdleFrames() {
                     continue;
                 }
                 // Target dimensions for portrait area (250x200), centered
-                int targetW = 250;
-                int targetH = 200;
+                int targetW = 150;
+                int targetH = 120;
                 Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 jijiIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded idle frame " + (i + 1));
@@ -1891,8 +1892,8 @@ private void initKaelIdleFrames() {
                     kaelIdleFrames[i] = null;
                     continue;
                 }
-                int targetW = 250;
-                int targetH = 200;
+                int targetW = (i == 0 || i == 2) ? 135 : 150; // Make frames 1 and 3 slimmer
+                int targetH = 120;
                 Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 kaelIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded Kael idle frame " + (i + 1));
@@ -1931,8 +1932,8 @@ private void initEnemyKaelIdleFrames() {
                 g.setTransform(tx);
                 g.drawImage(base, 0, 0, null);
                 g.dispose();
-                int targetW = 250;
-                int targetH = 200;
+                int targetW = (i == 0 || i == 2) ? 135 : 150; // Make frames 1 and 3 slimmer
+                int targetH = 120;
                 Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 enemyKaelIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded and flipped enemy Kael idle frame " + (i + 1));
@@ -1957,7 +1958,7 @@ private void startKaelIdleAnimation() {
         System.out.println("⚠️ Cannot start Kael idle - frames:" + (kaelIdleFrames[0]!=null) + " label:" + kaelLargePortraitLabel);
         return;
     }
-    currentKaelIdleFrame = 0;
+    kaelIdleSequenceIndex = 0;
     kaelIdleFrameCounter = 0;
     final int tickMs = 16;
     final int frameDuration = 30; // Ticks per frame
@@ -1967,9 +1968,10 @@ private void startKaelIdleAnimation() {
             kaelIdleFrameCounter++;
             if (kaelIdleFrameCounter >= frameDuration) {
                 kaelIdleFrameCounter = 0;
-                currentKaelIdleFrame = (currentKaelIdleFrame + 1) % kaelIdleFrames.length;
-                if (kaelIdleFrames[currentKaelIdleFrame] != null) {
-                    kaelLargePortraitLabel.setIcon(kaelIdleFrames[currentKaelIdleFrame]);
+                kaelIdleSequenceIndex = (kaelIdleSequenceIndex + 1) % KAEL_IDLE_SEQUENCE.length;
+                int frameIndex = KAEL_IDLE_SEQUENCE[kaelIdleSequenceIndex];
+                if (kaelIdleFrames[frameIndex] != null) {
+                    kaelLargePortraitLabel.setIcon(kaelIdleFrames[frameIndex]);
                     kaelLargePortraitLabel.repaint();
                 }
             }
@@ -1979,14 +1981,15 @@ private void startKaelIdleAnimation() {
         }
     });
     kaelIdleAnimationTimer.start();
-    kaelLargePortraitLabel.setIcon(kaelIdleFrames[0]);
+    int initialFrame = KAEL_IDLE_SEQUENCE[0];
+    kaelLargePortraitLabel.setIcon(kaelIdleFrames[initialFrame]);
     System.out.println("▶️ Kael idle animation started");
 }
 
 private void stopKaelIdleAnimation() {
     if (kaelIdleAnimationTimer != null && kaelIdleAnimationTimer.isRunning()) {
         kaelIdleAnimationTimer.stop();
-        currentKaelIdleFrame = 0;
+        kaelIdleSequenceIndex = 0;
         kaelIdleFrameCounter = 0;
         System.out.println("⏹️ Kael idle animation stopped");
     }
@@ -1998,7 +2001,7 @@ private void startEnemyKaelIdleAnimation() {
         System.out.println("⚠️ Cannot start enemy Kael idle - frames:" + (enemyKaelIdleFrames[0]!=null) + " label:" + enemyKaelLargePortraitLabel);
         return;
     }
-    enemyCurrentKaelIdleFrame = 0;
+    enemyKaelIdleSequenceIndex = 0;
     enemyKaelIdleFrameCounter = 0;
     final int tickMs = 16;
     final int frameDuration = 30;
@@ -2008,9 +2011,10 @@ private void startEnemyKaelIdleAnimation() {
             enemyKaelIdleFrameCounter++;
             if (enemyKaelIdleFrameCounter >= frameDuration) {
                 enemyKaelIdleFrameCounter = 0;
-                enemyCurrentKaelIdleFrame = (enemyCurrentKaelIdleFrame + 1) % enemyKaelIdleFrames.length;
-                if (enemyKaelIdleFrames[enemyCurrentKaelIdleFrame] != null) {
-                    enemyKaelLargePortraitLabel.setIcon(enemyKaelIdleFrames[enemyCurrentKaelIdleFrame]);
+                enemyKaelIdleSequenceIndex = (enemyKaelIdleSequenceIndex + 1) % KAEL_IDLE_SEQUENCE.length;
+                int frameIndex = KAEL_IDLE_SEQUENCE[enemyKaelIdleSequenceIndex];
+                if (enemyKaelIdleFrames[frameIndex] != null) {
+                    enemyKaelLargePortraitLabel.setIcon(enemyKaelIdleFrames[frameIndex]);
                     enemyKaelLargePortraitLabel.repaint();
                 }
             }
@@ -2020,14 +2024,15 @@ private void startEnemyKaelIdleAnimation() {
         }
     });
     enemyKaelIdleAnimationTimer.start();
-    enemyKaelLargePortraitLabel.setIcon(enemyKaelIdleFrames[0]);
+    int initialFrame = KAEL_IDLE_SEQUENCE[0];
+    enemyKaelLargePortraitLabel.setIcon(enemyKaelIdleFrames[initialFrame]);
     System.out.println("▶️ Enemy Kael idle animation started");
 }
 
 private void stopEnemyKaelIdleAnimation() {
     if (enemyKaelIdleAnimationTimer != null && enemyKaelIdleAnimationTimer.isRunning()) {
         enemyKaelIdleAnimationTimer.stop();
-        enemyCurrentKaelIdleFrame = 0;
+        enemyKaelIdleSequenceIndex = 0;
         enemyKaelIdleFrameCounter = 0;
         System.out.println("⏹️ Enemy Kael idle animation stopped");
     }
