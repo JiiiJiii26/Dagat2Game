@@ -145,6 +145,30 @@ private int enemyKaelIdleSequenceIndex = 0;
 private int enemyKaelIdleFrameCounter = 0;
 private boolean enemyKaelIdleAnimationPlaying = false;
 
+private ImageIcon[] kaelAttackFrames = new ImageIcon[3];
+private Timer kaelAttackAnimationTimer;
+private int currentKaelAttackFrame = 0;
+private int kaelAttackFrameCounter = 0;
+private boolean kaelAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyKaelAttackFrames = new ImageIcon[3];
+private Timer enemyKaelAttackAnimationTimer;
+private int currentEnemyKaelAttackFrame = 0;
+private int enemyKaelAttackFrameCounter = 0;
+private boolean enemyKaelAttackAnimationPlaying = false;
+
+private ImageIcon[] kaelDamagedFrames = new ImageIcon[3];
+private Timer kaelDamagedAnimationTimer;
+private int currentKaelDamagedFrame = 0;
+private int kaelDamagedFrameCounter = 0;
+private boolean kaelDamagedAnimationPlaying = false;
+
+private ImageIcon[] enemyKaelDamagedFrames = new ImageIcon[3];
+private Timer enemyKaelDamagedAnimationTimer;
+private int currentEnemyKaelDamagedFrame = 0;
+private int enemyKaelDamagedFrameCounter = 0;
+private boolean enemyKaelDamagedAnimationPlaying = false;
+
 private JLabel jijiLargePortraitLabel;
 
 
@@ -771,6 +795,10 @@ private class WaveBackgroundPanel extends JPanel {
         initJijiAttackFrames();
         initKaelIdleFrames();
         initEnemyKaelIdleFrames();
+        initKaelAttackFrames();
+        initEnemyKaelAttackFrames();
+        initKaelDamagedFrames();
+        initEnemyKaelDamagedFrames();
     }
     
     public void refreshSkillPanels() {
@@ -1043,6 +1071,10 @@ private class WaveBackgroundPanel extends JPanel {
     stopEnemyAttackAnimation();
     stopKaelIdleAnimation();
     stopEnemyKaelIdleAnimation();
+    stopKaelAttackAnimation();
+    stopEnemyKaelAttackAnimation();
+    stopKaelDamagedAnimation();
+    stopEnemyKaelDamagedAnimation();
     
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
@@ -1952,6 +1984,134 @@ private void initEnemyKaelIdleFrames() {
     }
 }
 
+private void initKaelAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/kael_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    kaelAttackFrames[i] = null;
+                    continue;
+                }
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                kaelAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Kael attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Kael attack frame " + (i+1) + ": " + e.getMessage());
+                kaelAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Kael attack frame missing: " + f.getAbsolutePath());
+            kaelAttackFrames[i] = null;
+        }
+    }
+}
+
+private void initEnemyKaelAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/kael_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyKaelAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyKaelAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Kael attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Kael attack frame " + (i+1) + ": " + e.getMessage());
+                enemyKaelAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Kael attack frame missing: " + f.getAbsolutePath());
+            enemyKaelAttackFrames[i] = null;
+        }
+    }
+}
+
+private void initKaelDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/kael_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    kaelDamagedFrames[i] = null;
+                    continue;
+                }
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                kaelDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Kael damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Kael damaged frame " + (i+1) + ": " + e.getMessage());
+                kaelDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Kael damaged frame missing: " + f.getAbsolutePath());
+            kaelDamagedFrames[i] = null;
+        }
+    }
+}
+
+private void initEnemyKaelDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/kael_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyKaelDamagedFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyKaelDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Kael damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Kael damaged frame " + (i+1) + ": " + e.getMessage());
+                enemyKaelDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Kael damaged frame missing: " + f.getAbsolutePath());
+            enemyKaelDamagedFrames[i] = null;
+        }
+    }
+}
+
 private void startKaelIdleAnimation() {
     stopKaelIdleAnimation(); // Ensure no duplicate timers
     if (kaelIdleFrames[0] == null || kaelLargePortraitLabel == null) {
@@ -2035,6 +2195,290 @@ private void stopEnemyKaelIdleAnimation() {
         enemyKaelIdleSequenceIndex = 0;
         enemyKaelIdleFrameCounter = 0;
         System.out.println("⏹️ Enemy Kael idle animation stopped");
+    }
+}
+
+private void startKaelAttackAnimation() {
+    // Stop all other Kael animations
+    stopKaelIdleAnimation();
+    if (kaelAttackAnimationTimer != null && kaelAttackAnimationTimer.isRunning()) {
+        kaelAttackAnimationTimer.stop();
+    }
+    if (kaelAttackFrames[0] == null || kaelLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Kael attack - frames:" + (kaelAttackFrames[0]!=null));
+        return;
+    }
+    currentKaelAttackFrame = 0;
+    kaelAttackFrameCounter = 0;
+    final int tickMs = 16;
+    final int[] ATTACK_FRAME_DURATIONS = {4, 4, 8}; // ticks (~0.5s total)
+    kaelAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (kaelLargePortraitLabel == null) return;
+            if (!kaelAttackAnimationPlaying) return; // Should be set before calling
+            kaelAttackFrameCounter++;
+            int frameTicks = ATTACK_FRAME_DURATIONS[currentKaelAttackFrame];
+            if (kaelAttackFrameCounter >= frameTicks) {
+                kaelAttackFrameCounter = 0;
+                currentKaelAttackFrame++;
+                if (currentKaelAttackFrame >= kaelAttackFrames.length) {
+                    // Animation finished
+                    stopKaelAttackAnimation();
+                    kaelAttackAnimationPlaying = false;
+                    // Return to idle
+                    if (kaelIdleFrames[0] != null) {
+                        startKaelIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = kaelAttackFrames[currentKaelAttackFrame];
+                if (frame != null) {
+                    kaelLargePortraitLabel.setIcon(frame);
+                } else {
+                    kaelLargePortraitLabel.setIcon(kaelAttackFrames[0]);
+                }
+                kaelLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Kael attack timer error: " + ex.getMessage());
+            stopKaelAttackAnimation();
+        }
+    });
+    kaelAttackAnimationTimer.start();
+    kaelLargePortraitLabel.setIcon(kaelAttackFrames[0]);
+    kaelAttackAnimationPlaying = true;
+    System.out.println("⚔️ Kael attack animation started");
+}
+
+private void stopKaelAttackAnimation() {
+    if (kaelAttackAnimationTimer != null && kaelAttackAnimationTimer.isRunning()) {
+        kaelAttackAnimationTimer.stop();
+        currentKaelAttackFrame = 0;
+        kaelAttackFrameCounter = 0;
+        System.out.println("⏹️ Kael attack animation stopped");
+    }
+}
+
+private void startEnemyKaelAttackAnimation() {
+    // Stop all other enemy Kael animations
+    stopEnemyKaelIdleAnimation();
+    if (enemyKaelAttackAnimationTimer != null && enemyKaelAttackAnimationTimer.isRunning()) {
+        enemyKaelAttackAnimationTimer.stop();
+    }
+    if (enemyKaelAttackFrames[0] == null || enemyKaelLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Kael attack - frames:" + (enemyKaelAttackFrames[0]!=null));
+        return;
+    }
+    currentEnemyKaelAttackFrame = 0;
+    enemyKaelAttackFrameCounter = 0;
+    final int tickMs = 16;
+    final int[] ATTACK_FRAME_DURATIONS = {4, 4, 8};
+    enemyKaelAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyKaelLargePortraitLabel == null) return;
+            if (!enemyKaelAttackAnimationPlaying) return;
+            enemyKaelAttackFrameCounter++;
+            int frameTicks = ATTACK_FRAME_DURATIONS[currentEnemyKaelAttackFrame];
+            if (enemyKaelAttackFrameCounter >= frameTicks) {
+                enemyKaelAttackFrameCounter = 0;
+                currentEnemyKaelAttackFrame++;
+                if (currentEnemyKaelAttackFrame >= enemyKaelAttackFrames.length) {
+                    // Animation finished
+                    stopEnemyKaelAttackAnimation();
+                    enemyKaelAttackAnimationPlaying = false;
+                    // Return to idle
+                    if (enemyKaelIdleFrames[0] != null) {
+                        startEnemyKaelIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyKaelAttackFrames[currentEnemyKaelAttackFrame];
+                if (frame != null) {
+                    enemyKaelLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyKaelLargePortraitLabel.setIcon(enemyKaelAttackFrames[0]);
+                }
+                enemyKaelLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Kael attack timer error: " + ex.getMessage());
+            stopEnemyKaelAttackAnimation();
+        }
+    });
+    enemyKaelAttackAnimationTimer.start();
+    enemyKaelLargePortraitLabel.setIcon(enemyKaelAttackFrames[0]);
+    enemyKaelAttackAnimationPlaying = true;
+    System.out.println("⚔️ Enemy Kael attack animation started");
+}
+
+private void stopEnemyKaelAttackAnimation() {
+    if (enemyKaelAttackAnimationTimer != null && enemyKaelAttackAnimationTimer.isRunning()) {
+        enemyKaelAttackAnimationTimer.stop();
+        currentEnemyKaelAttackFrame = 0;
+        enemyKaelAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Kael attack animation stopped");
+    }
+}
+
+private void startKaelDamagedAnimation() {
+    stopKaelIdleAnimation();
+    if (kaelDamagedAnimationTimer != null && kaelDamagedAnimationTimer.isRunning()) {
+        kaelDamagedAnimationTimer.stop();
+    }
+    if (kaelDamagedFrames[0] == null || kaelLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Kael damaged - frames:" + (kaelDamagedFrames[0]!=null));
+        return;
+    }
+    currentKaelDamagedFrame = 0;
+    kaelDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    final int[] DAMAGED_FRAME_DURATIONS = {6, 6, 12}; // ticks (~0.3s total)
+    kaelDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (kaelLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Kael)) {
+                stopKaelDamagedAnimation();
+                return;
+            }
+            kaelDamagedFrameCounter++;
+            int frameTicks = DAMAGED_FRAME_DURATIONS[currentKaelDamagedFrame];
+            if (kaelDamagedFrameCounter >= frameTicks) {
+                kaelDamagedFrameCounter = 0;
+                currentKaelDamagedFrame++;
+                if (currentKaelDamagedFrame >= kaelDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopKaelDamagedAnimation();
+                    kaelDamagedAnimationPlaying = false;
+                    if (kaelIdleFrames[0] != null) {
+                        startKaelIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = kaelDamagedFrames[currentKaelDamagedFrame];
+                if (frame != null) {
+                    kaelLargePortraitLabel.setIcon(frame);
+                } else {
+                    kaelLargePortraitLabel.setIcon(kaelDamagedFrames[0]);
+                }
+                kaelLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Kael damaged timer error: " + ex.getMessage());
+            stopKaelDamagedAnimation();
+        }
+    });
+    kaelDamagedAnimationTimer.start();
+    kaelLargePortraitLabel.setIcon(kaelDamagedFrames[0]);
+    kaelDamagedAnimationPlaying = true;
+    System.out.println("💢 Kael damaged animation started");
+}
+
+private void stopKaelDamagedAnimation() {
+    if (kaelDamagedAnimationTimer != null && kaelDamagedAnimationTimer.isRunning()) {
+        kaelDamagedAnimationTimer.stop();
+        currentKaelDamagedFrame = 0;
+        kaelDamagedFrameCounter = 0;
+        System.out.println("⏹️ Kael damaged animation stopped");
+    }
+}
+
+private void startEnemyKaelDamagedAnimation() {
+    stopEnemyKaelIdleAnimation();
+    if (enemyKaelDamagedAnimationTimer != null && enemyKaelDamagedAnimationTimer.isRunning()) {
+        enemyKaelDamagedAnimationTimer.stop();
+    }
+    if (enemyKaelDamagedFrames[0] == null || enemyKaelLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Kael damaged - frames:" + (enemyKaelDamagedFrames[0]!=null));
+        return;
+    }
+    currentEnemyKaelDamagedFrame = 0;
+    enemyKaelDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    final int[] DAMAGED_FRAME_DURATIONS = {6, 6, 12};
+    enemyKaelDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyKaelLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Kael)) {
+                stopEnemyKaelDamagedAnimation();
+                return;
+            }
+            enemyKaelDamagedFrameCounter++;
+            int frameTicks = DAMAGED_FRAME_DURATIONS[currentEnemyKaelDamagedFrame];
+            if (enemyKaelDamagedFrameCounter >= frameTicks) {
+                enemyKaelDamagedFrameCounter = 0;
+                currentEnemyKaelDamagedFrame++;
+                if (currentEnemyKaelDamagedFrame >= enemyKaelDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemyKaelDamagedAnimation();
+                    enemyKaelDamagedAnimationPlaying = false;
+                    if (enemyKaelIdleFrames[0] != null) {
+                        startEnemyKaelIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyKaelDamagedFrames[currentEnemyKaelDamagedFrame];
+                if (frame != null) {
+                    enemyKaelLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyKaelLargePortraitLabel.setIcon(enemyKaelDamagedFrames[0]);
+                }
+                enemyKaelLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Kael damaged timer error: " + ex.getMessage());
+            stopEnemyKaelDamagedAnimation();
+        }
+    });
+    enemyKaelDamagedAnimationTimer.start();
+    enemyKaelLargePortraitLabel.setIcon(enemyKaelDamagedFrames[0]);
+    enemyKaelDamagedAnimationPlaying = true;
+    System.out.println("💢 Enemy Kael damaged animation started");
+}
+
+private void stopEnemyKaelDamagedAnimation() {
+    if (enemyKaelDamagedAnimationTimer != null && enemyKaelDamagedAnimationTimer.isRunning()) {
+        enemyKaelDamagedAnimationTimer.stop();
+        currentEnemyKaelDamagedFrame = 0;
+        enemyKaelDamagedFrameCounter = 0;
+        System.out.println("⏹️ Enemy Kael damaged animation stopped");
+    }
+}
+
+private void showKaelAttackAnimation() {
+    System.out.println("⚔️ showKaelAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (kaelAttackAnimationPlaying) {
+        System.out.println("⏭️ Kael attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof Kael && kaelLargePortraitLabel != null) {
+        if (kaelAttackFrames[0] != null) {
+            startKaelAttackAnimation();
+        } else {
+            System.out.println("⚠️ Kael attack frames not loaded, skipping attack animation");
+            kaelAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showEnemyKaelAttackAnimation() {
+    System.out.println("⚔️ showEnemyKaelAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemyKaelAttackAnimationPlaying) {
+        System.out.println("⏭️ Enemy Kael attack animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof Kael && enemyKaelLargePortraitLabel != null) {
+        if (enemyKaelAttackFrames[0] != null) {
+            startEnemyKaelAttackAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Kael attack frames not loaded, skipping attack animation");
+            enemyKaelAttackAnimationPlaying = false;
+        }
     }
 }
 
@@ -2387,6 +2831,8 @@ private void refreshEnemyJijiPortrait() {
         }
     }
 }
+
+
 
 private void showJijiAttackAnimation() {
     System.out.println("⚔️ showJijiAttackAnimation called!");
@@ -3382,11 +3828,17 @@ private void setupClickHandlers() {
     if (playerCharacter instanceof Jiji && result == ShotResult.SUNK) {
         showJijiAttackAnimation();
     }
+    if (playerCharacter instanceof Kael && result == ShotResult.SUNK) {
+        showKaelAttackAnimation();
+    }
 
     if (currentEnemy instanceof Jiji && result == ShotResult.SUNK) {
         Jiji enemyJiji = (Jiji) currentEnemy;
         enemyJiji.onShipSunk();
         refreshEnemyJijiPortrait();
+    }
+    if (currentEnemy instanceof Kael && result == ShotResult.SUNK) {
+        startEnemyKaelDamagedAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
@@ -3525,14 +3977,12 @@ private void enemyTurn() {
         
         // Track ship count before the attack to detect if a ship gets sunk
         int shipsBeforeAttack = 0;
-        if (playerCharacter instanceof Jiji) {
-            for (Ship ship : playerBoard.getShips()) {
-                if (!ship.isSunk()) {
-                    shipsBeforeAttack++;
-                }
+        for (Ship ship : playerBoard.getShips()) {
+            if (!ship.isSunk()) {
+                shipsBeforeAttack++;
             }
-            System.out.println("Ships before attack: " + shipsBeforeAttack);
         }
+        System.out.println("Ships before attack: " + shipsBeforeAttack);
         
         ShotResult result = playerBoard.fire(x, y);
         
@@ -3546,6 +3996,7 @@ private void enemyTurn() {
             }
             System.out.println("Ships after attack: " + shipsAfterAttack);
             
+
             // If a ship was sunk (ships decreased), trigger damaged animation
             if (shipsAfterAttack < shipsBeforeAttack) {
                 Jiji jiji = (Jiji) playerCharacter;
@@ -3573,6 +4024,12 @@ private void enemyTurn() {
                 updateStatusLabel("💀 YOUR SHIP WAS SUNK!", Color.RED);
                 if (currentEnemy instanceof Jiji) {
                     showEnemyJijiAttackAnimation();
+                }
+                if (currentEnemy instanceof Kael) {
+                    showEnemyKaelAttackAnimation();
+                }
+                if (playerCharacter instanceof Kael) {
+                    startKaelDamagedAnimation();
                 }
                 break;
             case MISS:
