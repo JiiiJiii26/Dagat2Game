@@ -30,7 +30,7 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = false;   
+    private boolean testMode = true;   
     private String testEnemyName = "Valerius";
 
     private JPanel jijiPortraitContainer;
@@ -192,11 +192,24 @@ private int valeriusAttackFrameCounter = 0;
 private boolean valeriusAttackAnimationPlaying = false;
 private static final int[] VALERIUS_ATTACK_FRAME_DURATIONS = {8, 8, 8, 12}; // ticks (~0.6s total)
 
+private ImageIcon[] valeriusDamagedFrames = new ImageIcon[3];
+private Timer valeriusDamagedAnimationTimer;
+private int currentValeriusDamagedFrame = 0;
+private int valeriusDamagedFrameCounter = 0;
+private boolean valeriusDamagedAnimationPlaying = false;
+private static final int[] VALERIUS_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
 private ImageIcon[] enemyValeriusAttackFrames = new ImageIcon[4];
 private Timer enemyValeriusAttackAnimationTimer;
 private int currentEnemyValeriusAttackFrame = 0;
 private int enemyValeriusAttackFrameCounter = 0;
 private boolean enemyValeriusAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyValeriusDamagedFrames = new ImageIcon[3];
+private Timer enemyValeriusDamagedAnimationTimer;
+private int currentEnemyValeriusDamagedFrame = 0;
+private int enemyValeriusDamagedFrameCounter = 0;
+private boolean enemyValeriusDamagedAnimationPlaying = false;
 
 private JLabel enemyValeriusLargePortraitLabel;
 
@@ -829,7 +842,9 @@ private class WaveBackgroundPanel extends JPanel {
         initValeriusIdleFrames();
         initEnemyValeriusIdleFrames();
         initValeriusAttackFrames();
+        initValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
+        initEnemyValeriusDamagedFrames();
         initKaelAttackFrames();
         initEnemyKaelAttackFrames();
         initKaelDamagedFrames();
@@ -1114,7 +1129,9 @@ private class WaveBackgroundPanel extends JPanel {
     stopEnemyValeriusAttackAnimation();
     stopKaelDamagedAnimation();
     stopEnemyKaelDamagedAnimation();
-    
+    stopValeriusDamagedAnimation();
+    stopEnemyValeriusDamagedAnimation();
+
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
 
@@ -2235,6 +2252,80 @@ private void initEnemyValeriusAttackFrames() {
     }
 }
 
+private void initValeriusDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/valerius_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    valeriusDamagedFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                valeriusDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Valerius damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Valerius damaged frame " + (i+1) + ": " + e.getMessage());
+                valeriusDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Valerius damaged frame missing: " + f.getAbsolutePath());
+            valeriusDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Valerius Damaged Frame " + i + " " + (valeriusDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyValeriusDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/valerius_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyValeriusDamagedFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyValeriusDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Valerius damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Valerius damaged frame " + (i+1) + ": " + e.getMessage());
+                enemyValeriusDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Valerius damaged frame missing: " + f.getAbsolutePath());
+            enemyValeriusDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Valerius Damaged Frame " + i + " " + (enemyValeriusDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
 private void startEnemyValeriusIdleAnimation() {
     stopEnemyValeriusIdleAnimation();
     if (enemyValeriusIdleFrames[0] == null || enemyValeriusLargePortraitLabel == null) {
@@ -2848,6 +2939,126 @@ private void stopKaelDamagedAnimation() {
         currentKaelDamagedFrame = 0;
         kaelDamagedFrameCounter = 0;
         System.out.println("⏹️ Kael damaged animation stopped");
+    }
+}
+
+private void startValeriusDamagedAnimation() {
+    stopValeriusIdleAnimation();
+    if (valeriusDamagedAnimationTimer != null && valeriusDamagedAnimationTimer.isRunning()) {
+        valeriusDamagedAnimationTimer.stop();
+    }
+    if (valeriusDamagedFrames[0] == null || valeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Valerius damaged - frames:" + (valeriusDamagedFrames[0]!=null));
+        return;
+    }
+    currentValeriusDamagedFrame = 0;
+    valeriusDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    valeriusDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (valeriusLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Valerius)) {
+                stopValeriusDamagedAnimation();
+                return;
+            }
+            valeriusDamagedFrameCounter++;
+            int frameTicks = VALERIUS_DAMAGED_FRAME_DURATIONS[currentValeriusDamagedFrame];
+            if (valeriusDamagedFrameCounter >= frameTicks) {
+                valeriusDamagedFrameCounter = 0;
+                currentValeriusDamagedFrame++;
+                if (currentValeriusDamagedFrame >= valeriusDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopValeriusDamagedAnimation();
+                    valeriusDamagedAnimationPlaying = false;
+                    if (valeriusIdleFrames[0] != null) {
+                        startValeriusIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = valeriusDamagedFrames[currentValeriusDamagedFrame];
+                if (frame != null) {
+                    valeriusLargePortraitLabel.setIcon(frame);
+                } else {
+                    valeriusLargePortraitLabel.setIcon(valeriusDamagedFrames[0]);
+                }
+                valeriusLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Valerius damaged timer error: " + ex.getMessage());
+            stopValeriusDamagedAnimation();
+        }
+    });
+    valeriusDamagedAnimationTimer.start();
+    valeriusLargePortraitLabel.setIcon(valeriusDamagedFrames[0]);
+    System.out.println("💢 Valerius damaged animation started");
+}
+
+private void stopValeriusDamagedAnimation() {
+    if (valeriusDamagedAnimationTimer != null && valeriusDamagedAnimationTimer.isRunning()) {
+        valeriusDamagedAnimationTimer.stop();
+        currentValeriusDamagedFrame = 0;
+        valeriusDamagedFrameCounter = 0;
+        System.out.println("⏹️ Valerius damaged animation stopped");
+    }
+}
+
+private void startEnemyValeriusDamagedAnimation() {
+    stopEnemyValeriusIdleAnimation();
+    if (enemyValeriusDamagedAnimationTimer != null && enemyValeriusDamagedAnimationTimer.isRunning()) {
+        enemyValeriusDamagedAnimationTimer.stop();
+    }
+    if (enemyValeriusDamagedFrames[0] == null || enemyValeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Valerius damaged - frames:" + (enemyValeriusDamagedFrames[0]!=null));
+        return;
+    }
+    currentEnemyValeriusDamagedFrame = 0;
+    enemyValeriusDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    enemyValeriusDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyValeriusLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Valerius)) {
+                stopEnemyValeriusDamagedAnimation();
+                return;
+            }
+            enemyValeriusDamagedFrameCounter++;
+            int frameTicks = VALERIUS_DAMAGED_FRAME_DURATIONS[currentEnemyValeriusDamagedFrame];
+            if (enemyValeriusDamagedFrameCounter >= frameTicks) {
+                enemyValeriusDamagedFrameCounter = 0;
+                currentEnemyValeriusDamagedFrame++;
+                if (currentEnemyValeriusDamagedFrame >= enemyValeriusDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemyValeriusDamagedAnimation();
+                    enemyValeriusDamagedAnimationPlaying = false;
+                    if (enemyValeriusIdleFrames[0] != null) {
+                        startEnemyValeriusIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyValeriusDamagedFrames[currentEnemyValeriusDamagedFrame];
+                if (frame != null) {
+                    enemyValeriusLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusDamagedFrames[0]);
+                }
+                enemyValeriusLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Valerius damaged timer error: " + ex.getMessage());
+            stopEnemyValeriusDamagedAnimation();
+        }
+    });
+    enemyValeriusDamagedAnimationTimer.start();
+    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusDamagedFrames[0]);
+    System.out.println("💢 Enemy Valerius damaged animation started");
+}
+
+private void stopEnemyValeriusDamagedAnimation() {
+    if (enemyValeriusDamagedAnimationTimer != null && enemyValeriusDamagedAnimationTimer.isRunning()) {
+        enemyValeriusDamagedAnimationTimer.stop();
+        currentEnemyValeriusDamagedFrame = 0;
+        enemyValeriusDamagedFrameCounter = 0;
+        System.out.println("⏹️ Enemy Valerius damaged animation stopped");
     }
 }
 
@@ -4372,7 +4583,7 @@ private void setupClickHandlers() {
         startEnemyKaelDamagedAnimation();
     }
     if (currentEnemy instanceof Valerius && result == ShotResult.SUNK) {
-        startEnemyValeriusAttackAnimation();
+        startEnemyValeriusDamagedAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
@@ -4564,6 +4775,9 @@ private void enemyTurn() {
                 }
                 if (playerCharacter instanceof Kael) {
                     startKaelDamagedAnimation();
+                }
+                if (playerCharacter instanceof Valerius) {
+                    startValeriusDamagedAnimation();
                 }
                 break;
             case MISS:
