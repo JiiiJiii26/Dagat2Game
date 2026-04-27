@@ -29,7 +29,7 @@ import java.awt.geom.AffineTransform;
 public class CampaignMode {
    
     private boolean testMode = true;
-    private String testEnemyName = "Valerius";
+    private String testEnemyName = "Jiji";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -819,19 +819,27 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemyKaelDamagedFrames();
 
             initValeriusIdleFrames();
-            Valerius valerius = (Valerius) playerCharacter;
-            if (valerius.isDamaged()) {
-                if (valeriusDamagedFrames[0] != null) {
-                    valeriusLargePortraitLabel.setIcon(valeriusDamagedFrames[0]);
-                }
-            } else {
-                if (valeriusIdleFrames[0] != null) {
-                    startValeriusIdleAnimation();
-                }
+            if (playerCharacter instanceof Valerius) {
+        initValeriusIdleFrames();
+        initValeriusDamagedFrames();
+        initEnemyValeriusIdleFrames();
+        initEnemyValeriusDamagedFrames();
+        
+        Valerius valerius = (Valerius) playerCharacter;
+        if (valerius.isDamaged()) {
+            if (valeriusDamagedFrames[0] != null) {
+                // Don't try to set icon here - label doesn't exist yet
+                // This will be handled in createBattleUI()
             }
-    
+        } else {
+            if (valeriusIdleFrames[0] != null) {
+                // Don't start animation here - label doesn't exist yet
+                // This will be handled in createBattleUI()
+            }
+        }
     }
-    
+    }
+
     public void refreshSkillPanels() {
         if (currentWaveIndex < waves.size()) {
             createBattleUI(waves.get(currentWaveIndex));
@@ -1407,159 +1415,189 @@ boardsPanel.add(rightPanel); // Board + ship counter together
     combinedBottomPanel.setPreferredSize(new Dimension(800, 220));   
 
     // LARGE PORTRAIT - Bottom Left
-    if (playerCharacter instanceof Jiji) {
-        Icon portrait = getCharacterPortrait(playerCharacter);
-        if (portrait != null) {
-            jijiLargePortraitLabel = new JLabel(portrait);
-            jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
-            jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            jijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
-            System.out.println("✅ Jiji portrait label created - icon: " + 
-                portrait.getIconWidth() + "x" + portrait.getIconHeight());
-            
-            JPanel westWrapper = new JPanel(new BorderLayout());
-            westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(400, 220));
-            westWrapper.add(kaelLargePortraitLabel, BorderLayout.CENTER);
-
-            JLabel nameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
-            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            nameTag.setForeground(new Color(100, 200, 255));
-            westWrapper.add(nameTag, BorderLayout.SOUTH);
-
-            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
-            System.out.println("✅ Kael large portrait created at bottom left");
-
-            if (kaelIdleFrames[0] != null) {
-                startKaelIdleAnimation();
-            } else {
-                System.out.println("⚠️ Kael idle frames failed to load, keeping static portrait");
+   // LARGE PORTRAIT - Bottom Left
+if (playerCharacter instanceof Jiji) {
+    Icon portrait = getCharacterPortrait(playerCharacter);
+    if (portrait != null) {
+        jijiLargePortraitLabel = new JLabel(portrait);
+        jijiLargePortraitLabel.setToolTipText("Jiji: \"Is the game over yet? I want to nap.\"");
+        jijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        jijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        jijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+        
+        JPanel westWrapper = new JPanel(new BorderLayout());
+        westWrapper.setOpaque(false);
+        westWrapper.setPreferredSize(new Dimension(250, 220));
+        westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);  // ← FIXED: use jijiLargePortraitLabel
+        
+        JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
+        nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        nameTag.setForeground(new Color(100, 200, 255));
+        westWrapper.add(nameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+        
+        initJijiIdleFrames();
+        initJijiDamagedFrames();
+        Jiji jiji = (Jiji) playerCharacter;
+        if (jiji.isDamaged()) {
+            if (jijiDamagedFrames[0] != null) {
+                startDamagedAnimation();
             }
         } else {
-            System.out.println("⚠️ Could not load Kael portrait");
-        }
-    } else if (playerCharacter instanceof Valerius) {
-        Icon portrait = getCharacterPortrait(playerCharacter);
-        if (portrait != null) {
-            valeriusLargePortraitLabel = new JLabel(portrait);
-            valeriusLargePortraitLabel.setToolTipText("Valerius: \"Fortifications hold!\"");
-            valeriusLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            valeriusLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            valeriusLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
-            System.out.println("✅ Valerius portrait label created - icon: " +
-                portrait.getIconWidth() + "x" + portrait.getIconHeight());
-            
-            JPanel westWrapper = new JPanel(new BorderLayout());
-            westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(250, 220));
-            westWrapper.add(valeriusLargePortraitLabel, BorderLayout.CENTER);
-            
-            JLabel nameTag = new JLabel("🛡️ VALERIUS", SwingConstants.CENTER);
-            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            nameTag.setForeground(new Color(100, 200, 255));
-            westWrapper.add(nameTag, BorderLayout.SOUTH);
-            
-            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
-            System.out.println("✅ Valerius large portrait created at bottom left");
-            
-            initValeriusIdleFrames();
-            Valerius valerius = (Valerius) playerCharacter;
-            if (valerius.isDamaged()) {
-                if (valeriusDamagedFrames[0] != null) {
-                    valeriusLargePortraitLabel.setIcon(valeriusDamagedFrames[0]);
-                }
-            } else {
-                if (valeriusIdleFrames[0] != null) {
-                    startValeriusIdleAnimation();
-                }
+            if (jijiIdleFrames[0] != null) {
+                startIdleAnimation();
             }
-        } else {
-            System.out.println("⚠️ Could not load Valerius portrait");
         }
-    } else {
-        JPanel emptyPanel = new JPanel();
-        emptyPanel.setOpaque(false);
-        emptyPanel.setPreferredSize(new Dimension(250, 220));
-        combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
     }
-
-    if (currentEnemy instanceof Jiji) {
-        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
-        if (enemyPortrait != null) {
-            enemyJijiLargePortraitLabel = new JLabel(enemyPortrait);
-            enemyJijiLargePortraitLabel.setToolTipText("Enemy Jiji: \"Time to wake up and fight!\"");
-            enemyJijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            enemyJijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            enemyJijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
-            System.out.println("✅ Enemy Jiji portrait label created - icon: " +
-                enemyPortrait.getIconWidth() + "x" + enemyPortrait.getIconHeight());
-            
-            JPanel eastWrapper = new JPanel(new BorderLayout());
-            eastWrapper.setOpaque(false);
-            eastWrapper.setPreferredSize(new Dimension(250, 220));
-            eastWrapper.add(enemyKaelLargePortraitLabel, BorderLayout.CENTER);
-
-            JLabel enemyNameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
-            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            enemyNameTag.setForeground(new Color(255, 100, 100)); // Reddish for enemy
-            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
-
-            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
-            System.out.println("✅ Enemy Kael large portrait created at bottom right");
-
-            if (enemyKaelIdleFrames[0] != null) {
-                startEnemyKaelIdleAnimation();
-            } else {
-                System.out.println("⚠️ Enemy Kael idle frames failed to load, keeping static portrait");
-            }
-        } else {
-            System.out.println("⚠️ Could not load Enemy Kael portrait");
+} else if (playerCharacter instanceof Kael) {
+    Icon portrait = getCharacterPortrait(playerCharacter);
+    if (portrait != null) {
+        kaelLargePortraitLabel = new JLabel(portrait);
+        kaelLargePortraitLabel.setToolTipText("Kael: \"Shadows bend to my will.\"");
+        kaelLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        kaelLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        kaelLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+        
+        JPanel westWrapper = new JPanel(new BorderLayout());
+        westWrapper.setOpaque(false);
+        westWrapper.setPreferredSize(new Dimension(150, 140));
+        westWrapper.add(kaelLargePortraitLabel, BorderLayout.CENTER);  // ← FIXED: use kaelLargePortraitLabel
+        
+        JLabel nameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
+        nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        nameTag.setForeground(new Color(100, 200, 255));
+        westWrapper.add(nameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+        
+        if (kaelIdleFrames[0] != null) {
+            startKaelIdleAnimation();
         }
-    } else if (currentEnemy instanceof Valerius) {
-        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
-        if (enemyPortrait != null) {
-            enemyValeriusLargePortraitLabel = new JLabel(enemyPortrait);
-            enemyValeriusLargePortraitLabel.setToolTipText("Enemy Valerius: \"Your attacks are futile!\"");
-            enemyValeriusLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            enemyValeriusLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            enemyValeriusLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
-            System.out.println("✅ Enemy Valerius portrait label created - icon: " +
-                enemyPortrait.getIconWidth() + "x" + enemyPortrait.getIconHeight());
-            
-            JPanel eastWrapper = new JPanel(new BorderLayout());
-            eastWrapper.setOpaque(false);
-            eastWrapper.setPreferredSize(new Dimension(250, 220));
-            eastWrapper.add(enemyValeriusLargePortraitLabel, BorderLayout.CENTER);
-            
-            JLabel enemyNameTag = new JLabel("🛡️ VALERIUS", SwingConstants.CENTER);
-            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            enemyNameTag.setForeground(new Color(255, 100, 100));
-            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
-            
-            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
-            System.out.println("✅ Enemy Valerius large portrait created at bottom right");
-            
-            initEnemyValeriusIdleFrames();
-            Valerius enemyValerius = (Valerius) currentEnemy;
-            if (enemyValerius.isDamaged()) {
-                if (enemyValeriusDamagedFrames[0] != null) {
-                    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusDamagedFrames[0]);
-                }
-            } else {
-                if (enemyValeriusIdleFrames[0] != null) {
-                    startEnemyValeriusIdleAnimation();
-                }
-            }
-        } else {
-            System.out.println("⚠️ Could not load Enemy Valerius portrait");
-        }
-    } else {
-        JPanel emptyPanelEast = new JPanel();
-        emptyPanelEast.setOpaque(false);
-        emptyPanelEast.setPreferredSize(new Dimension(150, 140));
-        combinedBottomPanel.add(emptyPanelEast, BorderLayout.EAST);
     }
+} else if (playerCharacter instanceof Valerius) {
+    Icon portrait = getCharacterPortrait(playerCharacter);
+    if (portrait != null) {
+        valeriusLargePortraitLabel = new JLabel(portrait);
+        valeriusLargePortraitLabel.setToolTipText("Valerius: \"Fortifications hold!\"");
+        valeriusLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        valeriusLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        valeriusLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+        
+        JPanel westWrapper = new JPanel(new BorderLayout());
+        westWrapper.setOpaque(false);
+        westWrapper.setPreferredSize(new Dimension(250, 220));
+        westWrapper.add(valeriusLargePortraitLabel, BorderLayout.CENTER);  // ← FIXED: use valeriusLargePortraitLabel
+        
+        JLabel nameTag = new JLabel("🛡️ VALERIUS", SwingConstants.CENTER);
+        nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        nameTag.setForeground(new Color(100, 200, 255));
+        westWrapper.add(nameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+        
+        if (valeriusIdleFrames[0] != null) {
+            startValeriusIdleAnimation();
+        }
+    }
+} else {
+    JPanel emptyPanel = new JPanel();
+    emptyPanel.setOpaque(false);
+    emptyPanel.setPreferredSize(new Dimension(250, 220));
+    combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
+}
+
+if (currentEnemy instanceof Jiji) {
+    Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+    if (enemyPortrait != null) {
+        enemyJijiLargePortraitLabel = new JLabel(enemyPortrait);
+        enemyJijiLargePortraitLabel.setToolTipText("Enemy Jiji: \"Time to wake up and fight!\"");
+        enemyJijiLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        enemyJijiLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        enemyJijiLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+        
+        JPanel eastWrapper = new JPanel(new BorderLayout());
+        eastWrapper.setOpaque(false);
+        eastWrapper.setPreferredSize(new Dimension(250, 220));
+        eastWrapper.add(enemyJijiLargePortraitLabel, BorderLayout.CENTER);
+        
+        JLabel enemyNameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
+        enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        enemyNameTag.setForeground(new Color(255, 100, 100));
+        eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+        
+        initEnemyJijiIdleFrames();
+        initEnemyJijiDamagedFrames();
+        initEnemyJijiAttackFrames();
+        Jiji enemyJiji = (Jiji) currentEnemy;
+        if (enemyJiji.isDamaged()) {
+            if (enemyJijiDamagedFrames[0] != null) {
+                startEnemyDamagedAnimation();
+            }
+        } else {
+            if (enemyJijiIdleFrames[0] != null) {
+                startEnemyIdleAnimation();
+            }
+        }
+    }
+} else if (currentEnemy instanceof Kael) {
+    Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+    if (enemyPortrait != null) {
+        enemyKaelLargePortraitLabel = new JLabel(enemyPortrait);
+        enemyKaelLargePortraitLabel.setToolTipText("Enemy Kael: \"You cannot escape the shadows.\"");
+        enemyKaelLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        enemyKaelLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        enemyKaelLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+        
+        JPanel eastWrapper = new JPanel(new BorderLayout());
+        eastWrapper.setOpaque(false);
+        eastWrapper.setPreferredSize(new Dimension(150, 140));
+        eastWrapper.add(enemyKaelLargePortraitLabel, BorderLayout.CENTER);
+        
+        JLabel enemyNameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
+        enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        enemyNameTag.setForeground(new Color(255, 100, 100));
+        eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+        
+        if (enemyKaelIdleFrames[0] != null) {
+            startEnemyKaelIdleAnimation();
+        }
+    }
+} else if (currentEnemy instanceof Valerius) {
+    Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+    if (enemyPortrait != null) {
+        enemyValeriusLargePortraitLabel = new JLabel(enemyPortrait);
+        enemyValeriusLargePortraitLabel.setToolTipText("Enemy Valerius: \"Your attacks are futile!\"");
+        enemyValeriusLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+        enemyValeriusLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+        enemyValeriusLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
+        
+        JPanel eastWrapper = new JPanel(new BorderLayout());
+        eastWrapper.setOpaque(false);
+        eastWrapper.setPreferredSize(new Dimension(250, 220));
+        eastWrapper.add(enemyValeriusLargePortraitLabel, BorderLayout.CENTER);
+        
+        JLabel enemyNameTag = new JLabel("🛡️ VALERIUS", SwingConstants.CENTER);
+        enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+        enemyNameTag.setForeground(new Color(255, 100, 100));
+        eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+        
+        combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+        
+        if (enemyValeriusIdleFrames[0] != null) {
+            startEnemyValeriusIdleAnimation();
+        }
+    }
+} else {
+    JPanel emptyPanelEast = new JPanel();
+    emptyPanelEast.setOpaque(false);
+    emptyPanelEast.setPreferredSize(new Dimension(250, 220));
+    combinedBottomPanel.add(emptyPanelEast, BorderLayout.EAST);
+}
 
     combinedBottomPanel.add(currentSkillPanel, BorderLayout.CENTER);
     mainContentPanel.add(combinedBottomPanel, BorderLayout.SOUTH);
