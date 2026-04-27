@@ -818,10 +818,18 @@ private class WaveBackgroundPanel extends JPanel {
         initKaelDamagedFrames();
         initEnemyKaelDamagedFrames();
 
-          initValeriusIdleFrames();     
-    initValeriusDamagedFrames();   
-    initEnemyValeriusIdleFrames(); 
-    initEnemyValeriusDamagedFrames();
+            initValeriusIdleFrames();
+            Valerius valerius = (Valerius) playerCharacter;
+            if (valerius.isDamaged()) {
+                if (valeriusDamagedFrames[0] != null) {
+                    valeriusLargePortraitLabel.setIcon(valeriusDamagedFrames[0]);
+                }
+            } else {
+                if (valeriusIdleFrames[0] != null) {
+                    startValeriusIdleAnimation();
+                }
+            }
+    
     }
     
     public void refreshSkillPanels() {
@@ -1412,50 +1420,7 @@ boardsPanel.add(rightPanel); // Board + ship counter together
             
             JPanel westWrapper = new JPanel(new BorderLayout());
             westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(250, 220));
-            westWrapper.add(jijiLargePortraitLabel, BorderLayout.CENTER);
-            
-            JLabel nameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
-            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            nameTag.setForeground(new Color(100, 200, 255)); 
-            westWrapper.add(nameTag, BorderLayout.SOUTH);
-            
-            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
-            System.out.println("✅ Jiji large portrait created at bottom left");
-            
-            initJijiIdleFrames();
-            initJijiDamagedFrames();
-            Jiji jiji = (Jiji) playerCharacter;
-            if (jiji.isDamaged()) {
-                if (jijiDamagedFrames[0] != null) {
-                    startDamagedAnimation();
-                } else {
-                    System.out.println("⚠️ Damaged frames not available, showing static");
-                }
-            } else {
-                if (jijiIdleFrames[0] != null) {
-                    startIdleAnimation();
-                } else {
-                    System.out.println("⚠️ Idle frames failed to load, keeping static portrait");
-                }
-            }
-        } else {
-            System.out.println("⚠️ Could not load Jiji portrait");
-        }
-    } else if (playerCharacter instanceof Kael) {
-        Icon portrait = getCharacterPortrait(playerCharacter);
-        if (portrait != null) {
-            kaelLargePortraitLabel = new JLabel(portrait);
-            kaelLargePortraitLabel.setToolTipText("Kael: \"Shadows bend to my will.\"");
-            kaelLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            kaelLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            kaelLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
-            System.out.println("✅ Kael portrait label created - icon: " +
-                portrait.getIconWidth() + "x" + portrait.getIconHeight());
-
-            JPanel westWrapper = new JPanel(new BorderLayout());
-            westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.setPreferredSize(new Dimension(400, 220));
             westWrapper.add(kaelLargePortraitLabel, BorderLayout.CENTER);
 
             JLabel nameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
@@ -1481,13 +1446,13 @@ boardsPanel.add(rightPanel); // Board + ship counter together
             valeriusLargePortraitLabel.setToolTipText("Valerius: \"Fortifications hold!\"");
             valeriusLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
             valeriusLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            valeriusLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+            valeriusLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
             System.out.println("✅ Valerius portrait label created - icon: " +
                 portrait.getIconWidth() + "x" + portrait.getIconHeight());
             
             JPanel westWrapper = new JPanel(new BorderLayout());
             westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.setPreferredSize(new Dimension(250, 220));
             westWrapper.add(valeriusLargePortraitLabel, BorderLayout.CENTER);
             
             JLabel nameTag = new JLabel("🛡️ VALERIUS", SwingConstants.CENTER);
@@ -1515,7 +1480,7 @@ boardsPanel.add(rightPanel); // Board + ship counter together
     } else {
         JPanel emptyPanel = new JPanel();
         emptyPanel.setOpaque(false);
-        emptyPanel.setPreferredSize(new Dimension(150, 140));
+        emptyPanel.setPreferredSize(new Dimension(250, 220));
         combinedBottomPanel.add(emptyPanel, BorderLayout.WEST);
     }
 
@@ -1533,50 +1498,6 @@ boardsPanel.add(rightPanel); // Board + ship counter together
             JPanel eastWrapper = new JPanel(new BorderLayout());
             eastWrapper.setOpaque(false);
             eastWrapper.setPreferredSize(new Dimension(250, 220));
-            eastWrapper.add(enemyJijiLargePortraitLabel, BorderLayout.CENTER);
-            
-            JLabel enemyNameTag = new JLabel("💻 JIJI", SwingConstants.CENTER);
-            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            enemyNameTag.setForeground(new Color(255, 100, 100)); // Reddish for enemy
-            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
-            
-            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
-            System.out.println("✅ Enemy Jiji large portrait created at bottom right");
-            
-            initEnemyJijiIdleFrames();
-            initEnemyJijiDamagedFrames();
-            initEnemyJijiAttackFrames();
-            Jiji enemyJiji = (Jiji) currentEnemy;
-            if (enemyJiji.isDamaged()) {
-                if (enemyJijiDamagedFrames[0] != null) {
-                    startEnemyDamagedAnimation();
-                } else {
-                    System.out.println("⚠️ Enemy damaged frames not available, showing static");
-                }
-            } else {
-                if (enemyJijiIdleFrames[0] != null) {
-                    startEnemyIdleAnimation();
-                } else {
-                    System.out.println("⚠️ Enemy idle frames failed to load, keeping static portrait");
-                }
-            }
-        } else {
-            System.out.println("⚠️ Could not load Enemy Jiji portrait");
-        }
-    } else if (currentEnemy instanceof Kael) {
-        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
-        if (enemyPortrait != null) {
-            enemyKaelLargePortraitLabel = new JLabel(enemyPortrait);
-            enemyKaelLargePortraitLabel.setToolTipText("Enemy Kael: \"You cannot escape the shadows.\"");
-            enemyKaelLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            enemyKaelLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            enemyKaelLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
-            System.out.println("✅ Enemy Kael portrait label created - icon: " +
-                enemyPortrait.getIconWidth() + "x" + enemyPortrait.getIconHeight());
-
-            JPanel eastWrapper = new JPanel(new BorderLayout());
-            eastWrapper.setOpaque(false);
-            eastWrapper.setPreferredSize(new Dimension(150, 140));
             eastWrapper.add(enemyKaelLargePortraitLabel, BorderLayout.CENTER);
 
             JLabel enemyNameTag = new JLabel("⚔️ KAEL", SwingConstants.CENTER);
@@ -1602,13 +1523,13 @@ boardsPanel.add(rightPanel); // Board + ship counter together
             enemyValeriusLargePortraitLabel.setToolTipText("Enemy Valerius: \"Your attacks are futile!\"");
             enemyValeriusLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
             enemyValeriusLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            enemyValeriusLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+            enemyValeriusLargePortraitLabel.setPreferredSize(new Dimension(250, 200));
             System.out.println("✅ Enemy Valerius portrait label created - icon: " +
                 enemyPortrait.getIconWidth() + "x" + enemyPortrait.getIconHeight());
             
             JPanel eastWrapper = new JPanel(new BorderLayout());
             eastWrapper.setOpaque(false);
-            eastWrapper.setPreferredSize(new Dimension(150, 140));
+            eastWrapper.setPreferredSize(new Dimension(250, 220));
             eastWrapper.add(enemyValeriusLargePortraitLabel, BorderLayout.CENTER);
             
             JLabel enemyNameTag = new JLabel("🛡️ VALERIUS", SwingConstants.CENTER);
@@ -1773,7 +1694,21 @@ private void initJijiIdleFrames() {
                 // Target dimensions for portrait area (250x200), centered
                 int targetW = 250;
                 int targetH = 200;
-                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                // Scale proportionally to fit without distortion
+                double scaleX = (double) targetW / base.getWidth();
+                double scaleY = (double) targetH / base.getHeight();
+                double scale = Math.min(scaleX, scaleY);
+                int scaledW = (int) (base.getWidth() * scale);
+                int scaledH = (int) (base.getHeight() * scale);
+                Image tempScaled = base.getScaledInstance(scaledW, scaledH, Image.SCALE_SMOOTH);
+                // Create a new image with target size and center the scaled image
+                BufferedImage finalImage = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = finalImage.createGraphics();
+                int x = (targetW - scaledW) / 2;
+                int y = (targetH - scaledH) / 2;
+                g2d.drawImage(tempScaled, x, y, null);
+                g2d.dispose();
+                Image scaled = finalImage;
                 jijiIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded idle frame " + (i + 1));
             } catch (Exception e) {
@@ -1943,7 +1878,8 @@ private void startValeriusIdleAnimation() {
     }
     valeriusCurrentIdleFrame = 0;
     valeriusIdleFrameCounter = 0;
-    final int tickMs = 16;
+    final int tickMs = 25;
+    int[] valeriusSequence = {0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3};
     valeriusIdleAnimationTimer = new Timer(tickMs, e -> {
         try {
             if (valeriusLargePortraitLabel == null) return;
@@ -1952,10 +1888,10 @@ private void startValeriusIdleAnimation() {
                 return;
             }
             valeriusIdleFrameCounter++;
-            if (valeriusIdleFrameCounter >= SLOT_FRAME_MAP.length) {
+            if (valeriusIdleFrameCounter >= valeriusSequence.length) {
                 valeriusIdleFrameCounter = 0;
             }
-            int frameIdx = SLOT_FRAME_MAP[valeriusIdleFrameCounter];
+            int frameIdx = valeriusSequence[valeriusIdleFrameCounter];
             if (frameIdx >= 0 && frameIdx < valeriusIdleFrames.length && valeriusIdleFrames[frameIdx] != null) {
                 valeriusLargePortraitLabel.setIcon(valeriusIdleFrames[frameIdx]);
             }
@@ -1987,7 +1923,8 @@ private void startEnemyValeriusIdleAnimation() {
     }
     enemyValeriusCurrentIdleFrame = 0;
     enemyValeriusIdleFrameCounter = 0;
-    final int tickMs = 16;
+    final int tickMs = 25;
+    int[] valeriusSequence = {0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3};
     enemyValeriusIdleAnimationTimer = new Timer(tickMs, e -> {
         try {
             if (enemyValeriusLargePortraitLabel == null) return;
@@ -1996,10 +1933,10 @@ private void startEnemyValeriusIdleAnimation() {
                 return;
             }
             enemyValeriusIdleFrameCounter++;
-            if (enemyValeriusIdleFrameCounter >= SLOT_FRAME_MAP.length) {
+            if (enemyValeriusIdleFrameCounter >= valeriusSequence.length) {
                 enemyValeriusIdleFrameCounter = 0;
             }
-            int frameIdx = SLOT_FRAME_MAP[enemyValeriusIdleFrameCounter];
+            int frameIdx = valeriusSequence[enemyValeriusIdleFrameCounter];
             if (frameIdx >= 0 && frameIdx < enemyValeriusIdleFrames.length && enemyValeriusIdleFrames[frameIdx] != null) {
                 enemyValeriusLargePortraitLabel.setIcon(enemyValeriusIdleFrames[frameIdx]);
             }
@@ -2154,8 +2091,8 @@ private void initEnemyKaelIdleFrames() {
                 g.setTransform(tx);
                 g.drawImage(base, 0, 0, null);
                 g.dispose();
-                int targetW = (i == 0 || i == 2) ? 135 : 150; // Make frames 1 and 3 slimmer
-                int targetH = 120;
+                int targetW = 250;
+                int targetH = 200;
                 Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 enemyKaelIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded and flipped enemy Kael idle frame " + (i + 1));
@@ -2203,6 +2140,7 @@ private void initKaelAttackFrames() {
 }
 
 private void initValeriusIdleFrames() {
+    // Load player Valerius idle frames - match Jiji size (250x200)
     for (int i = 0; i < 4; i++) {
         String path = "assets/valerius_idle" + (i + 1) + ".png";
         File f = new File(path);
@@ -2214,12 +2152,15 @@ private void initValeriusIdleFrames() {
                     valeriusIdleFrames[i] = null;
                     continue;
                 }
-                // Target dimensions for portrait area (150x120), centered
-                int targetW = 150;
-                int targetH = 120;
+                
+                // Use the SAME dimensions as Jiji (250x200)
+                int targetW = 250;
+                int targetH = 200;
+                
+                // Simple scaling - fill the area
                 Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 valeriusIdleFrames[i] = new ImageIcon(scaled);
-                System.out.println("✅ Loaded Valerius idle frame " + (i + 1));
+                System.out.println("✅ Loaded Valerius idle frame " + (i + 1) + " - " + targetW + "x" + targetH);
             } catch (Exception e) {
                 System.out.println("⚠️ Error loading Valerius frame " + (i+1) + ": " + e.getMessage());
                 valeriusIdleFrames[i] = null;
