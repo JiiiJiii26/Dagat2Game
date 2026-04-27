@@ -25,7 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.awt.geom.AffineTransform;
-//test
+
 public class CampaignMode {
    
 
@@ -184,6 +184,19 @@ private Timer enemyValeriusIdleAnimationTimer;
 private int enemyValeriusIdleSequenceIndex = 0;
 private int enemyValeriusIdleFrameCounter = 0;
 private boolean enemyValeriusIdleAnimationPlaying = false;
+
+private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
+private Timer valeriusAttackAnimationTimer;
+private int currentValeriusAttackFrame = 0;
+private int valeriusAttackFrameCounter = 0;
+private boolean valeriusAttackAnimationPlaying = false;
+private static final int[] VALERIUS_ATTACK_FRAME_DURATIONS = {8, 8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemyValeriusAttackFrames = new ImageIcon[4];
+private Timer enemyValeriusAttackAnimationTimer;
+private int currentEnemyValeriusAttackFrame = 0;
+private int enemyValeriusAttackFrameCounter = 0;
+private boolean enemyValeriusAttackAnimationPlaying = false;
 
 private JLabel enemyValeriusLargePortraitLabel;
 
@@ -815,6 +828,8 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemyKaelIdleFrames();
         initValeriusIdleFrames();
         initEnemyValeriusIdleFrames();
+        initValeriusAttackFrames();
+        initEnemyValeriusAttackFrames();
         initKaelAttackFrames();
         initEnemyKaelAttackFrames();
         initKaelDamagedFrames();
@@ -1095,6 +1110,8 @@ private class WaveBackgroundPanel extends JPanel {
     stopEnemyValeriusIdleAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
+    stopValeriusAttackAnimation();
+    stopEnemyValeriusAttackAnimation();
     stopKaelDamagedAnimation();
     stopEnemyKaelDamagedAnimation();
     
@@ -2144,6 +2161,80 @@ private void initValeriusIdleFrames() {
     }
 }
 
+private void initValeriusAttackFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/valerius_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    valeriusAttackFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                valeriusAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Valerius attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Valerius attack frame " + (i+1) + ": " + e.getMessage());
+                valeriusAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Valerius attack frame missing: " + f.getAbsolutePath());
+            valeriusAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Valerius Attack Frame " + i + " " + (valeriusAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyValeriusAttackFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/valerius_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyValeriusAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyValeriusAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Valerius attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Valerius attack frame " + (i+1) + ": " + e.getMessage());
+                enemyValeriusAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Valerius attack frame missing: " + f.getAbsolutePath());
+            enemyValeriusAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Enemy Valerius Attack Frame " + i + " " + (enemyValeriusAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
 private void startEnemyValeriusIdleAnimation() {
     stopEnemyValeriusIdleAnimation();
     if (enemyValeriusIdleFrames[0] == null || enemyValeriusLargePortraitLabel == null) {
@@ -2398,6 +2489,138 @@ private void stopValeriusIdleAnimation() {
         valeriusIdleSequenceIndex = 0;
         valeriusIdleFrameCounter = 0;
         System.out.println("⏹️ Valerius idle animation stopped");
+    }
+}
+
+private void startValeriusAttackAnimation() {
+    // Stop all other Valerius animations
+    stopValeriusIdleAnimation();
+    if (valeriusAttackAnimationTimer != null && valeriusAttackAnimationTimer.isRunning()) {
+        valeriusAttackAnimationTimer.stop();
+    }
+    if (valeriusAttackFrames[0] == null || valeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Valerius attack - frames:" + (valeriusAttackFrames[0]!=null));
+        return;
+    }
+    currentValeriusAttackFrame = 0;
+    valeriusAttackFrameCounter = 0;
+    final int tickMs = 16;
+    valeriusAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (valeriusLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Valerius)) {
+                stopValeriusAttackAnimation();
+                return;
+            }
+            valeriusAttackFrameCounter++;
+            int frameTicks = VALERIUS_ATTACK_FRAME_DURATIONS[currentValeriusAttackFrame];
+            if (valeriusAttackFrameCounter >= frameTicks) {
+                valeriusAttackFrameCounter = 0;
+                currentValeriusAttackFrame = (currentValeriusAttackFrame + 1) % valeriusAttackFrames.length;
+                ImageIcon frame = valeriusAttackFrames[currentValeriusAttackFrame];
+                if (frame != null) {
+                    valeriusLargePortraitLabel.setIcon(frame);
+                } else {
+                    valeriusLargePortraitLabel.setIcon(valeriusAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentValeriusAttackFrame == valeriusAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopValeriusAttackAnimation();
+                    valeriusAttackAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        // Return to idle animation
+                        if (valeriusIdleFrames[0] != null) {
+                            startValeriusIdleAnimation();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Valerius attack timer error: " + ex.getMessage());
+            stopValeriusAttackAnimation();
+        }
+    });
+    valeriusAttackAnimationTimer.start();
+    valeriusLargePortraitLabel.setIcon(valeriusAttackFrames[0]);
+    System.out.println("⚔️ Valerius attack animation started");
+}
+
+private void stopValeriusAttackAnimation() {
+    if (valeriusAttackAnimationTimer != null && valeriusAttackAnimationTimer.isRunning()) {
+        valeriusAttackAnimationTimer.stop();
+        currentValeriusAttackFrame = 0;
+        valeriusAttackFrameCounter = 0;
+        System.out.println("⏹️ Valerius attack animation stopped");
+    }
+}
+
+private void startEnemyValeriusAttackAnimation() {
+    // Stop all other enemy Valerius animations
+    stopEnemyValeriusIdleAnimation();
+    if (enemyValeriusAttackAnimationTimer != null && enemyValeriusAttackAnimationTimer.isRunning()) {
+        enemyValeriusAttackAnimationTimer.stop();
+    }
+    if (enemyValeriusAttackFrames[0] == null || enemyValeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Valerius attack - frames:" + (enemyValeriusAttackFrames[0]!=null));
+        return;
+    }
+    currentEnemyValeriusAttackFrame = 0;
+    enemyValeriusAttackFrameCounter = 0;
+    final int tickMs = 16;
+    enemyValeriusAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyValeriusLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Valerius)) {
+                stopEnemyValeriusAttackAnimation();
+                return;
+            }
+            enemyValeriusAttackFrameCounter++;
+            int frameTicks = VALERIUS_ATTACK_FRAME_DURATIONS[currentEnemyValeriusAttackFrame];
+            if (enemyValeriusAttackFrameCounter >= frameTicks) {
+                enemyValeriusAttackFrameCounter = 0;
+                currentEnemyValeriusAttackFrame = (currentEnemyValeriusAttackFrame + 1) % enemyValeriusAttackFrames.length;
+                ImageIcon frame = enemyValeriusAttackFrames[currentEnemyValeriusAttackFrame];
+                if (frame != null) {
+                    enemyValeriusLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentEnemyValeriusAttackFrame == enemyValeriusAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopEnemyValeriusAttackAnimation();
+                    enemyValeriusAttackAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        // Return to idle animation
+                        if (enemyValeriusIdleFrames[0] != null) {
+                            startEnemyValeriusIdleAnimation();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Valerius attack timer error: " + ex.getMessage());
+            stopEnemyValeriusAttackAnimation();
+        }
+    });
+    enemyValeriusAttackAnimationTimer.start();
+    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusAttackFrames[0]);
+    System.out.println("⚔️ Enemy Valerius attack animation started");
+}
+
+private void stopEnemyValeriusAttackAnimation() {
+    if (enemyValeriusAttackAnimationTimer != null && enemyValeriusAttackAnimationTimer.isRunning()) {
+        enemyValeriusAttackAnimationTimer.stop();
+        currentEnemyValeriusAttackFrame = 0;
+        enemyValeriusAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Valerius attack animation stopped");
     }
 }
 
@@ -3097,6 +3320,26 @@ private void showJijiAttackAnimation() {
             System.out.println("⚠️ Attack frames not loaded, skipping attack animation");
             jijiAttackAnimationPlaying = false;
             jijiAttackPlayedThisTurn = true;
+        }
+    }
+}
+
+private void showValeriusAttackAnimation() {
+    System.out.println("⚔️ showValeriusAttackAnimation called! Frames loaded: " + (valeriusAttackFrames[0] != null));
+
+    // Only play once per turn and if not already playing
+    if (valeriusAttackAnimationPlaying) {
+        System.out.println("⏭️ Valerius attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof Valerius && valeriusLargePortraitLabel != null) {
+        if (valeriusAttackFrames[0] != null) {
+            valeriusAttackAnimationPlaying = true;
+            startValeriusAttackAnimation();
+        } else {
+            System.out.println("⚠️ Valerius attack frames not loaded, skipping attack animation");
+            valeriusAttackAnimationPlaying = false;
         }
     }
 }
@@ -4116,6 +4359,9 @@ private void setupClickHandlers() {
     if (playerCharacter instanceof Kael && result == ShotResult.SUNK) {
         showKaelAttackAnimation();
     }
+    if (playerCharacter instanceof Valerius && result == ShotResult.SUNK) {
+        showValeriusAttackAnimation();
+    }
 
     if (currentEnemy instanceof Jiji && result == ShotResult.SUNK) {
         Jiji enemyJiji = (Jiji) currentEnemy;
@@ -4124,6 +4370,9 @@ private void setupClickHandlers() {
     }
     if (currentEnemy instanceof Kael && result == ShotResult.SUNK) {
         startEnemyKaelDamagedAnimation();
+    }
+    if (currentEnemy instanceof Valerius && result == ShotResult.SUNK) {
+        startEnemyValeriusAttackAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
