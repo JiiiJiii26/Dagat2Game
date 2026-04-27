@@ -17,7 +17,7 @@ public class BoardPanel extends JPanel {
     private Board board;
     private final int SIZE = 10;
     private int cellWidth = 90;
-    private int cellHeight = 58;
+    private int cellHeight = 54;
     private boolean isPlayerBoard;  
     private boolean showShips;  
     private PlayerClickHandler playerClickHandler;

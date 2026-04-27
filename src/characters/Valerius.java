@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Random;
 
 public class Valerius extends GameCharacter {
+    private boolean damaged = false;
     
     private Random random = new Random();
     private int currentMana;
@@ -169,6 +170,14 @@ public class Valerius extends GameCharacter {
         return cellsDestroyed;
     }
     
+
+public boolean isDamaged() {
+    return damaged;
+}
+
+public void setDamaged(boolean damaged) {
+    this.damaged = damaged;
+}
     
     
     

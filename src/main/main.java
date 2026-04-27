@@ -31,15 +31,19 @@ public class Main {
     private static GameCharacter multiplayerPlayer2Character;
     private static MultiplayerBattlePanel multiplayerBattlePanel;
  
-    public static void main(String[] args) {
-        frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setLocationRelativeTo(null);
+public static void main(String[] args) {
+    frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.setLayout(new BorderLayout());
+    frame.setMinimumSize(new Dimension(900, 700));
+    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    frame.setLocationRelativeTo(null);
 
-        showMainMenu();
-    }
+    // For testing Valerius
+    selectedCharacter = new Valerius();
+
+    showMainMenu();
+}
 
     public static void showMainMenu() {
         MainMenuPanel menuPanel = new MainMenuPanel(new MainMenuPanel.MenuListener() {
