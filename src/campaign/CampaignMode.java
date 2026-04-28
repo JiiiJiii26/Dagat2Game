@@ -164,6 +164,12 @@ private Timer valeriusAttackAnimationTimer;
 private int currentValeriusAttackFrame = 0;
 private int valeriusAttackFrameCounter = 0;
 private boolean valeriusAttackAnimationPlaying = false;
+
+private ImageIcon[] valeriusSinkFrames = new ImageIcon[4];
+private Timer valeriusSinkAnimationTimer;
+private int currentValeriusSinkFrame = 0;
+private int valeriusSinkFrameCounter = 0;
+private boolean valeriusSinkAnimationPlaying = false;
 private static final int[] VALERIUS_ATTACK_FRAME_DURATIONS = {4, 4, 4, 8}; // ticks (~0.4s total)
 
 private ImageIcon[] enemyValeriusAttackFrames = new ImageIcon[4];
@@ -171,6 +177,12 @@ private Timer enemyValeriusAttackAnimationTimer;
 private int currentEnemyValeriusAttackFrame = 0;
 private int enemyValeriusAttackFrameCounter = 0;
 private boolean enemyValeriusAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyValeriusSinkFrames = new ImageIcon[4];
+private Timer enemyValeriusSinkAnimationTimer;
+private int currentEnemyValeriusSinkFrame = 0;
+private int enemyValeriusSinkFrameCounter = 0;
+private boolean enemyValeriusSinkAnimationPlaying = false;
 
 private ImageIcon[] enemyValeriusIdleFrames = new ImageIcon[4];
 private Timer enemyValeriusIdleAnimationTimer;
@@ -205,6 +217,18 @@ private JLabel valeriusLargePortraitLabel;
 private JLabel enemyValeriusLargePortraitLabel;
 private ImageIcon[] valeriusDamagedFrames = new ImageIcon[4];
 private ImageIcon[] enemyValeriusDamagedFrames = new ImageIcon[4];
+
+private ImageIcon[] valeriusShipSunkFrames = new ImageIcon[3];
+private Timer valeriusShipSunkAnimationTimer;
+private int currentValeriusShipSunkFrame = 0;
+private int valeriusShipSunkFrameCounter = 0;
+private boolean valeriusShipSunkAnimationPlaying = false;
+
+private ImageIcon[] enemyValeriusShipSunkFrames = new ImageIcon[3];
+private Timer enemyValeriusShipSunkAnimationTimer;
+private int currentEnemyValeriusShipSunkFrame = 0;
+private int enemyValeriusShipSunkFrameCounter = 0;
+private boolean enemyValeriusShipSunkAnimationPlaying = false;
 
 private JLabel enemyJijiLargePortraitLabel;
 private ImageIcon[] enemyJijiIdleFrames = new ImageIcon[4];
@@ -835,9 +859,13 @@ private class WaveBackgroundPanel extends JPanel {
         initValeriusIdleFrames();
         initValeriusDamagedFrames();
         initValeriusAttackFrames();
+        initValeriusSinkFrames();
+        initValeriusShipSunkFrames();
         initEnemyValeriusIdleFrames();
         initEnemyValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
+        initEnemyValeriusSinkFrames();
+        initEnemyValeriusShipSunkFrames();
         
         if (playerCharacter instanceof Valerius) {
         Valerius valerius = (Valerius) playerCharacter;
@@ -2375,6 +2403,122 @@ private void initEnemyValeriusAttackFrames() {
     }
 }
 
+private void initValeriusSinkFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/valerius_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage img = ImageIO.read(f);
+                BufferedImage scaled = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = scaled.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(img, 0, 0, 250, 200, null);
+                g2d.dispose();
+                valeriusSinkFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Valerius sink frame " + (i + 1) + " loaded (250x200)");
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not load Valerius sink frame " + (i + 1) + ": " + e.getMessage());
+                valeriusSinkFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Valerius sink frame missing: " + f.getAbsolutePath());
+            valeriusSinkFrames[i] = null;
+        }
+    }
+}
+
+private void initEnemyValeriusSinkFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/valerius_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage img = ImageIO.read(f);
+                // Flip horizontally for enemy
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-img.getWidth(), 0);
+                BufferedImage flipped = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = flipped.createGraphics();
+                g2d.setTransform(tx);
+                g2d.drawImage(img, 0, 0, null);
+                g2d.dispose();
+                BufferedImage scaled = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
+                g2d = scaled.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(flipped, 0, 0, 250, 200, null);
+                g2d.dispose();
+                enemyValeriusSinkFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Enemy Valerius sink frame " + (i + 1) + " loaded (flipped, 250x200)");
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not load enemy Valerius sink frame " + (i + 1) + ": " + e.getMessage());
+                enemyValeriusSinkFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Valerius sink frame missing: " + f.getAbsolutePath());
+            enemyValeriusSinkFrames[i] = null;
+        }
+    }
+}
+
+private void initValeriusShipSunkFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/valerius_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage img = ImageIO.read(f);
+                BufferedImage scaled = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = scaled.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(img, 0, 0, 250, 200, null);
+                g2d.dispose();
+                valeriusShipSunkFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Valerius ship sunk frame " + (i + 1) + " loaded (250x200)");
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not load Valerius ship sunk frame " + (i + 1) + ": " + e.getMessage());
+                valeriusShipSunkFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Valerius ship sunk frame missing: " + f.getAbsolutePath());
+            valeriusShipSunkFrames[i] = null;
+        }
+    }
+}
+
+private void initEnemyValeriusShipSunkFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/valerius_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage img = ImageIO.read(f);
+                // Flip horizontally for enemy
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-img.getWidth(), 0);
+                BufferedImage flipped = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2d = flipped.createGraphics();
+                g2d.setTransform(tx);
+                g2d.drawImage(img, 0, 0, null);
+                g2d.dispose();
+                BufferedImage scaled = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
+                g2d = scaled.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2d.drawImage(flipped, 0, 0, 250, 200, null);
+                g2d.dispose();
+                enemyValeriusShipSunkFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Enemy Valerius ship sunk frame " + (i + 1) + " loaded (flipped, 250x200)");
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not load enemy Valerius ship sunk frame " + (i + 1) + ": " + e.getMessage());
+                enemyValeriusShipSunkFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Valerius ship sunk frame missing: " + f.getAbsolutePath());
+            enemyValeriusShipSunkFrames[i] = null;
+        }
+    }
+}
+
 private void startValeriusAttackAnimation() {
     // Stop all other Valerius animations
     stopValeriusIdleAnimation();
@@ -2424,6 +2568,220 @@ private void stopValeriusAttackAnimation() {
         currentValeriusAttackFrame = 0;
         valeriusAttackFrameCounter = 0;
         System.out.println("⏹️ Valerius attack animation stopped");
+    }
+}
+
+private void startValeriusSinkAnimation() {
+    // Stop all other Valerius animations
+    stopValeriusIdleAnimation();
+    stopValeriusAttackAnimation();
+    if (valeriusSinkAnimationTimer != null && valeriusSinkAnimationTimer.isRunning()) {
+        valeriusSinkAnimationTimer.stop();
+    }
+    if (valeriusSinkFrames[0] == null || valeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Valerius sink - frames:" + (valeriusSinkFrames[0]!=null));
+        return;
+    }
+    currentValeriusSinkFrame = 0;
+    valeriusSinkFrameCounter = 0;
+    final int tickMs = 16;
+    valeriusSinkAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (valeriusLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Valerius)) return;
+            valeriusSinkFrameCounter++;
+            int frameTicks = VALERIUS_ATTACK_FRAME_DURATIONS[currentValeriusSinkFrame]; // Reuse durations
+            if (valeriusSinkFrameCounter >= frameTicks) {
+                currentValeriusSinkFrame++;
+                valeriusSinkFrameCounter = 0;
+                if (currentValeriusSinkFrame >= valeriusSinkFrames.length) {
+                    valeriusSinkAnimationPlaying = false;
+                    stopValeriusSinkAnimation();
+                    startValeriusIdleAnimation();
+                    return;
+                }
+                if (valeriusSinkFrames[currentValeriusSinkFrame] != null) {
+                    valeriusLargePortraitLabel.setIcon(valeriusSinkFrames[currentValeriusSinkFrame]);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Valerius sink timer error: " + ex.getMessage());
+            stopValeriusSinkAnimation();
+        }
+    });
+    valeriusSinkAnimationTimer.start();
+    valeriusLargePortraitLabel.setIcon(valeriusSinkFrames[0]);
+    valeriusSinkAnimationPlaying = true;
+    System.out.println("⚔️ Valerius sink animation started");
+}
+
+private void stopValeriusSinkAnimation() {
+    if (valeriusSinkAnimationTimer != null && valeriusSinkAnimationTimer.isRunning()) {
+        valeriusSinkAnimationTimer.stop();
+        currentValeriusSinkFrame = 0;
+        valeriusSinkFrameCounter = 0;
+        System.out.println("⏹️ Valerius sink animation stopped");
+    }
+}
+
+private void startEnemyValeriusSinkAnimation() {
+    // Stop all other enemy Valerius animations
+    stopEnemyValeriusIdleAnimation();
+    stopEnemyValeriusAttackAnimation();
+    if (enemyValeriusSinkAnimationTimer != null && enemyValeriusSinkAnimationTimer.isRunning()) {
+        enemyValeriusSinkAnimationTimer.stop();
+    }
+    if (enemyValeriusSinkFrames[0] == null || enemyValeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Valerius sink - frames:" + (enemyValeriusSinkFrames[0]!=null));
+        return;
+    }
+    currentEnemyValeriusSinkFrame = 0;
+    enemyValeriusSinkFrameCounter = 0;
+    final int tickMs = 16;
+    enemyValeriusSinkAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyValeriusLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Valerius)) return;
+            enemyValeriusSinkFrameCounter++;
+            int frameTicks = VALERIUS_ATTACK_FRAME_DURATIONS[currentEnemyValeriusSinkFrame]; // Reuse durations
+            if (enemyValeriusSinkFrameCounter >= frameTicks) {
+                currentEnemyValeriusSinkFrame++;
+                enemyValeriusSinkFrameCounter = 0;
+                if (currentEnemyValeriusSinkFrame >= enemyValeriusSinkFrames.length) {
+                    enemyValeriusSinkAnimationPlaying = false;
+                    stopEnemyValeriusSinkAnimation();
+                    startEnemyValeriusIdleAnimation();
+                    return;
+                }
+                if (enemyValeriusSinkFrames[currentEnemyValeriusSinkFrame] != null) {
+                    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusSinkFrames[currentEnemyValeriusSinkFrame]);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Valerius sink timer error: " + ex.getMessage());
+            stopEnemyValeriusSinkAnimation();
+        }
+    });
+    enemyValeriusSinkAnimationTimer.start();
+    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusSinkFrames[0]);
+    enemyValeriusSinkAnimationPlaying = true;
+    System.out.println("⚔️ Enemy Valerius sink animation started");
+}
+
+private void stopEnemyValeriusSinkAnimation() {
+    if (enemyValeriusSinkAnimationTimer != null && enemyValeriusSinkAnimationTimer.isRunning()) {
+        enemyValeriusSinkAnimationTimer.stop();
+        currentEnemyValeriusSinkFrame = 0;
+        enemyValeriusSinkFrameCounter = 0;
+        System.out.println("⏹️ Enemy Valerius sink animation stopped");
+    }
+}
+
+private void startValeriusShipSunkAnimation() {
+    // Stop all other Valerius animations
+    stopValeriusIdleAnimation();
+    stopValeriusAttackAnimation();
+    stopValeriusSinkAnimation();
+    if (valeriusShipSunkAnimationTimer != null && valeriusShipSunkAnimationTimer.isRunning()) {
+        valeriusShipSunkAnimationTimer.stop();
+    }
+    if (valeriusShipSunkFrames[0] == null || valeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Valerius ship sunk - frames:" + (valeriusShipSunkFrames[0]!=null));
+        return;
+    }
+    currentValeriusShipSunkFrame = 0;
+    valeriusShipSunkFrameCounter = 0;
+    final int tickMs = 16;
+    valeriusShipSunkAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (valeriusLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Valerius)) return;
+            valeriusShipSunkFrameCounter++;
+            int frameTicks = 8; // Simple duration for 3 frames
+            if (valeriusShipSunkFrameCounter >= frameTicks) {
+                currentValeriusShipSunkFrame++;
+                valeriusShipSunkFrameCounter = 0;
+                if (currentValeriusShipSunkFrame >= valeriusShipSunkFrames.length) {
+                    valeriusShipSunkAnimationPlaying = false;
+                    stopValeriusShipSunkAnimation();
+                    startValeriusIdleAnimation();
+                    return;
+                }
+                if (valeriusShipSunkFrames[currentValeriusShipSunkFrame] != null) {
+                    valeriusLargePortraitLabel.setIcon(valeriusShipSunkFrames[currentValeriusShipSunkFrame]);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Valerius ship sunk timer error: " + ex.getMessage());
+            stopValeriusShipSunkAnimation();
+        }
+    });
+    valeriusShipSunkAnimationTimer.start();
+    valeriusLargePortraitLabel.setIcon(valeriusShipSunkFrames[0]);
+    valeriusShipSunkAnimationPlaying = true;
+    System.out.println("⚔️ Valerius ship sunk animation started");
+}
+
+private void stopValeriusShipSunkAnimation() {
+    if (valeriusShipSunkAnimationTimer != null && valeriusShipSunkAnimationTimer.isRunning()) {
+        valeriusShipSunkAnimationTimer.stop();
+        currentValeriusShipSunkFrame = 0;
+        valeriusShipSunkFrameCounter = 0;
+        System.out.println("⏹️ Valerius ship sunk animation stopped");
+    }
+}
+
+private void startEnemyValeriusShipSunkAnimation() {
+    // Stop all other enemy Valerius animations
+    stopEnemyValeriusIdleAnimation();
+    stopEnemyValeriusAttackAnimation();
+    stopEnemyValeriusSinkAnimation();
+    if (enemyValeriusShipSunkAnimationTimer != null && enemyValeriusShipSunkAnimationTimer.isRunning()) {
+        enemyValeriusShipSunkAnimationTimer.stop();
+    }
+    if (enemyValeriusShipSunkFrames[0] == null || enemyValeriusLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Valerius ship sunk - frames:" + (enemyValeriusShipSunkFrames[0]!=null));
+        return;
+    }
+    currentEnemyValeriusShipSunkFrame = 0;
+    enemyValeriusShipSunkFrameCounter = 0;
+    final int tickMs = 16;
+    enemyValeriusShipSunkAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyValeriusLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Valerius)) return;
+            enemyValeriusShipSunkFrameCounter++;
+            int frameTicks = 8; // Simple duration for 3 frames
+            if (enemyValeriusShipSunkFrameCounter >= frameTicks) {
+                currentEnemyValeriusShipSunkFrame++;
+                enemyValeriusShipSunkFrameCounter = 0;
+                if (currentEnemyValeriusShipSunkFrame >= enemyValeriusShipSunkFrames.length) {
+                    enemyValeriusShipSunkAnimationPlaying = false;
+                    stopEnemyValeriusShipSunkAnimation();
+                    startEnemyValeriusIdleAnimation();
+                    return;
+                }
+                if (enemyValeriusShipSunkFrames[currentEnemyValeriusShipSunkFrame] != null) {
+                    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusShipSunkFrames[currentEnemyValeriusShipSunkFrame]);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Valerius ship sunk timer error: " + ex.getMessage());
+            stopEnemyValeriusShipSunkAnimation();
+        }
+    });
+    enemyValeriusShipSunkAnimationTimer.start();
+    enemyValeriusLargePortraitLabel.setIcon(enemyValeriusShipSunkFrames[0]);
+    enemyValeriusShipSunkAnimationPlaying = true;
+    System.out.println("⚔️ Enemy Valerius ship sunk animation started");
+}
+
+private void stopEnemyValeriusShipSunkAnimation() {
+    if (enemyValeriusShipSunkAnimationTimer != null && enemyValeriusShipSunkAnimationTimer.isRunning()) {
+        enemyValeriusShipSunkAnimationTimer.stop();
+        currentEnemyValeriusShipSunkFrame = 0;
+        enemyValeriusShipSunkFrameCounter = 0;
+        System.out.println("⏹️ Enemy Valerius ship sunk animation stopped");
     }
 }
 
@@ -4383,7 +4741,7 @@ private Icon getCharacterPortrait(GameCharacter character) {
         startEnemyKaelDamagedAnimation();
     }
     if (currentEnemy instanceof Valerius && result == ShotResult.SUNK) {
-        showEnemyValeriusAttackAnimation();
+        startEnemyValeriusShipSunkAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
