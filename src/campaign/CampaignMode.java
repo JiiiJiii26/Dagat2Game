@@ -831,8 +831,7 @@ private class WaveBackgroundPanel extends JPanel {
         initKaelDamagedFrames();
         initEnemyKaelDamagedFrames();
 
-            initValeriusIdleFrames();
-            if (playerCharacter instanceof Valerius) {
+        // Initialize Valerius frames (always needed for both player and enemy)
         initValeriusIdleFrames();
         initValeriusDamagedFrames();
         initValeriusAttackFrames();
@@ -840,6 +839,7 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemyValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
         
+        if (playerCharacter instanceof Valerius) {
         Valerius valerius = (Valerius) playerCharacter;
         if (valerius.isDamaged()) {
             if (valeriusDamagedFrames[0] != null) {
@@ -2282,7 +2282,7 @@ private void initEnemyValeriusDamagedFrames() {
                 int targetH = 200;
                 Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 enemyValeriusDamagedFrames[i] = new ImageIcon(scaled);
-                System.out.println("✅ Loaded enemy Valerius damaged frame " + (i + 1));
+                System.out.println("✅ Loaded and flipped enemy Valerius damaged frame " + (i + 1));
             } catch (Exception e) {
                 System.out.println("⚠️ Error loading enemy Valerius damaged frame " + (i+1) + ": " + e.getMessage());
                 enemyValeriusDamagedFrames[i] = null;
@@ -2523,7 +2523,7 @@ private void initEnemyValeriusIdleFrames() {
                     enemyValeriusIdleFrames[i] = null;
                     continue;
                 }
-                // Flip horizontally
+                // Flip horizontally to face toward player
                 BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g = flipped.createGraphics();
                 AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
