@@ -314,116 +314,20 @@ public class Main {
     }
 
    private static void showGameScreen(String difficulty) {
-    System.out.println("🎮 Starting game with: " +
-        (selectedCharacter != null ? selectedCharacter.getName() : "NO CHARACTER"));
-
-    frame.getContentPane().removeAll();
-    frame.setLayout(new BorderLayout());
-
-    JPanel topPanel = new JPanel(new BorderLayout());
-    topPanel.setBackground(new Color(25, 25, 112));
-    topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-
-    JButton backButton = new JButton("← BACK TO MENU");
-    backButton.setFont(new Font("Arial", Font.BOLD, 14));
-    backButton.setBackground(new Color(80, 80, 100));
-    backButton.setForeground(Color.WHITE);
-    backButton.setFocusPainted(false);
-    backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    backButton.addActionListener(e -> {
-        int confirm = JOptionPane.showConfirmDialog(frame,
-            "Are you sure you want to return to the main menu?\nThe current game will be lost.",
-            "Return to Menu",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        if (confirm == JOptionPane.YES_OPTION) {
-            showMainMenu();
-        }
-    });
-    topPanel.add(backButton, BorderLayout.WEST);
-
-    JLabel titleLabel = new JLabel("🌊 TIDEBOUND - " + difficulty + " MODE 🌊", SwingConstants.CENTER);
-    titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
-    titleLabel.setForeground(new Color(173, 216, 230));
-    titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-    topPanel.add(titleLabel, BorderLayout.CENTER);
-
-
-    topPanel.add(new JPanel(), BorderLayout.EAST);
-
-    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-    splitPane.setBackground(new Color(25, 25, 112));
-    splitPane.setDividerLocation(700);
-
-    JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-    boardsPanel.setBackground(new Color(25, 25, 112));
-    boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-
-    JPanel playerPanel = new JPanel(new BorderLayout());
-    playerPanel.setBackground(new Color(25, 25, 112));
-    JLabel playerLabel = new JLabel("YOUR FLEET", SwingConstants.CENTER);
-    playerLabel.setFont(new Font("Arial", Font.BOLD, 18));
-    playerLabel.setForeground(Color.WHITE);
-    playerPanel.add(playerLabel, BorderLayout.NORTH);
-    playerBoardPanel = new BoardPanel(true, playerBoard, true);
-    playerPanel.add(playerBoardPanel, BorderLayout.CENTER);
-
-
-    JPanel enemyPanel = new JPanel(new BorderLayout());
-    enemyPanel.setBackground(new Color(25, 25, 112));
-    JLabel enemyLabel = new JLabel("ENEMY WATERS", SwingConstants.CENTER);
-    enemyLabel.setFont(new Font("Arial", Font.BOLD, 18));
-    enemyLabel.setForeground(Color.WHITE);
-    enemyPanel.add(enemyLabel, BorderLayout.NORTH);
-    enemyBoardPanel = new BoardPanel(false, aiPlayer.getBoard(), false);
-
-    enemyBoardPanel.setEnemyClickHandler(new BoardPanel.EnemyClickHandler() {
-        @Override
-        public void onEnemyCellClicked(int row, int col) {
-            if (playerTurn) {
-                handlePlayerTurn(row, col);
-            }
-        }
-    });
-
-    enemyPanel.add(enemyBoardPanel, BorderLayout.CENTER);
-    boardsPanel.add(playerPanel);
-    boardsPanel.add(enemyPanel);
-    splitPane.setLeftComponent(boardsPanel);
-
-
-    if (selectedCharacter != null) {
-        skillPanel = new SkillPanel(selectedCharacter);
-        skillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
-        skillPanel.setPreferredSize(new Dimension(250, 600));
-        splitPane.setRightComponent(skillPanel);
-    } else {
-        JPanel emptyPanel = new JPanel();
-        emptyPanel.setBackground(new Color(25, 25, 112));
-        emptyPanel.setPreferredSize(new Dimension(250, 600));
-        splitPane.setRightComponent(emptyPanel);
-    }
-
-
-    JPanel statusPanel = new JPanel();
-    statusPanel.setBackground(new Color(25, 25, 112));
-    statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
-    statusLabel = new JLabel("YOUR TURN - Click on enemy waters!", SwingConstants.CENTER);
-    statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
-    statusLabel.setForeground(Color.WHITE);
-    statusPanel.add(statusLabel);
-
-    frame.add(topPanel, BorderLayout.NORTH);
-    frame.add(splitPane, BorderLayout.CENTER);
-    frame.add(statusPanel, BorderLayout.SOUTH);
-
-    frame.revalidate();
-    frame.repaint();
-
-    System.out.println("⚓ Battle started against " + difficulty + " AI!");
-}
+       aiPlayer = new AIPlayer(difficulty);
+       
+       SinglePlayerBattlePanel battlePanel = new SinglePlayerBattlePanel(
+           selectedCharacter,
+           playerBoard,
+           aiPlayer,
+           frame
+       );
+       
+       frame.getContentPane().removeAll();
+       frame.add(battlePanel, BorderLayout.CENTER);
+       frame.revalidate();
+       frame.repaint();
+   }
 
 
 
