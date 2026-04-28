@@ -2,12 +2,10 @@ package gui;
 
 import game.ShotResult;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import javax.swing.*;
-import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 import models.Board;
 import models.Cell;
 import models.Ship;
@@ -106,7 +104,7 @@ public class BoardPanel extends JPanel {
         this.showShips = showShips;  
 
         oceanFrames = new ArrayList<>();
-        String basePath = "D:\\GameProj\\Battleship Game\\assets\\oceanfloor";
+        String basePath = "assets/oceanfloor";
         
         for (int i = 1; i <= 3; i++) {
             try {
@@ -145,11 +143,12 @@ public class BoardPanel extends JPanel {
                 }
                 repaint();
             });
-            animationTimer.start();
+ 
+            // animationTimer.start();  // ocean swap disabled
         }
 
     try {
-            java.io.File carrierFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\carrier.png");
+            java.io.File carrierFile = new java.io.File("assets/carrier.png");
             if (carrierFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(carrierFile);
                 if (img != null) {
@@ -175,7 +174,7 @@ public class BoardPanel extends JPanel {
         carrierTimer.start();
 
         try {
-            java.io.File battleshipFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\battleship.png");
+            java.io.File battleshipFile = new java.io.File("assets/battleship.png");
             if (battleshipFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(battleshipFile);
                 if (img != null) {
@@ -201,7 +200,7 @@ public class BoardPanel extends JPanel {
         battleshipTimer.start();
 
         try {
-            java.io.File cruiserFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\cruiser.png");
+            java.io.File cruiserFile = new java.io.File("assets/cruiser.png");
             if (cruiserFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(cruiserFile);
                 if (img != null) {
@@ -227,7 +226,7 @@ public class BoardPanel extends JPanel {
         cruiserTimer.start();
 
         try {
-            java.io.File submarineFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\submarine.png");
+            java.io.File submarineFile = new java.io.File("assets/submarine.png");
             if (submarineFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(submarineFile);
                 if (img != null) {
@@ -253,7 +252,7 @@ public class BoardPanel extends JPanel {
         submarineTimer.start();
 
         try {
-            java.io.File destroyerFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\destroyer.png");
+            java.io.File destroyerFile = new java.io.File("assets/destroyer.png");
             if (destroyerFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(destroyerFile);
                 if (img != null) {
@@ -279,7 +278,7 @@ public class BoardPanel extends JPanel {
         destroyerTimer.start();
 
         try {
-            java.io.File dmgCellFile = new java.io.File("D:\\GameProj\\Battleship Game\\assets\\dmg_cell.png");
+            java.io.File dmgCellFile = new java.io.File("assets/dmg_cell.png");
             if (dmgCellFile.exists()) {
                 Image img = javax.imageio.ImageIO.read(dmgCellFile);
                 if (img != null) {
@@ -305,7 +304,7 @@ public class BoardPanel extends JPanel {
         dmgCellTimer.start();
 
         smokeFrames = new ArrayList<>();
-        String smokeBasePath = "D:\\GameProj\\Battleship Game\\assets\\smk";
+        String smokeBasePath = "assets/smk";
         
         for (int i = 1; i <= 4; i++) {
             try {
@@ -339,7 +338,7 @@ public class BoardPanel extends JPanel {
         }
 
         subDestroyFrames = new ArrayList<>();
-        String subDestroyBasePath = "D:\\GameProj\\Battleship Game\\assets\\subdestroy";
+        String subDestroyBasePath = "assets/subdestroy";
         
         for (int i = 1; i <= 3; i++) {
             try {
@@ -380,7 +379,7 @@ public class BoardPanel extends JPanel {
         }
         
         try {
-            String imagePath = "D:\\GameProj\\Battleship Game\\assets\\destroyerdmg.jpg";
+            String imagePath = "assets/destroyerdmg.jpg";
             java.io.File file = new java.io.File(imagePath);
             if (file.exists()) {
                 destroyerDmgImage = javax.imageio.ImageIO.read(file);
@@ -413,7 +412,7 @@ public class BoardPanel extends JPanel {
         }
         
         try {
-            String imagePath = "D:\\GameProj\\Battleship Game\\assets\\cruiserdestroy.png";
+            String imagePath = "assets/cruiserdestroy.png";
             java.io.File file = new java.io.File(imagePath);
             if (file.exists()) {
                 cruiserDestroyImage = javax.imageio.ImageIO.read(file);
@@ -446,7 +445,7 @@ public class BoardPanel extends JPanel {
         }
         
         try {
-            String imagePath = "D:\\GameProj\\Battleship Game\\assets\\battleshipdmg.png";
+            String imagePath = "assets/battleshipdmg.png";
             java.io.File file = new java.io.File(imagePath);
             if (file.exists()) {
                 battleshipDmgImage = javax.imageio.ImageIO.read(file);
@@ -479,7 +478,7 @@ public class BoardPanel extends JPanel {
         }
         
         try {
-            String imagePath = "D:\\GameProj\\Battleship Game\\assets\\carrierdmg.png";
+            String imagePath = "assets/carrierdmg.png";
             java.io.File file = new java.io.File(imagePath);
             if (file.exists()) {
                 carrierDmgImage = javax.imageio.ImageIO.read(file);
@@ -575,31 +574,16 @@ public class BoardPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        if (!oceanFrames.isEmpty()) {
+
+         if (!oceanFrames.isEmpty()) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            
-            int targetIdx = (currentFrameIndex + 1) % oceanFrames.size();
-            
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-            Image currentImg = oceanFrames.get(currentFrameIndex);
-            if (currentImg != null) {
-                g2d.drawImage(currentImg, 0, 0, getBoardWidth(), getBoardHeight(), this);
-            }
-            
-            if (holdCounter >= holdDelay / fadeDelay) {
-                float alpha = currentAlpha;
-                Image targetImg = oceanFrames.get(targetIdx);
-                if (targetImg != null && alpha > 0) {
-                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                    g2d.drawImage(targetImg, 0, 0, getBoardWidth(), getBoardHeight(), this);
-                }
-            }
-        } else {
-            g.setColor(new Color(20, 40, 60));
-            g.fillRect(0, 0, getBoardWidth(), getBoardHeight());
-        }
-        
+            Image img = oceanFrames.get(0);
+        if (img != null) {
+            g2d.drawImage(img, 0, 0, getBoardWidth(), getBoardHeight(), this);
+    }
+}
+       
         boolean canShowShips = showShips || (board != null && !board.getShips().isEmpty() && hasAnyRevealedShips());
         
         if (canShowShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
