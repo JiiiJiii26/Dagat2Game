@@ -56,7 +56,7 @@ public class Main {
 
             @Override
             public void onOptions() {
-
+                new OptionsDialog(frame).setVisible(true);
             }
 
             @Override
