@@ -1,5 +1,6 @@
 package gui;
 
+import audio.MusicManager;
 import characters.GameCharacter;
 import game.LocalMultiplayer;
 import game.ShotResult;
@@ -13,19 +14,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * MultiplayerBattlePanel - TideBound naval-themed redesign (revision 2).
- *
- * Improvements over rev 1:
- *  - Whose-turn clarity: full-banner color flash on turn change + big P1/P2 indicator
- *  - Cell-snapped hover highlight on the active board (replaces floaty crosshair)
- *  - Hit/Miss/Sunk feedback: cell flash + shockwave + lock-on brackets + screen shake
- *  - Status banner moved to overlay the active board (closer to where player is looking)
- *  - Right sidebar: character portrait + ability dossier + skill panel host
- *  - Bigger permanent hit/miss markers drawn on overlay
- *
- * Preserves all original game logic.
- */
+
 public class MultiplayerBattlePanel extends JPanel {
 
     // ---------- Game state ----------
@@ -103,6 +92,8 @@ public class MultiplayerBattlePanel extends JPanel {
         setBackground(BG_DEEP);
         buildUI();
         updateBoardViews();
+
+        audio.MusicManager.getInstance().playMusic("battle");
     }
 
     private void buildUI() {
@@ -1182,6 +1173,8 @@ public class MultiplayerBattlePanel extends JPanel {
     }
 
     private void postSkillActionUpdate(boolean wasPlayer1Turn, int currentPlayerNumber) {
+        audio.MusicManager.getInstance().playSound("skill");
+
         refreshBoards();
         timerGauge.resetTimer();
         timerGauge.startTimer();
@@ -1198,6 +1191,14 @@ public class MultiplayerBattlePanel extends JPanel {
 
         if (game.isGameOver()) {
             String winner = game.getWinner();
+
+             if ((winner.contains("Player 1") && currentPlayerNumber == 1) ||  (winner.contains("Player 2") && currentPlayerNumber == 2)) {
+                audio.MusicManager.getInstance().stopMusic();
+                audio.MusicManager.getInstance().playSound("victory");
+         } else {
+                audio.MusicManager.getInstance().stopMusic();
+                audio.MusicManager.getInstance().playSound("defeat");
+        }
             updateStatusMessage("GAME OVER! " + winner + " WINS!", HIT_GOLD);
             disableInteraction();
         }
@@ -1213,17 +1214,20 @@ public class MultiplayerBattlePanel extends JPanel {
         switch (result) {
             case HIT:
                 updateStatusMessage("HIT!", TARGET_RED);
+                audio.MusicManager.getInstance().playSound("hit");
                 targetFrame.triggerShake();
                 break;
             case SUNK:
                 updateStatusMessage("SHIP SUNK!", SUNK_AMBER);
+                audio.MusicManager.getInstance().playSound("sunk");
                 targetFrame.triggerShake();
                 break;
             case MISS:
                 updateStatusMessage("Miss...", MISS_WHITE);
+                audio.MusicManager.getInstance().playSound("miss");
                 break;
             default: break;
-        }
+}
 
         refreshBoards();
         timerGauge.resetTimer();
@@ -1240,6 +1244,15 @@ public class MultiplayerBattlePanel extends JPanel {
 
         if (game.isGameOver()) {
             String winner = game.getWinner();
+
+             if ((winner.contains("Player 1") && currentPlayer == 1) ||  (winner.contains("Player 2") && currentPlayer == 2)) {
+                 audio.MusicManager.getInstance().stopMusic();
+                    audio.MusicManager.getInstance().playSound("victory");
+         } else {
+                audio.MusicManager.getInstance().stopMusic();
+                audio.MusicManager.getInstance().playSound("defeat");
+        }
+
             updateStatusMessage("GAME OVER! " + winner + " WINS!", HIT_GOLD);
             disableInteraction();
         }

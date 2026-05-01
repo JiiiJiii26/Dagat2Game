@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Random;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import audio.MusicManager;
 
 public class MainMenuPanel extends JPanel {
     
@@ -65,6 +66,8 @@ public class MainMenuPanel extends JPanel {
             repaint();
         });
         masterTimer.start();
+
+        audio.MusicManager.getInstance().playMusic("menu");
     }
     
     private void loadTitleImage() {

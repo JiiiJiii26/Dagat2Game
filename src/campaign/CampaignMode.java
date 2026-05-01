@@ -10,9 +10,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-
 import characters.*;
 import gui.BoardPanel;
+import audio.MusicManager;
 import gui.PlacementPanel;
 import gui.SkillPanel;
 import gui.TimerPanel;
@@ -25,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.awt.geom.AffineTransform;
+
 
 public class CampaignMode {
    
@@ -1708,6 +1709,8 @@ mainPanel.add(topArea, BorderLayout.NORTH);
     }
     
     System.out.println("✅ Battle UI created with TideBound design + preserved animations!");
+
+    audio.MusicManager.getInstance().playMusic("battle");
 }
 
 
@@ -3870,6 +3873,9 @@ private void executeSkill(int targetX, int targetY) {
         currentSkillTargetsOwnBoard = false;
         currentSkillRequiresDirection = false;
         
+        audio.MusicManager.getInstance().playSound("skill");
+
+
         updateStatusLabel("✨ " + skillNameCopy + " used successfully!", Color.GREEN);
         if (frame.getContentPane() instanceof WaveBackgroundPanel) {
             ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(new Color(255, 255, 255));
@@ -4575,6 +4581,13 @@ private void setupClickHandlers() {
     
     if (result == ShotResult.HIT || result == ShotResult.SUNK) {
         updateStatusLabel("💥 HIT! Enemy ship damaged!", Color.GREEN);
+
+    if (result == ShotResult.SUNK) {
+        audio.MusicManager.getInstance().playSound("sunk");  // SUNK sound
+    } else {
+        audio.MusicManager.getInstance().playSound("hit");   // HIT sound
+    }
+
         if (frame.getContentPane() instanceof WaveBackgroundPanel) {
             ((WaveBackgroundPanel) frame.getContentPane()).triggerShake(15);
         }
@@ -4601,6 +4614,7 @@ private void setupClickHandlers() {
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
+        audio.MusicManager.getInstance().playSound("miss");
     }
     
     if (playerCharacter instanceof Selene) {
@@ -4778,9 +4792,11 @@ private void enemyTurn() {
         switch(result) {
             case HIT:
                 updateStatusLabel("💥 Enemy hit one of your ships!", Color.RED);
+                audio.MusicManager.getInstance().playSound("hit");
                 break;
             case SUNK:
                 updateStatusLabel("💀 YOUR SHIP WAS SUNK!", Color.RED);
+                audio.MusicManager.getInstance().playSound("sunk");
                 if (currentEnemy instanceof Jiji) {
                     showEnemyJijiAttackAnimation();
                 }
@@ -4796,6 +4812,7 @@ private void enemyTurn() {
                 break;
             case MISS:
                 updateStatusLabel("😅 Enemy missed! Lucky break!", Color.GREEN);
+                audio.MusicManager.getInstance().playSound("miss");
                 break;
             default:
                 break;
@@ -4804,10 +4821,12 @@ private void enemyTurn() {
         refreshBoardsOnly();
         
         if (playerBoard.allShipsSunk()) {
+            audio.MusicManager.getInstance().stopMusic();
+            audio.MusicManager.getInstance().playSound("defeat");
             updateStatusLabel("💔 GAME OVER - Your fleet destroyed!", Color.RED);
             gameOver();
             return;
-        }
+    }
         
         playerTurn = true;
         if (turnTimer != null) {
@@ -4847,6 +4866,10 @@ private void enemyTurn() {
          if (moonPhaseTimer != null) {
         moonPhaseTimer.stop();
     }
+
+        audio.MusicManager.getInstance().stopMusic();
+        audio.MusicManager.getInstance().playSound("victory");
+
         updateStatusLabel("🎉 WAVE CLEAR! Well done!", Color.GREEN);
         currentWaveIndex++;
         
