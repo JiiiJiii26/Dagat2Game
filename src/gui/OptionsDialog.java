@@ -1,5 +1,6 @@
 package gui;
 
+import audio.MusicManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -70,14 +71,33 @@ public class OptionsDialog extends JDialog {
         musicBtn.setBounds(sc(120,W), sc(160,H), sc(60,W), sc(52,H));
         musicBtn.addActionListener(e -> {
             musicOn[0] = !musicOn[0];
-            bg.repaint();
-        });
+            // Apply immediately to MusicManager
+            if (musicOn[0]) {
+                 // Unmute: set volume and restart the current track
+                MusicManager.getInstance().setMusicVolume(0.9f);
+                String currentTrack = MusicManager.getInstance().getCurrentTrack();
+                if (currentTrack != null) {
+                    MusicManager.getInstance().stopMusic();
+                    MusicManager.getInstance().playMusic(currentTrack);
+            }
+        } else {
+            // Mute: just set volume to 0
+             MusicManager.getInstance().setMusicVolume(0.0f);
+        }
+        bg.repaint();
+    });
         bg.add(musicBtn);
 
         JButton soundBtn = makeInvisibleButton();
         soundBtn.setBounds(sc(120,W), sc(245,H), sc(60,W), sc(52,H));
         soundBtn.addActionListener(e -> {
             soundOn[0] = !soundOn[0];
+            // Apply immediately to MusicManager
+            if (soundOn[0]) {
+                MusicManager.getInstance().setSfxVolume(1.0f);
+            } else {
+                MusicManager.getInstance().setSfxVolume(0.0f);
+            }
             bg.repaint();
         });
         bg.add(soundBtn);
@@ -110,21 +130,39 @@ public class OptionsDialog extends JDialog {
     }
 
     private void saveAndClose(GameSettings s, boolean[] musicOn, boolean[] soundOn, boolean[] fullscreenOn) {
-        s.setMusicEnabled(musicOn[0]);
-        s.setSoundEffectsEnabled(soundOn[0]);
-        s.setFullscreen(fullscreenOn[0]);
+    s.setMusicEnabled(musicOn[0]);
+    s.setSoundEffectsEnabled(soundOn[0]);
+    s.setFullscreen(fullscreenOn[0]);
 
-        if (s.isFullscreen()) {
-            ownerFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        } else {
-            ownerFrame.setExtendedState(JFrame.NORMAL);
-            ownerFrame.setSize(1280, 720);
-            ownerFrame.setLocationRelativeTo(null);
+    // Apply final settings to MusicManager
+    if (musicOn[0]) {
+        MusicManager.getInstance().setMusicVolume(0.9f);
+        // Only restart if not playing
+        if (!MusicManager.getInstance().isPlaying()) {
+            MusicManager.getInstance().playMusic("menu");
         }
-
-        System.out.println("Settings saved: " + s);
-        dispose();
+    } else {
+        MusicManager.getInstance().setMusicVolume(0.0f);
+        MusicManager.getInstance().stopMusic();
     }
+    
+    if (soundOn[0]) {
+        MusicManager.getInstance().setSfxVolume(1.0f);
+    } else {
+        MusicManager.getInstance().setSfxVolume(0.0f);
+    }
+
+    if (s.isFullscreen()) {
+        ownerFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    } else {
+        ownerFrame.setExtendedState(JFrame.NORMAL);
+        ownerFrame.setSize(1280, 720);
+        ownerFrame.setLocationRelativeTo(null);
+    }
+
+    System.out.println("Settings saved: " + s);
+    dispose();
+}
 
     private BufferedImage loadImage(String path) {
         try {
@@ -154,9 +192,7 @@ public class OptionsDialog extends JDialog {
         private final boolean[] fullscreenOn;
 
         private static final Color OFF_COLOR  = new Color(180, 30, 30, 180);
-
         private static final Color ON_COLOR   = new Color(50, 200, 50, 80);
-
         private static final Color TICK_COLOR = new Color(80, 220, 80, 220);
 
         public ImagePanel(BufferedImage image, int W, int H, boolean[] musicOn, boolean[] soundOn, boolean[] fullscreenOn) {
@@ -201,7 +237,6 @@ public class OptionsDialog extends JDialog {
                 g2.drawLine(x + 3,     y + h/2,   x + w/2,   y + h - 4);
                 g2.drawLine(x + w/2,   y + h - 4, x + w - 3, y + 4);
             } else {
-
                 g2.setColor(new Color(0, 0, 0, 120));
                 g2.fillRect(x + 2, y + 2, w - 4, h - 4);
             }

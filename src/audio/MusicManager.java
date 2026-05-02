@@ -37,7 +37,14 @@ public class MusicManager {
     
     private boolean musicEnabled = true;
     private boolean sfxEnabled = true;
-    
+
+public void setSfxVolume(float volume) {
+    this.sfxVolume = Math.max(0.0f, Math.min(1.0f, volume));
+}
+
+public float getSfxVolume() {
+    return sfxVolume;
+}
     // ===================================================================
     // SINGLETON
     // ===================================================================
@@ -224,11 +231,14 @@ public class MusicManager {
      * Set music volume (0.0 = mute, 1.0 = max).
      */
     public void setMusicVolume(float volume) {
-        this.musicVolume = Math.max(0f, Math.min(1f, volume));
-        if (currentMusicClip != null) {
-            setClipVolume(currentMusicClip, musicVolume);
-        }
+    this.musicVolume = Math.max(0f, Math.min(1f, volume));
+    
+    if (currentMusicClip != null) {
+        setClipVolume(currentMusicClip, musicVolume);
+    } else {
+    
     }
+}
     
     /**
      * Set sound effects volume (0.0 = mute, 1.0 = max).
@@ -252,15 +262,16 @@ public class MusicManager {
     }
     
     private void setClipVolume(Clip clip, float volume) {
-        if (clip != null && clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-            FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            // Convert 0.0-1.0 to decibels (dB range is typically -80 to 6)
-            float min = gainControl.getMinimum();
-            float max = gainControl.getMaximum();
-            float dB = min + (max - min) * volume;
-            gainControl.setValue(dB);
-        }
+    if (clip != null && clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+        FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+        float min = gainControl.getMinimum();
+        float max = gainControl.getMaximum();
+        float dB = min + (max - min) * volume;
+        gainControl.setValue(dB);
+    } else {
+        
     }
+}
     
     // ===================================================================
     // ENABLE/DISABLE
