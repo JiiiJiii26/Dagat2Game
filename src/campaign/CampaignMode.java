@@ -1857,18 +1857,8 @@ private void startIdleAnimation() {
                 int frameIdx = SLOT_FRAME_MAP[currentCycleSlot];
                 ImageIcon baseFrame = jijiIdleFrames[frameIdx];
                 if (baseFrame != null) {
-                    // Apply subtle per-slot horizontal sway
-                    int offsetX = SLOT_OFFSET_X[currentCycleSlot];
-                    if (offsetX != 0) {
-                        BufferedImage shifted = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
-                        Graphics2D g = shifted.createGraphics();
-                        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                        g.drawImage(baseFrame.getImage(), offsetX, 0, null);
-                        g.dispose();
-                        jijiLargePortraitLabel.setIcon(new ImageIcon(shifted));
-                    } else {
-                        jijiLargePortraitLabel.setIcon(baseFrame);
-                    }
+                    // Simply set the icon – no sway
+                    jijiLargePortraitLabel.setIcon(baseFrame);
                 } else {
                     jijiLargePortraitLabel.setIcon(jijiIdleFrames[0]);
                 }
@@ -1880,7 +1870,7 @@ private void startIdleAnimation() {
     });
     idleAnimationTimer.start();
     jijiLargePortraitLabel.setIcon(jijiIdleFrames[SLOT_FRAME_MAP[0]]);
-    System.out.println("▶️ Jiji idle animation started");
+    System.out.println("▶️ Jiji idle animation started (no sway)");
 }
 
 
