@@ -75,6 +75,8 @@ public class BoardPanel extends JPanel {
     private int smokeFadeDelay = 40;
     private float smokeAlpha = 0f;
 
+    
+
     public interface PlayerClickHandler {
         void onPlayerCellClicked(int row, int col);
     }
@@ -570,6 +572,7 @@ public class BoardPanel extends JPanel {
         }
         return false;
     }
+    
     
     @Override
     protected void paintComponent(Graphics g) {
