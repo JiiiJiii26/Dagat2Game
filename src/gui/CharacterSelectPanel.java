@@ -7,6 +7,8 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Random;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
@@ -17,11 +19,27 @@ public class CharacterSelectPanel extends JPanel {
 
     private static final Color OVERLAY_DIM = new Color(0, 0, 0, 200);
     private static final Color SLOT_HOVER  = new Color(255, 255, 255, 40);
-    private static final Color TEXT_GOLD   = new Color(255, 215, 0); // Kept for button hover highlights
+    private static final Color TEXT_GOLD   = new Color(255, 215, 0);
     
     private Font customFont;
 
     private final ArrayList<CharacterData> roster = new ArrayList<>();
+    
+    // Ocean animation particles (same as MainMenuPanel)
+    private final ArrayList<SmokeParticle> smokeList = new ArrayList<>();
+    private final ArrayList<SplashParticle> splashList = new ArrayList<>();
+    private final ArrayList<CannonFlash> flashList = new ArrayList<>();
+    private final Random random = new Random();
+    
+    private static final int[][] CANNON_POSITIONS = {
+        {400, 420}, {520, 400}, {650, 380}, {750, 360}, {900, 370}
+    };
+    
+    private static final int[][] SPLASH_POSITIONS = {
+        {150, 500}, {250, 480}, {350, 510}, {800, 460}, 
+        {950, 490}, {1100, 470}, {1200, 500}
+    };
+    
     private final CharacterSelectListener listener;
     private int selectedIndex = -1; 
     private ImageCache imageCache;
@@ -89,6 +107,14 @@ public class CharacterSelectPanel extends JPanel {
         });
         
         select(-1);
+        
+        // Start ocean animation timer
+        Timer oceanTimer = new Timer(16, e -> {
+            spawnParticles();
+            updateParticles();
+            repaint();
+        });
+        oceanTimer.start();
     }
 
     private void buildRoster() {
@@ -96,9 +122,9 @@ public class CharacterSelectPanel extends JPanel {
         String morganaSkills = "HP: 2100 | Mana: 380\n\nSkill 1: Enchanting Melody\nEffect: Confuses enemy targeting - for 2 turns, enemy sees fake hit/miss indicators.\nMana Cost: 40 | Cooldown: 2 turns\n\nSkill 2: Whirlpool Trap\nEffect: Creates a whirlpool on a 2x2 area - enemy ships entering this area next turn are revealed. (Dmg: 50-100)\nMana Cost: 80 | Cooldown: 3 turns\n\nSkill 3: Storm Call\nEffect: Summons a tempest - floods 4 random enemy cells, making them unusable for 1 turn. (Dmg: 200-350)\nMana Cost: 300 | Cooldown: 4 turns\n\nPassive: Ocean's Embrace\nEffect: First hit each match is automatically dodged.";
 
         String valeriusLore = "A disgraced military engineer who specialized in coastal fortification. After his city was leveled by a naval bombardment he couldn't stop, Valerius went rogue. He built himself an exoskeleton from the scrap metal of sunken warships. Now, he offers his services to the highest bidder, acting as a one-man fortress that refuses to sink.";
-        String valeriusSkills = "HP: 2400 | Mana: 320\n\nSkill 1: Radar Overload\nEffect: Jamming Pulse — Disables the enemy’s ability to use any skills for 2 turns.\nMana Cost: 50 | Cooldown: 3 turns\n\nSkill 2: Kinetic Barrier\nEffect: Hardened Hull — Covers a 3x3 area with an energy shield. Shots hit deal 0 damage for 1 turn.\nMana Cost: 90 | Cooldown: 4 turns\n\nSkill 3: Orbital Railgun\nEffect: Precise Strike — Fires a high-velocity slug. Deals massive damage and scratches 4 adjacent cells. (Dmg: 400-600)\nMana Cost: 280 | Cooldown: 5 turns\n\nPassive: Scrapper's Resolve\nEffect: Below 20% HP, gains permanent 10% damage reduction.";
+        String valeriusSkills = "HP: 2400 | Mana: 320\n\nSkill 1: Radar Overload\nEffect: Jamming Pulse — Disables the enemy's ability to use any skills for 2 turns.\nMana Cost: 50 | Cooldown: 3 turns\n\nSkill 2: Kinetic Barrier\nEffect: Hardened Hull — Covers a 3x3 area with an energy shield. Shots hit deal 0 damage for 1 turn.\nMana Cost: 90 | Cooldown: 4 turns\n\nSkill 3: Orbital Railgun\nEffect: Precise Strike — Fires a high-velocity slug. Deals massive damage and scratches 4 adjacent cells. (Dmg: 400-600)\nMana Cost: 280 | Cooldown: 5 turns\n\nPassive: Scrapper's Resolve\nEffect: Below 20% HP, gains permanent 10% damage reduction.";
 
-        String kaelLore = "Kael grew up in the storm-ridden coasts where pirates and navy ships constantly clashed. Instead of brute force, he mastered stealth and strategy. Known as the “Tide Hunter,” he specializes in hiding fleets and striking enemies before they even know they’ve been located.";
+        String kaelLore = "Kael grew up in the storm-ridden coasts where pirates and navy ships constantly clashed. Instead of brute force, he mastered stealth and strategy. Known as the \"Tide Hunter,\" he specializes in hiding fleets and striking enemies before they even know they've been located.";
         String kaelSkills = "HP: 2200 | Energy: 500 | Speed: 85\n\nSkill 1: Silent Drift\nEffect: Hide one boat for 2 turns (cannot be targeted unless revealed).\nEnergy Cost: 80 | Cooldown: 2 turns\n\nSkill 2: Sonar Pulse\nEffect: Reveal one hidden enemy boat for 1 turn. (Dmg: 150-250)\nEnergy Cost: 120 | Cooldown: 3 turns\n\nSkill 3: Depth Charge Barrage\nEffect: If enemy boat is hidden, deals bonus +200 damage. (Dmg: 400-600)\nEnergy Cost: 200 | Cooldown: 4 turns\n\nUltimate: Tempest Lock\nEffect: Hits all enemy boats in a selected area. Cannot miss. (Dmg: 700-900)\nEnergy Cost: 300 | Cooldown: 5 turns";
 
         String jijiLore = "A lazy child who keeps playing online games in his free time. Procrastinating to the max, he sleeps whenever a task is given. One day, his games gave him the powers to fight the sea. Gifting him the title of TechnoMancer... he's still lazy though.";
@@ -352,12 +378,22 @@ public class CharacterSelectPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-        
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
-        g2.setColor(OVERLAY_DIM);
-        g2.fillRect(0, 0, getWidth(), getHeight());
+        // Draw ocean background (same as MainMenuPanel)
+        try {
+            ImageIcon bg = new ImageIcon("assets/naval.jpg");
+            g2.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), null);
+        } catch (Exception ex) {
+            g2.setColor(new Color(25, 25, 112));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        // Draw animated particles
+        for (CannonFlash f : flashList) f.draw(g2);
+        for (SmokeParticle s : smokeList) s.draw(g2);
+        for (SplashParticle p : splashList) p.draw(g2);
 
         if (selectionBg != null) {
             Rectangle bgRect = getScaledBackgroundRect(getSize(), selectionBg);
@@ -375,6 +411,60 @@ public class CharacterSelectPanel extends JPanel {
             }
         }
         g2.dispose();
+    }
+    
+    private void spawnParticles() {
+        if (random.nextInt(3) == 0) {
+            int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
+            smokeList.add(new SmokeParticle(
+                pos[0] + random.nextInt(30) - 15,
+                pos[1] + random.nextInt(10),
+                random.nextInt(8) + 6
+            ));
+        }
+        
+        if (random.nextInt(60) == 0) {
+            int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
+            flashList.add(new CannonFlash(pos[0], pos[1]));
+            
+            for (int i = 0; i < 8; i++) {
+                smokeList.add(new SmokeParticle(
+                    pos[0] + random.nextInt(40) - 20,
+                    pos[1] + random.nextInt(10),
+                    random.nextInt(12) + 8
+                ));
+            }
+        }
+        
+        if (random.nextInt(40) == 0) {
+            int[] pos = SPLASH_POSITIONS[random.nextInt(SPLASH_POSITIONS.length)];
+            int cx = pos[0] + random.nextInt(60) - 30;
+            int cy = pos[1] + random.nextInt(20) - 10;
+            
+            for (int i = 0; i < 12; i++) {
+                splashList.add(new SplashParticle(cx, cy));
+            }
+        }
+    }
+    
+    private void updateParticles() {
+        Iterator<SmokeParticle> si = smokeList.iterator();
+        while (si.hasNext()) {
+            if (si.next().update())
+                si.remove();
+        }
+        
+        Iterator<SplashParticle> sp = splashList.iterator();
+        while (sp.hasNext()) {
+            if (sp.next().update())
+                sp.remove();
+        }
+        
+        Iterator<CannonFlash> cf = flashList.iterator();
+        while (cf.hasNext()) {
+            if (cf.next().update())
+                cf.remove();
+        }
     }
 
     private void drawTopTitle(Graphics2D g2, int imgX, int imgY, int imgW, int imgH) {
@@ -488,7 +578,6 @@ public class CharacterSelectPanel extends JPanel {
                 g2.setStroke(new BasicStroke(2f));
                 g2.drawRoundRect(infoBtn.x, infoBtn.y, infoBtn.width, infoBtn.height, 10, 10);
                 
-                // Use plain font for the ? button as well
                 g2.setFont(customFont.deriveFont(Font.PLAIN, 20f));
                 FontMetrics fm = g2.getFontMetrics();
                 int qX = infoBtn.x + (infoBtn.width - fm.stringWidth("?")) / 2;
@@ -589,7 +678,7 @@ public class CharacterSelectPanel extends JPanel {
         g2.drawRect(pageBtn.x, pageBtn.y, pageBtn.width, pageBtn.height);
         
         String btnText = showingSkills ? "< LORE" : "SKILLS >";
-        g2.setFont(customFont.deriveFont(Font.PLAIN, 16f)); // Changed to PLAIN
+        g2.setFont(customFont.deriveFont(Font.PLAIN, 16f));
         int tX = pageBtn.x + (pageBtn.width - fm.stringWidth(btnText)) / 2;
         int tY = pageBtn.y + ((pageBtn.height - fm.getHeight()) / 2) + fm.getAscent();
         
@@ -634,6 +723,69 @@ public class CharacterSelectPanel extends JPanel {
                              rect.width + (hoverInflate*2), rect.height + (hoverInflate*2), 10, 10);
         } else {
             g2.drawImage(img, rect.x, rect.y, rect.width, rect.height, null);
+        }
+    }
+
+    // Particle classes (same as MainMenuPanel)
+    class SmokeParticle {
+        float x, y, vx, vy, size, alpha;
+        SmokeParticle(int x, int y, int size) {
+            this.x = x; this.y = y; this.size = size;
+            this.vx = random.nextFloat() * 1.5f - 0.75f;
+            this.vy = -(random.nextFloat() * 1.5f + 0.5f);
+            this.alpha = 0.6f;
+        }
+        boolean update() {
+            x += vx; y += vy; size += 0.3f; alpha -= 0.008f;
+            return alpha <= 0;
+        }
+        void draw(Graphics2D g2) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha)));
+            g2.setColor(new Color(60, 60, 60));
+            g2.fillOval((int)(x - size/2), (int)(y - size/2), (int)size, (int)size);
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+        }
+    }
+    
+    class SplashParticle {
+        float x, y, vx, vy, alpha;
+        SplashParticle(int cx, int cy) {
+            this.x = cx; this.y = cy;
+            float angle = random.nextFloat() * (float)Math.PI;
+            float speed = random.nextFloat() * 6f + 2f;
+            this.vx = (float)(Math.cos(angle) * speed);
+            this.vy = -(float)(Math.sin(angle) * speed) - 2f;
+            this.alpha = 0.9f;
+        }
+        boolean update() {
+            x += vx; y += vy; vy += 0.3f; alpha -= 0.025f;
+            return alpha <= 0;
+        }
+        void draw(Graphics2D g2) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha)));
+            g2.setColor(new Color(200, 230, 255));
+            g2.fillOval((int)x, (int)y, 4, 4);
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+        }
+    }
+    
+    class CannonFlash {
+        int x, y; float alpha, size;
+        CannonFlash(int x, int y) {
+            this.x = x; this.y = y; this.alpha = 1.0f; this.size = 40f;
+        }
+        boolean update() {
+            alpha -= 0.08f; size += 5f;
+            return alpha <= 0;
+        }
+        void draw(Graphics2D g2) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha * 0.5f)));
+            g2.setColor(new Color(255, 120, 0));
+            g2.fillOval((int)(x - size), (int)(y - size), (int)(size * 2), (int)(size * 2));
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, alpha)));
+            g2.setColor(new Color(255, 240, 100));
+            g2.fillOval((int)(x - size/3), (int)(y - size/3), (int)(size * 0.7f), (int)(size * 0.7f));
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
         }
     }
 
