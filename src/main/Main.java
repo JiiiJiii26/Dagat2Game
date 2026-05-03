@@ -31,16 +31,19 @@ public class Main {
     private static GameCharacter multiplayerPlayer2Character;
     private static MultiplayerBattlePanel multiplayerBattlePanel;
 
-    public static void main(String[] args) {
-        frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        frame.setMinimumSize(new Dimension(900, 700));
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setLocationRelativeTo(null);
+public static void main(String[] args) {
+    frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.setLayout(new BorderLayout());
+    frame.setMinimumSize(new Dimension(900, 700));
+    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    frame.setLocationRelativeTo(null);
 
-        showMainMenu();
-    }
+    // For testing Valerius
+    selectedCharacter = new Valerius();
+
+    showMainMenu();
+}
 
     public static void showMainMenu() {
         MainMenuPanel menuPanel = new MainMenuPanel(new MainMenuPanel.MenuListener() {
@@ -239,9 +242,18 @@ public class Main {
 
 
    private static void showCharacterSelectForCampaign() {
-    CharacterSelectPanel charPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
+    
+    JDialog dialog = new JDialog(frame, "Choose Your Commander", true);
+    dialog.setUndecorated(true);
+    dialog.setSize(frame.getSize());
+    dialog.setLocationRelativeTo(frame);
+    dialog.setBackground(new Color(0, 0, 0, 0)); 
+
+    
+    CharacterSelectPanel selectPanel = new CharacterSelectPanel(new CharacterSelectPanel.CharacterSelectListener() {
         @Override
         public void onCharacterSelected(GameCharacter character) {
+            dialog.dispose(); 
             selectedCharacter = character;
             System.out.println("🎮 Starting CAMPAIGN with: " + character.getName());
             CampaignMode campaign = new CampaignMode(frame, selectedCharacter);
@@ -250,14 +262,12 @@ public class Main {
 
         @Override
         public void onBackToMenu() {
-            showMainMenu();
+            dialog.dispose(); 
         }
     });
 
-    frame.getContentPane().removeAll();
-    frame.add(charPanel, BorderLayout.CENTER);
-    frame.revalidate();
-    frame.repaint();
+    dialog.add(selectPanel);
+    dialog.setVisible(true);
 }
 
 
@@ -329,6 +339,106 @@ public class Main {
        frame.repaint();
    }
 
+
+    JLabel titleLabel = new JLabel("🌊 TIDEBOUND - " + difficulty + " MODE 🌊", SwingConstants.CENTER);
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+    titleLabel.setForeground(new Color(173, 216, 230));
+    titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+    topPanel.add(titleLabel, BorderLayout.CENTER);
+
+
+    topPanel.add(new JPanel(), BorderLayout.EAST);
+
+    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+    splitPane.setBackground(new Color(25, 25, 112));
+    splitPane.setDividerLocation(1400); 
+    splitPane.setResizeWeight(0.95);
+
+    JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+    boardsPanel.setBackground(new Color(25, 25, 112));
+    boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    boardsPanel.setPreferredSize(new Dimension(1500, 800));
+    boardsPanel.setMaximumSize(new Dimension(1500, 800));
+    boardsPanel.setMinimumSize(new Dimension(1500, 800));
+
+    
+    JPanel playerPanel = new JPanel();
+    playerPanel.setLayout(new BorderLayout());
+    playerPanel.setBackground(new Color(25, 25, 112));
+    playerPanel.setPreferredSize(new Dimension(700, 800));
+    playerPanel.setMaximumSize(new Dimension(700, 800));
+    playerPanel.setMinimumSize(new Dimension(700, 800));
+    JLabel playerLabel = new JLabel("YOUR FLEET", SwingConstants.CENTER);
+    playerLabel.setFont(new Font("Arial", Font.BOLD, 18));
+    playerLabel.setForeground(Color.WHITE);
+    playerPanel.add(playerLabel, BorderLayout.NORTH);
+    playerBoardPanel = new BoardPanel(true, playerBoard, true);
+    playerBoardPanel.setPreferredSize(new Dimension(700, 800));
+    playerBoardPanel.setMaximumSize(new Dimension(700, 800));
+    playerBoardPanel.setMinimumSize(new Dimension(700, 800));
+    playerPanel.add(playerBoardPanel, BorderLayout.CENTER);
+
+    
+    JPanel enemyPanel = new JPanel();
+    enemyPanel.setLayout(new BorderLayout());
+    enemyPanel.setBackground(new Color(25, 25, 112));
+    enemyPanel.setPreferredSize(new Dimension(700, 800));
+    enemyPanel.setMaximumSize(new Dimension(700, 800));
+    enemyPanel.setMinimumSize(new Dimension(700, 800));
+    JLabel enemyLabel = new JLabel("ENEMY WATERS", SwingConstants.CENTER);
+    enemyLabel.setFont(new Font("Arial", Font.BOLD, 18));
+    enemyLabel.setForeground(Color.WHITE);
+    enemyPanel.add(enemyLabel, BorderLayout.NORTH);
+    enemyBoardPanel = new BoardPanel(false, aiPlayer.getBoard(), false);
+    enemyBoardPanel.setPreferredSize(new Dimension(700, 800));
+    enemyBoardPanel.setMaximumSize(new Dimension(700, 800));
+    enemyBoardPanel.setMinimumSize(new Dimension(700, 800));
+
+    enemyBoardPanel.setEnemyClickHandler(new BoardPanel.EnemyClickHandler() {
+        @Override
+        public void onEnemyCellClicked(int row, int col) {
+            if (playerTurn) {
+                handlePlayerTurn(row, col);
+            }
+        }
+    });
+
+    enemyPanel.add(enemyBoardPanel, BorderLayout.CENTER);
+    boardsPanel.add(playerPanel);
+    boardsPanel.add(enemyPanel);
+    splitPane.setLeftComponent(boardsPanel);
+
+    
+    if (selectedCharacter != null) {
+        skillPanel = new SkillPanel(selectedCharacter);
+        skillPanel.setBoards(playerBoardPanel, enemyBoardPanel);
+        skillPanel.setPreferredSize(new Dimension(250, 600));
+        splitPane.setRightComponent(skillPanel);
+    } else {
+        JPanel emptyPanel = new JPanel();
+        emptyPanel.setBackground(new Color(25, 25, 112));
+        emptyPanel.setPreferredSize(new Dimension(250, 600));
+        splitPane.setRightComponent(emptyPanel);
+    }
+
+    
+    JPanel statusPanel = new JPanel();
+    statusPanel.setBackground(new Color(25, 25, 112));
+    statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+    statusLabel = new JLabel("YOUR TURN - Click on enemy waters!", SwingConstants.CENTER);
+    statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    statusLabel.setForeground(Color.WHITE);
+    statusPanel.add(statusLabel);
+
+    frame.add(topPanel, BorderLayout.NORTH);
+    frame.add(splitPane, BorderLayout.CENTER);
+    frame.add(statusPanel, BorderLayout.SOUTH);
+
+    frame.revalidate();
+    frame.repaint();
+
+    System.out.println("⚓ Battle started against " + difficulty + " AI!");
+}
 
 
     private static void handlePlayerTurn(int row, int col) {
