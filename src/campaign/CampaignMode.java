@@ -186,6 +186,19 @@ private int enemyValeriusIdleSequenceIndex = 0;
 private int enemyValeriusIdleFrameCounter = 0;
 private boolean enemyValeriusIdleAnimationPlaying = false;
 
+private ImageIcon[] skyeIdleFrames = new ImageIcon[4];
+private Timer skyeIdleAnimationTimer;
+private int skyeIdleSequenceIndex = 0;
+private int skyeIdleFrameCounter = 0;
+private boolean skyeIdleAnimationPlaying = false;
+private static final int[] SKYE_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private ImageIcon[] enemySkyeIdleFrames = new ImageIcon[4];
+private Timer enemySkyeIdleAnimationTimer;
+private int enemySkyeIdleSequenceIndex = 0;
+private int enemySkyeIdleFrameCounter = 0;
+private boolean enemySkyeIdleAnimationPlaying = false;
+
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
 private int currentValeriusAttackFrame = 0;
@@ -213,6 +226,9 @@ private int enemyValeriusDamagedFrameCounter = 0;
 private boolean enemyValeriusDamagedAnimationPlaying = false;
 
 private JLabel enemyValeriusLargePortraitLabel;
+
+private JLabel skyeLargePortraitLabel;
+private JLabel enemySkyeLargePortraitLabel;
 
 private JLabel jijiLargePortraitLabel;
 
@@ -836,12 +852,12 @@ private class WaveBackgroundPanel extends JPanel {
         generateRandomWaves();
         // Pre-load animation frames
         initJijiIdleFrames();
-        initJijiDamagedFrames();
-        initJijiAttackFrames();
         initKaelIdleFrames();
         initEnemyKaelIdleFrames();
         initValeriusIdleFrames();
         initEnemyValeriusIdleFrames();
+        initSkyeIdleFrames();
+        initEnemySkyeIdleFrames();
         initValeriusAttackFrames();
         initValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
@@ -1134,6 +1150,8 @@ private void createBattleUI(CampaignWave wave) {
     stopEnemyKaelIdleAnimation();
     stopValeriusIdleAnimation();
     stopEnemyValeriusIdleAnimation();
+    stopSkyeIdleAnimation();
+    stopEnemySkyeIdleAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -1585,6 +1603,31 @@ enemyBoardPanel.setCellHeight(64);
                 startValeriusIdleAnimation();
             }
         }
+    } else if (playerCharacter instanceof Skye) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            skyeLargePortraitLabel = new JLabel(portrait);
+            skyeLargePortraitLabel.setToolTipText("Skye: \"Cats always land on their feet.\"");
+            skyeLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            skyeLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            skyeLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.add(skyeLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel nameTag = new JLabel("🐱 SKYE", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255));
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+
+            if (skyeIdleFrames[0] != null) {
+                startSkyeIdleAnimation();
+            }
+        }
     } else {
         JPanel emptyPanel = new JPanel();
         emptyPanel.setOpaque(false);
@@ -1678,6 +1721,31 @@ enemyBoardPanel.setCellHeight(64);
 
             if (enemyValeriusIdleFrames[0] != null) {
                 startEnemyValeriusIdleAnimation();
+            }
+        }
+    } else if (currentEnemy instanceof Skye) {
+        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+        if (enemyPortrait != null) {
+            enemySkyeLargePortraitLabel = new JLabel(enemyPortrait);
+            enemySkyeLargePortraitLabel.setToolTipText("Enemy Skye: \"Cats always land on their feet.\"");
+            enemySkyeLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            enemySkyeLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            enemySkyeLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel eastWrapper = new JPanel(new BorderLayout());
+            eastWrapper.setOpaque(false);
+            eastWrapper.setPreferredSize(new Dimension(150, 140));
+            eastWrapper.add(enemySkyeLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel enemyNameTag = new JLabel("🐱 SKYE", SwingConstants.CENTER);
+            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            enemyNameTag.setForeground(new Color(255, 100, 100));
+            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+
+            if (enemySkyeIdleFrames[0] != null) {
+                startEnemySkyeIdleAnimation();
             }
         }
     } else {
@@ -2189,6 +2257,80 @@ private void initValeriusIdleFrames() {
     }
 }
 
+private void initSkyeIdleFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/skye_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    skyeIdleFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                skyeIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Skye idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Skye frame " + (i+1) + ": " + e.getMessage());
+                skyeIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Skye idle frame missing: " + f.getAbsolutePath());
+            skyeIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Skye Frame " + i + " " + (skyeIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemySkyeIdleFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/skye_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemySkyeIdleFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemySkyeIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Skye idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Skye frame " + (i+1) + ": " + e.getMessage());
+                enemySkyeIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Skye idle frame missing: " + f.getAbsolutePath());
+            enemySkyeIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Enemy Skye Frame " + i + " " + (enemySkyeIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
 private void initValeriusAttackFrames() {
     for (int i = 0; i < 4; i++) {
         String path = "assets/valerius_atk" + (i + 1) + ".png";
@@ -2591,6 +2733,92 @@ private void stopValeriusIdleAnimation() {
         valeriusIdleSequenceIndex = 0;
         valeriusIdleFrameCounter = 0;
         System.out.println("⏹️ Valerius idle animation stopped");
+    }
+}
+
+private void startSkyeIdleAnimation() {
+    stopSkyeIdleAnimation(); // Ensure no duplicate timers
+    if (skyeIdleFrames[0] == null || skyeLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Skye idle - frames:" + (skyeIdleFrames[0]!=null) + " label:" + skyeLargePortraitLabel);
+        return;
+    }
+    skyeIdleSequenceIndex = 0;
+    skyeIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 24; // Ticks per frame - similar to Valerius
+    skyeIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (skyeLargePortraitLabel == null) return;
+            skyeIdleFrameCounter++;
+            if (skyeIdleFrameCounter >= frameDuration) {
+                skyeIdleFrameCounter = 0;
+                skyeIdleSequenceIndex = (skyeIdleSequenceIndex + 1) % SKYE_IDLE_SEQUENCE.length;
+                int frameIndex = SKYE_IDLE_SEQUENCE[skyeIdleSequenceIndex];
+                if (skyeIdleFrames[frameIndex] != null) {
+                    skyeLargePortraitLabel.setIcon(skyeIdleFrames[frameIndex]);
+                    skyeLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Skye idle timer error: " + ex.getMessage());
+            stopSkyeIdleAnimation();
+        }
+    });
+    skyeIdleAnimationTimer.start();
+    int initialFrame = SKYE_IDLE_SEQUENCE[0];
+    skyeLargePortraitLabel.setIcon(skyeIdleFrames[initialFrame]);
+    System.out.println("▶️ Skye idle animation started");
+}
+
+private void stopSkyeIdleAnimation() {
+    if (skyeIdleAnimationTimer != null && skyeIdleAnimationTimer.isRunning()) {
+        skyeIdleAnimationTimer.stop();
+        skyeIdleSequenceIndex = 0;
+        skyeIdleFrameCounter = 0;
+        System.out.println("⏹️ Skye idle animation stopped");
+    }
+}
+
+private void startEnemySkyeIdleAnimation() {
+    stopEnemySkyeIdleAnimation(); // Ensure no duplicate timers
+    if (enemySkyeIdleFrames[0] == null || enemySkyeLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Skye idle - frames:" + (enemySkyeIdleFrames[0]!=null) + " label:" + enemySkyeLargePortraitLabel);
+        return;
+    }
+    enemySkyeIdleSequenceIndex = 0;
+    enemySkyeIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 24; // Ticks per frame - similar to Valerius
+    enemySkyeIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemySkyeLargePortraitLabel == null) return;
+            enemySkyeIdleFrameCounter++;
+            if (enemySkyeIdleFrameCounter >= frameDuration) {
+                enemySkyeIdleFrameCounter = 0;
+                enemySkyeIdleSequenceIndex = (enemySkyeIdleSequenceIndex + 1) % SKYE_IDLE_SEQUENCE.length;
+                int frameIndex = SKYE_IDLE_SEQUENCE[enemySkyeIdleSequenceIndex];
+                if (enemySkyeIdleFrames[frameIndex] != null) {
+                    enemySkyeLargePortraitLabel.setIcon(enemySkyeIdleFrames[frameIndex]);
+                    enemySkyeLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Skye idle timer error: " + ex.getMessage());
+            stopEnemySkyeIdleAnimation();
+        }
+    });
+    enemySkyeIdleAnimationTimer.start();
+    int initialFrame = SKYE_IDLE_SEQUENCE[0];
+    enemySkyeLargePortraitLabel.setIcon(enemySkyeIdleFrames[initialFrame]);
+    System.out.println("▶️ Enemy Skye idle animation started");
+}
+
+private void stopEnemySkyeIdleAnimation() {
+    if (enemySkyeIdleAnimationTimer != null && enemySkyeIdleAnimationTimer.isRunning()) {
+        enemySkyeIdleAnimationTimer.stop();
+        enemySkyeIdleSequenceIndex = 0;
+        enemySkyeIdleFrameCounter = 0;
+        System.out.println("⏹️ Enemy Skye idle animation stopped");
     }
 }
 
@@ -4387,9 +4615,33 @@ private void setupClickHandlers() {
                       return new ImageIcon(path);
                   }
               }
+           }
+
+          // Skye idle
+          if (character instanceof Skye) {
+              if (character == currentEnemy) {
+                  if (enemySkyeIdleFrames[0] != null) {
+                      System.out.println("✅ Returning pre-rendered enemy Skye idle frame 0 (flipped)");
+                      return enemySkyeIdleFrames[0];
+                  }
+              } else {
+                  if (skyeIdleFrames[0] != null) {
+                      System.out.println("✅ Returning pre-rendered Skye idle frame 0");
+                      return skyeIdleFrames[0];
+                  }
+              }
+              // Fallback
+              String[] fallback = {"assets/skye_idle1.png", "assets/skye.gif", "assets/skye_idle.gif"};
+              for (String path : fallback) {
+                  File file = new File(path);
+                  if (file.exists()) {
+                      System.out.println("✅ Fallback: Loading " + path);
+                      return new ImageIcon(path);
+                  }
+              }
           }
 
-           // Default for other characters
+            // Default for other characters
          String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
          for (String path : possiblePaths) {
              File file = new File(path);
