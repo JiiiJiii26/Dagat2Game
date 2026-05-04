@@ -31,7 +31,7 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = true;   
+    private boolean testMode = false;   
     private String testEnemyName = "Morgana";
 
     private JPanel jijiPortraitContainer;
@@ -232,11 +232,37 @@ private int morganaIdleFrameCounter = 0;
 private boolean morganaIdleAnimationPlaying = false;
 private static final int[] MORGANA_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
 
+private ImageIcon[] morganaAttackFrames = new ImageIcon[3];
+private Timer morganaAttackAnimationTimer;
+private int currentMorganaAttackFrame = 0;
+private int morganaAttackFrameCounter = 0;
+private boolean morganaAttackAnimationPlaying = false;
+private static final int[] MORGANA_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] morganaDamagedFrames = new ImageIcon[3];
+private Timer morganaDamagedAnimationTimer;
+private int currentMorganaDamagedFrame = 0;
+private int morganaDamagedFrameCounter = 0;
+private boolean morganaDamagedAnimationPlaying = false;
+private static final int[] MORGANA_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
 private ImageIcon[] enemyMorganaIdleFrames = new ImageIcon[4];
 private Timer enemyMorganaIdleAnimationTimer;
 private int enemyMorganaIdleSequenceIndex = 0;
 private int enemyMorganaIdleFrameCounter = 0;
 private boolean enemyMorganaIdleAnimationPlaying = false;
+
+private ImageIcon[] enemyMorganaAttackFrames = new ImageIcon[3];
+private Timer enemyMorganaAttackAnimationTimer;
+private int currentEnemyMorganaAttackFrame = 0;
+private int enemyMorganaAttackFrameCounter = 0;
+private boolean enemyMorganaAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyMorganaDamagedFrames = new ImageIcon[3];
+private Timer enemyMorganaDamagedAnimationTimer;
+private int currentEnemyMorganaDamagedFrame = 0;
+private int enemyMorganaDamagedFrameCounter = 0;
+private boolean enemyMorganaDamagedAnimationPlaying = false;
 
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
@@ -906,6 +932,10 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemySkyeDamagedFrames();
         initMorganaIdleFrames();
         initEnemyMorganaIdleFrames();
+        initMorganaAttackFrames();
+        initMorganaDamagedFrames();
+        initEnemyMorganaAttackFrames();
+        initEnemyMorganaDamagedFrames();
         initValeriusAttackFrames();
         initValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
@@ -1205,7 +1235,9 @@ private void createBattleUI(CampaignWave wave) {
     stopSkyeDamagedAnimation();
     stopEnemySkyeDamagedAnimation();
     stopMorganaIdleAnimation();
+    stopMorganaDamagedAnimation();
     stopEnemyMorganaIdleAnimation();
+    stopEnemyMorganaDamagedAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -2657,6 +2689,154 @@ private void initEnemyMorganaIdleFrames() {
     }
 }
 
+private void initMorganaAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/morgana_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    morganaAttackFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                morganaAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Morgana attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Morgana attack frame " + (i+1) + ": " + e.getMessage());
+                morganaAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Morgana attack frame missing: " + f.getAbsolutePath());
+            morganaAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Morgana Attack Frame " + i + " " + (morganaAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyMorganaAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/morgana_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyMorganaAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyMorganaAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Morgana attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Morgana attack frame " + (i+1) + ": " + e.getMessage());
+                enemyMorganaAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Morgana attack frame missing: " + f.getAbsolutePath());
+            enemyMorganaAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Morgana Attack Frame " + i + " " + (enemyMorganaAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initMorganaDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/morgana_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    morganaDamagedFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                morganaDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Morgana damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Morgana damaged frame " + (i+1) + ": " + e.getMessage());
+                morganaDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Morgana damaged frame missing: " + f.getAbsolutePath());
+            morganaDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Morgana Damaged Frame " + i + " " + (morganaDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyMorganaDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/morgana_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyMorganaDamagedFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyMorganaDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Morgana damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Morgana damaged frame " + (i+1) + ": " + e.getMessage());
+                enemyMorganaDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Morgana damaged frame missing: " + f.getAbsolutePath());
+            enemyMorganaDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Morgana Damaged Frame " + i + " " + (enemyMorganaDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
 private void initValeriusAttackFrames() {
     for (int i = 0; i < 4; i++) {
         String path = "assets/valerius_atk" + (i + 1) + ".png";
@@ -3498,6 +3678,281 @@ private void stopEnemyMorganaIdleAnimation() {
     }
 }
 
+private void startMorganaAttackAnimation() {
+    // Stop all other Morgana animations
+    stopMorganaIdleAnimation();
+    if (morganaAttackAnimationTimer != null && morganaAttackAnimationTimer.isRunning()) {
+        morganaAttackAnimationTimer.stop();
+    }
+    if (morganaAttackFrames[0] == null || morganaLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Morgana attack - frames:" + (morganaAttackFrames[0]!=null) + " label:" + morganaLargePortraitLabel);
+        return;
+    }
+    morganaAttackAnimationPlaying = true;
+    currentMorganaAttackFrame = 0;
+    morganaAttackFrameCounter = 0;
+    final int tickMs = 16;
+    morganaAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (morganaLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof characters.Morgana)) {
+                stopMorganaAttackAnimation();
+                return;
+            }
+            morganaAttackFrameCounter++;
+            int frameTicks = MORGANA_ATTACK_FRAME_DURATIONS[currentMorganaAttackFrame];
+            if (morganaAttackFrameCounter >= frameTicks) {
+                morganaAttackFrameCounter = 0;
+                currentMorganaAttackFrame = (currentMorganaAttackFrame + 1) % morganaAttackFrames.length;
+                ImageIcon frame = morganaAttackFrames[currentMorganaAttackFrame];
+                if (frame != null) {
+                    morganaLargePortraitLabel.setIcon(frame);
+                    morganaLargePortraitLabel.repaint();
+                } else {
+                    morganaLargePortraitLabel.setIcon(morganaAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentMorganaAttackFrame == morganaAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopMorganaAttackAnimation();
+                    morganaAttackAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        if (morganaLargePortraitLabel != null) {
+                            morganaLargePortraitLabel.setIcon(getCharacterPortrait(playerCharacter));
+                            morganaLargePortraitLabel.repaint();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Morgana attack timer error: " + ex.getMessage());
+            stopMorganaAttackAnimation();
+        }
+    });
+    morganaAttackAnimationTimer.start();
+    System.out.println("⚔️ Morgana attack animation started");
+}
+
+private void stopMorganaAttackAnimation() {
+    if (morganaAttackAnimationTimer != null && morganaAttackAnimationTimer.isRunning()) {
+        morganaAttackAnimationTimer.stop();
+        currentMorganaAttackFrame = 0;
+        morganaAttackFrameCounter = 0;
+        System.out.println("⏹️ Morgana attack animation stopped");
+    }
+}
+
+private void startEnemyMorganaAttackAnimation() {
+    // Stop all other enemy Morgana animations
+    stopEnemyMorganaIdleAnimation();
+    if (enemyMorganaAttackAnimationTimer != null && enemyMorganaAttackAnimationTimer.isRunning()) {
+        enemyMorganaAttackAnimationTimer.stop();
+    }
+    if (enemyMorganaAttackFrames[0] == null || enemyMorganaLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Morgana attack - frames:" + (enemyMorganaAttackFrames[0]!=null) + " label:" + enemyMorganaLargePortraitLabel);
+        return;
+    }
+    enemyMorganaAttackAnimationPlaying = true;
+    currentEnemyMorganaAttackFrame = 0;
+    enemyMorganaAttackFrameCounter = 0;
+    final int tickMs = 16;
+    enemyMorganaAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyMorganaLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof characters.Morgana)) {
+                stopEnemyMorganaAttackAnimation();
+                return;
+            }
+            enemyMorganaAttackFrameCounter++;
+            int frameTicks = MORGANA_ATTACK_FRAME_DURATIONS[currentEnemyMorganaAttackFrame];
+            if (enemyMorganaAttackFrameCounter >= frameTicks) {
+                enemyMorganaAttackFrameCounter = 0;
+                currentEnemyMorganaAttackFrame = (currentEnemyMorganaAttackFrame + 1) % enemyMorganaAttackFrames.length;
+                ImageIcon frame = enemyMorganaAttackFrames[currentEnemyMorganaAttackFrame];
+                if (frame != null) {
+                    enemyMorganaLargePortraitLabel.setIcon(frame);
+                    enemyMorganaLargePortraitLabel.repaint();
+                } else {
+                    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentEnemyMorganaAttackFrame == enemyMorganaAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopEnemyMorganaAttackAnimation();
+                    enemyMorganaAttackAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        if (enemyMorganaLargePortraitLabel != null) {
+                            enemyMorganaLargePortraitLabel.setIcon(getCharacterPortrait(currentEnemy));
+                            enemyMorganaLargePortraitLabel.repaint();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Morgana attack timer error: " + ex.getMessage());
+            stopEnemyMorganaAttackAnimation();
+        }
+    });
+    enemyMorganaAttackAnimationTimer.start();
+    System.out.println("⚔️ Enemy Morgana attack animation started");
+}
+
+private void stopEnemyMorganaAttackAnimation() {
+    if (enemyMorganaAttackAnimationTimer != null && enemyMorganaAttackAnimationTimer.isRunning()) {
+        enemyMorganaAttackAnimationTimer.stop();
+        currentEnemyMorganaAttackFrame = 0;
+        enemyMorganaAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Morgana attack animation stopped");
+    }
+}
+
+private void startMorganaDamagedAnimation() {
+    stopMorganaIdleAnimation();
+    if (morganaDamagedAnimationTimer != null && morganaDamagedAnimationTimer.isRunning()) {
+        morganaDamagedAnimationTimer.stop();
+    }
+    if (morganaDamagedFrames[0] == null || morganaLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Morgana damaged - frames:" + (morganaDamagedFrames[0]!=null) + " label:" + morganaLargePortraitLabel);
+        return;
+    }
+    currentMorganaDamagedFrame = 0;
+    morganaDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    morganaDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (morganaLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof characters.Morgana)) {
+                stopMorganaDamagedAnimation();
+                return;
+            }
+            morganaDamagedFrameCounter++;
+            int frameTicks = MORGANA_DAMAGED_FRAME_DURATIONS[currentMorganaDamagedFrame];
+            if (morganaDamagedFrameCounter >= frameTicks) {
+                morganaDamagedFrameCounter = 0;
+                currentMorganaDamagedFrame++;
+                if (currentMorganaDamagedFrame >= morganaDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopMorganaDamagedAnimation();
+                    morganaDamagedAnimationPlaying = false;
+                    if (morganaIdleFrames[0] != null) {
+                        startMorganaIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = morganaDamagedFrames[currentMorganaDamagedFrame];
+                if (frame != null) {
+                    morganaLargePortraitLabel.setIcon(frame);
+                } else {
+                    morganaLargePortraitLabel.setIcon(morganaDamagedFrames[0]);
+                }
+                morganaLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Morgana damaged timer error: " + ex.getMessage());
+            stopMorganaDamagedAnimation();
+        }
+    });
+    morganaDamagedAnimationTimer.start();
+    morganaLargePortraitLabel.setIcon(morganaDamagedFrames[0]);
+    morganaDamagedAnimationPlaying = true;
+    System.out.println("💢 Morgana damaged animation started");
+}
+
+private void stopMorganaDamagedAnimation() {
+    if (morganaDamagedAnimationTimer != null && morganaDamagedAnimationTimer.isRunning()) {
+        morganaDamagedAnimationTimer.stop();
+        currentMorganaDamagedFrame = 0;
+        morganaDamagedFrameCounter = 0;
+        System.out.println("⏹️ Morgana damaged animation stopped");
+    }
+}
+
+private void startEnemyMorganaDamagedAnimation() {
+    stopEnemyMorganaIdleAnimation();
+    if (enemyMorganaDamagedAnimationTimer != null && enemyMorganaDamagedAnimationTimer.isRunning()) {
+        enemyMorganaDamagedAnimationTimer.stop();
+    }
+    if (enemyMorganaDamagedFrames[0] == null || enemyMorganaLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Morgana damaged - frames:" + (enemyMorganaDamagedFrames[0]!=null) + " label:" + enemyMorganaLargePortraitLabel);
+        return;
+    }
+    currentEnemyMorganaDamagedFrame = 0;
+    enemyMorganaDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    enemyMorganaDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyMorganaLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof characters.Morgana)) {
+                stopEnemyMorganaDamagedAnimation();
+                return;
+            }
+            enemyMorganaDamagedFrameCounter++;
+            int frameTicks = MORGANA_DAMAGED_FRAME_DURATIONS[currentEnemyMorganaDamagedFrame];
+            if (enemyMorganaDamagedFrameCounter >= frameTicks) {
+                enemyMorganaDamagedFrameCounter = 0;
+                currentEnemyMorganaDamagedFrame++;
+                if (currentEnemyMorganaDamagedFrame >= enemyMorganaDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemyMorganaDamagedAnimation();
+                    enemyMorganaDamagedAnimationPlaying = false;
+                    if (enemyMorganaIdleFrames[0] != null) {
+                        startEnemyMorganaIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyMorganaDamagedFrames[currentEnemyMorganaDamagedFrame];
+                if (frame != null) {
+                    enemyMorganaLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaDamagedFrames[0]);
+                }
+                enemyMorganaLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Morgana damaged timer error: " + ex.getMessage());
+            stopEnemyMorganaDamagedAnimation();
+        }
+    });
+    enemyMorganaDamagedAnimationTimer.start();
+    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaDamagedFrames[0]);
+    enemyMorganaDamagedAnimationPlaying = true;
+    System.out.println("💢 Enemy Morgana damaged animation started");
+}
+
+private void showEnemyMorganaDamagedAnimation() {
+    System.out.println("💥 showEnemyMorganaDamagedAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemyMorganaDamagedAnimationPlaying) {
+        System.out.println("⏭️ Enemy Morgana damaged animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof characters.Morgana && enemyMorganaLargePortraitLabel != null) {
+        if (enemyMorganaDamagedFrames[0] != null) {
+            startEnemyMorganaDamagedAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Morgana damaged frames not loaded, skipping damaged animation");
+            enemyMorganaDamagedAnimationPlaying = false;
+        }
+    }
+}
+
+private void stopEnemyMorganaDamagedAnimation() {
+    if (enemyMorganaDamagedAnimationTimer != null && enemyMorganaDamagedAnimationTimer.isRunning()) {
+        enemyMorganaDamagedAnimationTimer.stop();
+        currentEnemyMorganaDamagedFrame = 0;
+        enemyMorganaDamagedFrameCounter = 0;
+        System.out.println("⏹️ Enemy Morgana damaged animation stopped");
+    }
+}
+
 private void startValeriusAttackAnimation() {
     // Stop all other Valerius animations
     stopValeriusIdleAnimation();
@@ -4111,6 +4566,44 @@ private void showEnemySkyeAttackAnimation() {
         } else {
             System.out.println("⚠️ Enemy Skye attack frames not loaded, skipping attack animation");
             enemySkyeAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showMorganaAttackAnimation() {
+    System.out.println("⚔️ showMorganaAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (morganaAttackAnimationPlaying) {
+        System.out.println("⏭️ Morgana attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof characters.Morgana && morganaLargePortraitLabel != null) {
+        if (morganaAttackFrames[0] != null) {
+            startMorganaAttackAnimation();
+        } else {
+            System.out.println("⚠️ Morgana attack frames not loaded, skipping attack animation");
+            morganaAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showEnemyMorganaAttackAnimation() {
+    System.out.println("⚔️ showEnemyMorganaAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemyMorganaAttackAnimationPlaying) {
+        System.out.println("⏭️ Enemy Morgana attack animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof characters.Morgana && enemyMorganaLargePortraitLabel != null) {
+        if (enemyMorganaAttackFrames[0] != null) {
+            startEnemyMorganaAttackAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Morgana attack frames not loaded, skipping attack animation");
+            enemyMorganaAttackAnimationPlaying = false;
         }
     }
 }
@@ -5625,6 +6118,9 @@ private void setupClickHandlers() {
     if (playerCharacter instanceof characters.Skye && result == ShotResult.SUNK) {
         showSkyeAttackAnimation();
     }
+    if (playerCharacter instanceof characters.Morgana && result == ShotResult.SUNK) {
+        showMorganaAttackAnimation();
+    }
 
     if (currentEnemy instanceof Jiji && result == ShotResult.SUNK) {
         Jiji enemyJiji = (Jiji) currentEnemy;
@@ -5639,6 +6135,9 @@ private void setupClickHandlers() {
     }
     if (currentEnemy instanceof characters.Skye && result == ShotResult.SUNK) {
         showEnemySkyeDamagedAnimation();
+    }
+    if (currentEnemy instanceof characters.Morgana && result == ShotResult.SUNK) {
+        showEnemyMorganaDamagedAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
@@ -5831,11 +6330,17 @@ private void enemyTurn() {
                 if (currentEnemy instanceof Kael) {
                     showEnemyKaelAttackAnimation();
                 }
+                if (currentEnemy instanceof characters.Morgana) {
+                    showEnemyMorganaAttackAnimation();
+                }
                 if (playerCharacter instanceof Kael) {
                     startKaelDamagedAnimation();
                 }
                 if (playerCharacter instanceof Valerius) {
                     startValeriusDamagedAnimation();
+                }
+                if (playerCharacter instanceof characters.Morgana) {
+                    startMorganaDamagedAnimation();
                 }
                 break;
             case MISS:
