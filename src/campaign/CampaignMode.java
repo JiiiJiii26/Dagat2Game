@@ -31,8 +31,8 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = false;   
-    private String testEnemyName = "Skye";
+    private boolean testMode = true;   
+    private String testEnemyName = "Morgana";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -225,6 +225,19 @@ private int currentEnemySkyeDamagedFrame = 0;
 private int enemySkyeDamagedFrameCounter = 0;
 private boolean enemySkyeDamagedAnimationPlaying = false;
 
+private ImageIcon[] morganaIdleFrames = new ImageIcon[4];
+private Timer morganaIdleAnimationTimer;
+private int morganaIdleSequenceIndex = 0;
+private int morganaIdleFrameCounter = 0;
+private boolean morganaIdleAnimationPlaying = false;
+private static final int[] MORGANA_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private ImageIcon[] enemyMorganaIdleFrames = new ImageIcon[4];
+private Timer enemyMorganaIdleAnimationTimer;
+private int enemyMorganaIdleSequenceIndex = 0;
+private int enemyMorganaIdleFrameCounter = 0;
+private boolean enemyMorganaIdleAnimationPlaying = false;
+
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
 private int currentValeriusAttackFrame = 0;
@@ -255,6 +268,9 @@ private JLabel enemyValeriusLargePortraitLabel;
 
 private JLabel skyeLargePortraitLabel;
 private JLabel enemySkyeLargePortraitLabel;
+
+private JLabel morganaLargePortraitLabel;
+private JLabel enemyMorganaLargePortraitLabel;
 
 private JLabel jijiLargePortraitLabel;
 
@@ -888,6 +904,8 @@ private class WaveBackgroundPanel extends JPanel {
         initSkyeDamagedFrames();
         initEnemySkyeAttackFrames();
         initEnemySkyeDamagedFrames();
+        initMorganaIdleFrames();
+        initEnemyMorganaIdleFrames();
         initValeriusAttackFrames();
         initValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
@@ -1186,6 +1204,8 @@ private void createBattleUI(CampaignWave wave) {
     stopEnemySkyeAttackAnimation();
     stopSkyeDamagedAnimation();
     stopEnemySkyeDamagedAnimation();
+    stopMorganaIdleAnimation();
+    stopEnemyMorganaIdleAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -1662,6 +1682,31 @@ enemyBoardPanel.setCellHeight(64);
                 startSkyeIdleAnimation();
             }
         }
+    } else if (playerCharacter instanceof characters.Morgana) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            morganaLargePortraitLabel = new JLabel(portrait);
+            morganaLargePortraitLabel.setToolTipText("Morgana: \"The ocean's embrace protects me.\"");
+            morganaLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            morganaLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            morganaLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.add(morganaLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel nameTag = new JLabel("🧜‍♀️ MORGANA", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255));
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+
+            if (morganaIdleFrames[0] != null) {
+                startMorganaIdleAnimation();
+            }
+        }
     } else {
         JPanel emptyPanel = new JPanel();
         emptyPanel.setOpaque(false);
@@ -1780,6 +1825,31 @@ enemyBoardPanel.setCellHeight(64);
 
             if (enemySkyeIdleFrames[0] != null) {
                 startEnemySkyeIdleAnimation();
+            }
+        }
+    } else if (currentEnemy instanceof characters.Morgana) {
+        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+        if (enemyPortrait != null) {
+            enemyMorganaLargePortraitLabel = new JLabel(enemyPortrait);
+            enemyMorganaLargePortraitLabel.setToolTipText("Enemy Morgana: \"The ocean's embrace protects me.\"");
+            enemyMorganaLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            enemyMorganaLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            enemyMorganaLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel eastWrapper = new JPanel(new BorderLayout());
+            eastWrapper.setOpaque(false);
+            eastWrapper.setPreferredSize(new Dimension(150, 140));
+            eastWrapper.add(enemyMorganaLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel enemyNameTag = new JLabel("🧜‍♀️ MORGANA", SwingConstants.CENTER);
+            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            enemyNameTag.setForeground(new Color(255, 100, 100));
+            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+
+            if (enemyMorganaIdleFrames[0] != null) {
+                startEnemyMorganaIdleAnimation();
             }
         }
     } else {
@@ -2510,6 +2580,80 @@ private void initEnemySkyeDamagedFrames() {
     // Verify all frames loaded
     for (int i = 0; i < 4; i++) {
         System.out.println("   Enemy Skye Damaged Frame " + i + " " + (enemySkyeDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initMorganaIdleFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/morgana_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    morganaIdleFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                morganaIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Morgana idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Morgana frame " + (i+1) + ": " + e.getMessage());
+                morganaIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Morgana idle frame missing: " + f.getAbsolutePath());
+            morganaIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Morgana Frame " + i + " " + (morganaIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyMorganaIdleFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/morgana_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyMorganaIdleFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyMorganaIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Morgana idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Morgana frame " + (i+1) + ": " + e.getMessage());
+                enemyMorganaIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Morgana idle frame missing: " + f.getAbsolutePath());
+            enemyMorganaIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Enemy Morgana Frame " + i + " " + (enemyMorganaIdleFrames[i] != null ? "OK" : "NULL"));
     }
 }
 
@@ -3265,6 +3409,92 @@ private void stopEnemySkyeDamagedAnimation() {
         currentEnemySkyeDamagedFrame = 0;
         enemySkyeDamagedFrameCounter = 0;
         System.out.println("⏹️ Enemy Skye damaged animation stopped");
+    }
+}
+
+private void startMorganaIdleAnimation() {
+    stopMorganaIdleAnimation(); // Ensure no duplicate timers
+    if (morganaIdleFrames[0] == null || morganaLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Morgana idle - frames:" + (morganaIdleFrames[0]!=null) + " label:" + morganaLargePortraitLabel);
+        return;
+    }
+    morganaIdleSequenceIndex = 0;
+    morganaIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 24; // Ticks per frame - similar to Valerius
+    morganaIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (morganaLargePortraitLabel == null) return;
+            morganaIdleFrameCounter++;
+            if (morganaIdleFrameCounter >= frameDuration) {
+                morganaIdleFrameCounter = 0;
+                morganaIdleSequenceIndex = (morganaIdleSequenceIndex + 1) % MORGANA_IDLE_SEQUENCE.length;
+                int frameIndex = MORGANA_IDLE_SEQUENCE[morganaIdleSequenceIndex];
+                if (morganaIdleFrames[frameIndex] != null) {
+                    morganaLargePortraitLabel.setIcon(morganaIdleFrames[frameIndex]);
+                    morganaLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Morgana idle timer error: " + ex.getMessage());
+            stopMorganaIdleAnimation();
+        }
+    });
+    morganaIdleAnimationTimer.start();
+    int initialFrame = MORGANA_IDLE_SEQUENCE[0];
+    morganaLargePortraitLabel.setIcon(morganaIdleFrames[initialFrame]);
+    System.out.println("▶️ Morgana idle animation started");
+}
+
+private void stopMorganaIdleAnimation() {
+    if (morganaIdleAnimationTimer != null && morganaIdleAnimationTimer.isRunning()) {
+        morganaIdleAnimationTimer.stop();
+        morganaIdleSequenceIndex = 0;
+        morganaIdleFrameCounter = 0;
+        System.out.println("⏹️ Morgana idle animation stopped");
+    }
+}
+
+private void startEnemyMorganaIdleAnimation() {
+    stopEnemyMorganaIdleAnimation(); // Ensure no duplicate timers
+    if (enemyMorganaIdleFrames[0] == null || enemyMorganaLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Morgana idle - frames:" + (enemyMorganaIdleFrames[0]!=null) + " label:" + enemyMorganaLargePortraitLabel);
+        return;
+    }
+    enemyMorganaIdleSequenceIndex = 0;
+    enemyMorganaIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 24; // Ticks per frame - similar to Valerius
+    enemyMorganaIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyMorganaLargePortraitLabel == null) return;
+            enemyMorganaIdleFrameCounter++;
+            if (enemyMorganaIdleFrameCounter >= frameDuration) {
+                enemyMorganaIdleFrameCounter = 0;
+                enemyMorganaIdleSequenceIndex = (enemyMorganaIdleSequenceIndex + 1) % MORGANA_IDLE_SEQUENCE.length;
+                int frameIndex = MORGANA_IDLE_SEQUENCE[enemyMorganaIdleSequenceIndex];
+                if (enemyMorganaIdleFrames[frameIndex] != null) {
+                    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaIdleFrames[frameIndex]);
+                    enemyMorganaLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Morgana idle timer error: " + ex.getMessage());
+            stopEnemyMorganaIdleAnimation();
+        }
+    });
+    enemyMorganaIdleAnimationTimer.start();
+    int initialFrame = MORGANA_IDLE_SEQUENCE[0];
+    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaIdleFrames[initialFrame]);
+    System.out.println("▶️ Enemy Morgana idle animation started");
+}
+
+private void stopEnemyMorganaIdleAnimation() {
+    if (enemyMorganaIdleAnimationTimer != null && enemyMorganaIdleAnimationTimer.isRunning()) {
+        enemyMorganaIdleAnimationTimer.stop();
+        enemyMorganaIdleSequenceIndex = 0;
+        enemyMorganaIdleFrameCounter = 0;
+        System.out.println("⏹️ Enemy Morgana idle animation stopped");
     }
 }
 
@@ -5154,6 +5384,30 @@ private void setupClickHandlers() {
               }
               // Fallback
               String[] fallback = {"assets/skye_idle1.png", "assets/skye.gif", "assets/skye_idle.gif"};
+              for (String path : fallback) {
+                  File file = new File(path);
+                  if (file.exists()) {
+                      System.out.println("✅ Fallback: Loading " + path);
+                      return new ImageIcon(path);
+                  }
+              }
+          }
+
+          // Morgana idle
+          if (character instanceof characters.Morgana) {
+              if (character == currentEnemy) {
+                  if (enemyMorganaIdleFrames[0] != null) {
+                      System.out.println("✅ Returning pre-rendered enemy Morgana idle frame 0 (flipped)");
+                      return enemyMorganaIdleFrames[0];
+                  }
+              } else {
+                  if (morganaIdleFrames[0] != null) {
+                      System.out.println("✅ Returning pre-rendered Morgana idle frame 0");
+                      return morganaIdleFrames[0];
+                  }
+              }
+              // Fallback
+              String[] fallback = {"assets/morgana_idle1.png", "assets/morgana.gif", "assets/morgana_idle.gif"};
               for (String path : fallback) {
                   File file = new File(path);
                   if (file.exists()) {
