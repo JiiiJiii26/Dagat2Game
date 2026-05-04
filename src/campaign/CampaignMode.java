@@ -212,14 +212,14 @@ private int currentEnemySkyeAttackFrame = 0;
 private int enemySkyeAttackFrameCounter = 0;
 private boolean enemySkyeAttackAnimationPlaying = false;
 
-private ImageIcon[] skyeDamagedFrames = new ImageIcon[3];
+private ImageIcon[] skyeDamagedFrames = new ImageIcon[4];
 private Timer skyeDamagedAnimationTimer;
 private int currentSkyeDamagedFrame = 0;
 private int skyeDamagedFrameCounter = 0;
 private boolean skyeDamagedAnimationPlaying = false;
-private static final int[] SKYE_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+private static final int[] SKYE_DAMAGED_FRAME_DURATIONS = {10, 10, 10, 20}; // ticks (~0.5s total)
 
-private ImageIcon[] enemySkyeDamagedFrames = new ImageIcon[3];
+private ImageIcon[] enemySkyeDamagedFrames = new ImageIcon[4];
 private Timer enemySkyeDamagedAnimationTimer;
 private int currentEnemySkyeDamagedFrame = 0;
 private int enemySkyeDamagedFrameCounter = 0;
@@ -2399,9 +2399,8 @@ private void initSkyeAttackFrames() {
 }
 
 private void initSkyeDamagedFrames() {
-    // For now, use the same frames as idle for damaged (can be updated with actual damaged frames later)
-    for (int i = 0; i < 3; i++) {
-        String path = "assets/skye_idle" + (i + 1) + ".png";
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/skye_dmg" + (i + 1) + ".png";
         File f = new File(path);
         if (f.exists()) {
             try {
@@ -2427,7 +2426,7 @@ private void initSkyeDamagedFrames() {
         }
     }
     // Verify all frames loaded
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         System.out.println("   Skye Damaged Frame " + i + " " + (skyeDamagedFrames[i] != null ? "OK" : "NULL"));
     }
 }
@@ -2474,9 +2473,8 @@ private void initEnemySkyeAttackFrames() {
 }
 
 private void initEnemySkyeDamagedFrames() {
-    // For now, use the same frames as idle for damaged (can be updated with actual damaged frames later)
-    for (int i = 0; i < 3; i++) {
-        String path = "assets/skye_idle" + (i + 1) + ".png";
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/skye_dmg" + (i + 1) + ".png";
         File f = new File(path);
         if (f.exists()) {
             try {
@@ -2510,7 +2508,7 @@ private void initEnemySkyeDamagedFrames() {
         }
     }
     // Verify all frames loaded
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         System.out.println("   Enemy Skye Damaged Frame " + i + " " + (enemySkyeDamagedFrames[i] != null ? "OK" : "NULL"));
     }
 }
