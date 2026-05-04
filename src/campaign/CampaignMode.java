@@ -31,7 +31,7 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = true;   
+    private boolean testMode = false;   
     private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
@@ -328,6 +328,32 @@ private Timer enemyFlueIdleAnimationTimer;
 private int enemyFlueIdleSequenceIndex = 0;
 private int enemyFlueIdleFrameCounter = 0;
 private boolean enemyFlueIdleAnimationPlaying = false;
+
+private ImageIcon[] flueAttackFrames = new ImageIcon[3];
+private Timer flueAttackAnimationTimer;
+private int currentFlueAttackFrame = 0;
+private int flueAttackFrameCounter = 0;
+private boolean flueAttackAnimationPlaying = false;
+private static final int[] FLUE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemyFlueAttackFrames = new ImageIcon[3];
+private Timer enemyFlueAttackAnimationTimer;
+private int currentEnemyFlueAttackFrame = 0;
+private int enemyFlueAttackFrameCounter = 0;
+private boolean enemyFlueAttackAnimationPlaying = false;
+
+private ImageIcon[] flueDamagedFrames = new ImageIcon[3];
+private Timer flueDamagedAnimationTimer;
+private int currentFlueDamagedFrame = 0;
+private int flueDamagedFrameCounter = 0;
+private boolean flueDamagedAnimationPlaying = false;
+private static final int[] FLUE_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemyFlueDamagedFrames = new ImageIcon[3];
+private Timer enemyFlueDamagedAnimationTimer;
+private int currentEnemyFlueDamagedFrame = 0;
+private int enemyFlueDamagedFrameCounter = 0;
+private boolean enemyFlueDamagedAnimationPlaying = false;
 
 private ImageIcon[] seleneAttackFrames = new ImageIcon[3];
 private Timer seleneAttackAnimationTimer;
@@ -1046,6 +1072,10 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemySeleneIdleFrames();
         initFlueIdleFrames();
         initEnemyFlueIdleFrames();
+        initFlueAttackFrames();
+        initFlueDamagedFrames();
+        initEnemyFlueAttackFrames();
+        initEnemyFlueDamagedFrames();
         initSeleneAttackFrames();
         initSeleneDamagedFrames();
         initEnemySeleneAttackFrames();
@@ -1370,8 +1400,12 @@ private void createBattleUI(CampaignWave wave) {
     stopEnemyFlueIdleAnimation();
     stopSeleneAttackAnimation();
     stopSeleneDamagedAnimation();
+    stopFlueAttackAnimation();
     stopEnemySeleneAttackAnimation();
     stopEnemySeleneDamagedAnimation();
+    stopFlueDamagedAnimation();
+    stopEnemyFlueDamagedAnimation();
+    stopEnemyFlueAttackAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -3491,6 +3525,154 @@ private void initEnemyFlueIdleFrames() {
     }
 }
 
+private void initFlueAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/flue_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    flueAttackFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                flueAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Flue attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Flue attack frame " + (i+1) + ": " + e.getMessage());
+                flueAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Flue attack frame missing: " + f.getAbsolutePath());
+            flueAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Flue Attack Frame " + i + " " + (flueAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyFlueAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/flue_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyFlueAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyFlueAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Flue attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Flue attack frame " + (i+1) + ": " + e.getMessage());
+                enemyFlueAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Flue attack frame missing: " + f.getAbsolutePath());
+            enemyFlueAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Flue Attack Frame " + i + " " + (enemyFlueAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initFlueDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/flue_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    flueDamagedFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                flueDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Flue damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Flue damaged frame " + (i+1) + ": " + e.getMessage());
+                flueDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Flue damaged frame missing: " + f.getAbsolutePath());
+            flueDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Flue Damaged Frame " + i + " " + (flueDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyFlueDamagedFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/flue_dmg" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyFlueDamagedFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyFlueDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Flue damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Flue damaged frame " + (i+1) + ": " + e.getMessage());
+                enemyFlueDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Flue damaged frame missing: " + f.getAbsolutePath());
+            enemyFlueDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Flue Damaged Frame " + i + " " + (enemyFlueDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
 private void initSeleneAttackFrames() {
     for (int i = 0; i < 3; i++) {
         String path = "assets/selene_atk" + (i + 1) + ".png";
@@ -4784,6 +4966,25 @@ private void showEnemySeleneDamagedAnimation() {
     }
 }
 
+private void showEnemyFlueDamagedAnimation() {
+    System.out.println("💥 showEnemyFlueDamagedAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemyFlueDamagedAnimationPlaying) {
+        System.out.println("⏭️ Enemy Flue damaged animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof Flue && enemyFlueLargePortraitLabel != null) {
+        if (enemyFlueDamagedFrames[0] != null) {
+            startEnemyFlueDamagedAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Flue damaged frames not loaded, skipping damaged animation");
+            enemyFlueDamagedAnimationPlaying = false;
+        }
+    }
+}
+
 private void stopEnemyMorganaDamagedAnimation() {
     if (enemyMorganaDamagedAnimationTimer != null && enemyMorganaDamagedAnimationTimer.isRunning()) {
         enemyMorganaDamagedAnimationTimer.stop();
@@ -5312,6 +5513,250 @@ private void stopEnemyFlueIdleAnimation() {
         enemyFlueIdleSequenceIndex = 0;
         enemyFlueIdleFrameCounter = 0;
         System.out.println("⏹️ Enemy Flue idle animation stopped");
+    }
+}
+
+private void startFlueAttackAnimation() {
+    stopFlueIdleAnimation();
+    if (flueAttackAnimationTimer != null && flueAttackAnimationTimer.isRunning()) {
+        flueAttackAnimationTimer.stop();
+    }
+    if (flueAttackFrames[0] == null || flueLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Flue attack - frames:" + (flueAttackFrames[0]!=null) + " label:" + flueLargePortraitLabel);
+        return;
+    }
+    currentFlueAttackFrame = 0;
+    flueAttackFrameCounter = 0;
+    final int tickMs = 16;
+    flueAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (flueLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Flue)) {
+                stopFlueAttackAnimation();
+                return;
+            }
+            flueAttackFrameCounter++;
+            int frameTicks = FLUE_ATTACK_FRAME_DURATIONS[currentFlueAttackFrame];
+            if (flueAttackFrameCounter >= frameTicks) {
+                flueAttackFrameCounter = 0;
+                currentFlueAttackFrame++;
+                if (currentFlueAttackFrame >= flueAttackFrames.length) {
+                    // Animation finished, return to idle
+                    stopFlueAttackAnimation();
+                    flueAttackAnimationPlaying = false;
+                    if (flueIdleFrames[0] != null) {
+                        startFlueIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = flueAttackFrames[currentFlueAttackFrame];
+                if (frame != null) {
+                    flueLargePortraitLabel.setIcon(frame);
+                } else {
+                    flueLargePortraitLabel.setIcon(flueAttackFrames[0]);
+                }
+                flueLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Flue attack timer error: " + ex.getMessage());
+            stopFlueAttackAnimation();
+        }
+    });
+    flueAttackAnimationTimer.start();
+    flueLargePortraitLabel.setIcon(flueAttackFrames[0]);
+    flueAttackAnimationPlaying = true;
+    System.out.println("⚔️ Flue attack animation started");
+}
+
+private void stopFlueAttackAnimation() {
+    if (flueAttackAnimationTimer != null && flueAttackAnimationTimer.isRunning()) {
+        flueAttackAnimationTimer.stop();
+        currentFlueAttackFrame = 0;
+        flueAttackFrameCounter = 0;
+        System.out.println("⏹️ Flue attack animation stopped");
+    }
+}
+
+private void startEnemyFlueAttackAnimation() {
+    stopEnemyFlueIdleAnimation();
+    if (enemyFlueAttackAnimationTimer != null && enemyFlueAttackAnimationTimer.isRunning()) {
+        enemyFlueAttackAnimationTimer.stop();
+    }
+    if (enemyFlueAttackFrames[0] == null || enemyFlueLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Flue attack - frames:" + (enemyFlueAttackFrames[0]!=null) + " label:" + enemyFlueLargePortraitLabel);
+        return;
+    }
+    currentEnemyFlueAttackFrame = 0;
+    enemyFlueAttackFrameCounter = 0;
+    final int tickMs = 16;
+    enemyFlueAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyFlueLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Flue)) {
+                stopEnemyFlueAttackAnimation();
+                return;
+            }
+            enemyFlueAttackFrameCounter++;
+            int frameTicks = FLUE_ATTACK_FRAME_DURATIONS[currentEnemyFlueAttackFrame];
+            if (enemyFlueAttackFrameCounter >= frameTicks) {
+                enemyFlueAttackFrameCounter = 0;
+                currentEnemyFlueAttackFrame++;
+                if (currentEnemyFlueAttackFrame >= enemyFlueAttackFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemyFlueAttackAnimation();
+                    enemyFlueAttackAnimationPlaying = false;
+                    if (enemyFlueIdleFrames[0] != null) {
+                        startEnemyFlueIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyFlueAttackFrames[currentEnemyFlueAttackFrame];
+                if (frame != null) {
+                    enemyFlueLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyFlueLargePortraitLabel.setIcon(enemyFlueAttackFrames[0]);
+                }
+                enemyFlueLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Flue attack timer error: " + ex.getMessage());
+            stopEnemyFlueAttackAnimation();
+        }
+    });
+    enemyFlueAttackAnimationTimer.start();
+    enemyFlueLargePortraitLabel.setIcon(enemyFlueAttackFrames[0]);
+    enemyFlueAttackAnimationPlaying = true;
+    System.out.println("⚔️ Enemy Flue attack animation started");
+}
+
+private void stopEnemyFlueAttackAnimation() {
+    if (enemyFlueAttackAnimationTimer != null && enemyFlueAttackAnimationTimer.isRunning()) {
+        enemyFlueAttackAnimationTimer.stop();
+        currentEnemyFlueAttackFrame = 0;
+        enemyFlueAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Flue attack animation stopped");
+    }
+}
+
+private void startFlueDamagedAnimation() {
+    stopFlueIdleAnimation();
+    if (flueDamagedAnimationTimer != null && flueDamagedAnimationTimer.isRunning()) {
+        flueDamagedAnimationTimer.stop();
+    }
+    if (flueDamagedFrames[0] == null || flueLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Flue damaged - frames:" + (flueDamagedFrames[0]!=null) + " label:" + flueLargePortraitLabel);
+        return;
+    }
+    currentFlueDamagedFrame = 0;
+    flueDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    flueDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (flueLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Flue)) {
+                stopFlueDamagedAnimation();
+                return;
+            }
+            flueDamagedFrameCounter++;
+            int frameTicks = FLUE_DAMAGED_FRAME_DURATIONS[currentFlueDamagedFrame];
+            if (flueDamagedFrameCounter >= frameTicks) {
+                flueDamagedFrameCounter = 0;
+                currentFlueDamagedFrame++;
+                if (currentFlueDamagedFrame >= flueDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopFlueDamagedAnimation();
+                    flueDamagedAnimationPlaying = false;
+                    if (flueIdleFrames[0] != null) {
+                        startFlueIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = flueDamagedFrames[currentFlueDamagedFrame];
+                if (frame != null) {
+                    flueLargePortraitLabel.setIcon(frame);
+                } else {
+                    flueLargePortraitLabel.setIcon(flueDamagedFrames[0]);
+                }
+                flueLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Flue damaged timer error: " + ex.getMessage());
+            stopFlueDamagedAnimation();
+        }
+    });
+    flueDamagedAnimationTimer.start();
+    flueLargePortraitLabel.setIcon(flueDamagedFrames[0]);
+    flueDamagedAnimationPlaying = true;
+    System.out.println("💢 Flue damaged animation started");
+}
+
+private void stopFlueDamagedAnimation() {
+    if (flueDamagedAnimationTimer != null && flueDamagedAnimationTimer.isRunning()) {
+        flueDamagedAnimationTimer.stop();
+        currentFlueDamagedFrame = 0;
+        flueDamagedFrameCounter = 0;
+        System.out.println("⏹️ Flue damaged animation stopped");
+    }
+}
+
+private void startEnemyFlueDamagedAnimation() {
+    stopEnemyFlueIdleAnimation();
+    if (enemyFlueDamagedAnimationTimer != null && enemyFlueDamagedAnimationTimer.isRunning()) {
+        enemyFlueDamagedAnimationTimer.stop();
+    }
+    if (enemyFlueDamagedFrames[0] == null || enemyFlueLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Flue damaged - frames:" + (enemyFlueDamagedFrames[0]!=null) + " label:" + enemyFlueLargePortraitLabel);
+        return;
+    }
+    currentEnemyFlueDamagedFrame = 0;
+    enemyFlueDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    enemyFlueDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyFlueLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Flue)) {
+                stopEnemyFlueDamagedAnimation();
+                return;
+            }
+            enemyFlueDamagedFrameCounter++;
+            int frameTicks = FLUE_DAMAGED_FRAME_DURATIONS[currentEnemyFlueDamagedFrame];
+            if (enemyFlueDamagedFrameCounter >= frameTicks) {
+                enemyFlueDamagedFrameCounter = 0;
+                currentEnemyFlueDamagedFrame++;
+                if (currentEnemyFlueDamagedFrame >= enemyFlueDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemyFlueDamagedAnimation();
+                    enemyFlueDamagedAnimationPlaying = false;
+                    if (enemyFlueIdleFrames[0] != null) {
+                        startEnemyFlueIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyFlueDamagedFrames[currentEnemyFlueDamagedFrame];
+                if (frame != null) {
+                    enemyFlueLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyFlueLargePortraitLabel.setIcon(enemyFlueDamagedFrames[0]);
+                }
+                enemyFlueLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Flue damaged timer error: " + ex.getMessage());
+            stopEnemyFlueDamagedAnimation();
+        }
+    });
+    enemyFlueDamagedAnimationTimer.start();
+    enemyFlueLargePortraitLabel.setIcon(enemyFlueDamagedFrames[0]);
+    enemyFlueDamagedAnimationPlaying = true;
+    System.out.println("💢 Enemy Flue damaged animation started");
+}
+
+private void stopEnemyFlueDamagedAnimation() {
+    if (enemyFlueDamagedAnimationTimer != null && enemyFlueDamagedAnimationTimer.isRunning()) {
+        enemyFlueDamagedAnimationTimer.stop();
+        currentEnemyFlueDamagedFrame = 0;
+        enemyFlueDamagedFrameCounter = 0;
+        System.out.println("⏹️ Enemy Flue damaged animation stopped");
     }
 }
 
@@ -6233,6 +6678,25 @@ private void showAerisAttackAnimation() {
     }
 }
 
+private void showFlueAttackAnimation() {
+    System.out.println("⚔️ showFlueAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (flueAttackAnimationPlaying) {
+        System.out.println("⏭️ Flue attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof Flue && flueLargePortraitLabel != null) {
+        if (flueAttackFrames[0] != null) {
+            startFlueAttackAnimation();
+        } else {
+            System.out.println("⚠️ Flue attack frames not loaded, skipping attack animation");
+            flueAttackAnimationPlaying = false;
+        }
+    }
+}
+
 private void showSeleneAttackAnimation() {
     System.out.println("⚔️ showSeleneAttackAnimation called!");
 
@@ -6276,6 +6740,25 @@ private void showEnemyAerisAttackAnimation() {
         }
     } else {
         System.out.println("⚠️ Enemy Aeris attack animation conditions not met");
+    }
+}
+
+private void showEnemyFlueAttackAnimation() {
+    System.out.println("⚔️ showEnemyFlueAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemyFlueAttackAnimationPlaying) {
+        System.out.println("⏭️ Enemy Flue attack animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof Flue && enemyFlueLargePortraitLabel != null) {
+        if (enemyFlueAttackFrames[0] != null) {
+            startEnemyFlueAttackAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Flue attack frames not loaded, skipping attack animation");
+            enemyFlueAttackAnimationPlaying = false;
+        }
     }
 }
 
@@ -7880,6 +8363,9 @@ private void setupClickHandlers() {
     if (playerCharacter instanceof Selene && result == ShotResult.SUNK) {
         showSeleneAttackAnimation();
     }
+    if (playerCharacter instanceof Flue && result == ShotResult.SUNK) {
+        showFlueAttackAnimation();
+    }
     if (playerCharacter instanceof Valerius && result == ShotResult.SUNK) {
         showValeriusAttackAnimation();
     }
@@ -7912,6 +8398,9 @@ private void setupClickHandlers() {
     }
     if (currentEnemy instanceof Selene && result == ShotResult.SUNK) {
         showEnemySeleneDamagedAnimation();
+    }
+    if (currentEnemy instanceof Flue && result == ShotResult.SUNK) {
+        showEnemyFlueDamagedAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
@@ -8110,6 +8599,9 @@ private void enemyTurn() {
                 if (currentEnemy instanceof Aeris) {
                     showEnemyAerisAttackAnimation();
                 }
+                if (currentEnemy instanceof Flue) {
+                    showEnemyFlueAttackAnimation();
+                }
                 if (currentEnemy instanceof Selene) {
                     showEnemySeleneAttackAnimation();
                 }
@@ -8127,6 +8619,9 @@ private void enemyTurn() {
                 }
                 if (playerCharacter instanceof Selene) {
                     startSeleneDamagedAnimation();
+                }
+                if (playerCharacter instanceof Flue) {
+                    startFlueDamagedAnimation();
                 }
                 break;
             case MISS:
