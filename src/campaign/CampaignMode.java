@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Aeris";
+    private String testEnemyName = "Selene";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -303,6 +303,32 @@ private int currentEnemyAerisDamagedFrame = 0;
 private int enemyAerisDamagedFrameCounter = 0;
 private boolean enemyAerisDamagedAnimationPlaying = false;
 
+private ImageIcon[] seleneIdleFrames = new ImageIcon[4];
+private Timer seleneIdleAnimationTimer;
+private int seleneIdleSequenceIndex = 0;
+private int seleneIdleFrameCounter = 0;
+private boolean seleneIdleAnimationPlaying = false;
+private static final int[] SELENE_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private ImageIcon[] enemySeleneIdleFrames = new ImageIcon[4];
+private Timer enemySeleneIdleAnimationTimer;
+private int enemySeleneIdleSequenceIndex = 0;
+private int enemySeleneIdleFrameCounter = 0;
+private boolean enemySeleneIdleAnimationPlaying = false;
+
+private ImageIcon[] seleneAttackFrames = new ImageIcon[3];
+private Timer seleneAttackAnimationTimer;
+private int currentSeleneAttackFrame = 0;
+private int seleneAttackFrameCounter = 0;
+private boolean seleneAttackAnimationPlaying = false;
+private static final int[] SELENE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemySeleneAttackFrames = new ImageIcon[3];
+private Timer enemySeleneAttackAnimationTimer;
+private int currentEnemySeleneAttackFrame = 0;
+private int enemySeleneAttackFrameCounter = 0;
+private boolean enemySeleneAttackAnimationPlaying = false;
+
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
 private int currentValeriusAttackFrame = 0;
@@ -339,6 +365,9 @@ private JLabel enemyMorganaLargePortraitLabel;
 
 private JLabel aerisLargePortraitLabel;
 private JLabel enemyAerisLargePortraitLabel;
+
+private JLabel seleneLargePortraitLabel;
+private JLabel enemySeleneLargePortraitLabel;
 
 private JLabel jijiLargePortraitLabel;
 
@@ -984,6 +1013,13 @@ private class WaveBackgroundPanel extends JPanel {
         initAerisDamagedFrames();
         initEnemyAerisAttackFrames();
         initEnemyAerisDamagedFrames();
+        initSeleneIdleFrames();
+        initEnemySeleneIdleFrames();
+        initSeleneAttackFrames();
+        initEnemySeleneAttackFrames();
+        initAerisDamagedFrames();
+        initEnemyAerisAttackFrames();
+        initEnemyAerisDamagedFrames();
         initMorganaDamagedFrames();
         initEnemyMorganaAttackFrames();
         initEnemyMorganaDamagedFrames();
@@ -1292,9 +1328,13 @@ private void createBattleUI(CampaignWave wave) {
     stopAerisIdleAnimation();
     stopAerisAttackAnimation();
     stopAerisDamagedAnimation();
+    stopSeleneIdleAnimation();
     stopEnemyAerisIdleAnimation();
     stopEnemyAerisAttackAnimation();
     stopEnemyAerisDamagedAnimation();
+    stopEnemySeleneIdleAnimation();
+    stopSeleneAttackAnimation();
+    stopEnemySeleneAttackAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -1796,6 +1836,31 @@ enemyBoardPanel.setCellHeight(64);
                 startMorganaIdleAnimation();
             }
         }
+    } else if (playerCharacter instanceof Selene) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            seleneLargePortraitLabel = new JLabel(portrait);
+            seleneLargePortraitLabel.setToolTipText("Selene: \"The moon guides my fate.\"");
+            seleneLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            seleneLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            seleneLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.add(seleneLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel nameTag = new JLabel("🌙 SELENE", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255));
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+
+            if (seleneIdleFrames[0] != null) {
+                startSeleneIdleAnimation();
+            }
+        }
     } else if (playerCharacter instanceof Aeris) {
         Icon portrait = getCharacterPortrait(playerCharacter);
         if (portrait != null) {
@@ -1989,6 +2054,31 @@ enemyBoardPanel.setCellHeight(64);
 
             if (enemyAerisIdleFrames[0] != null) {
                 startEnemyAerisIdleAnimation();
+            }
+        }
+    } else if (currentEnemy instanceof Selene) {
+        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+        if (enemyPortrait != null) {
+            enemySeleneLargePortraitLabel = new JLabel(enemyPortrait);
+            enemySeleneLargePortraitLabel.setToolTipText("Enemy Selene: \"The moon guides my fate.\"");
+            enemySeleneLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            enemySeleneLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            enemySeleneLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel eastWrapper = new JPanel(new BorderLayout());
+            eastWrapper.setOpaque(false);
+            eastWrapper.setPreferredSize(new Dimension(150, 140));
+            eastWrapper.add(enemySeleneLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel enemyNameTag = new JLabel("🌙 SELENE", SwingConstants.CENTER);
+            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            enemyNameTag.setForeground(new Color(255, 100, 100));
+            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+
+            if (enemySeleneIdleFrames[0] != null) {
+                startEnemySeleneIdleAnimation();
             }
         }
     } else {
@@ -3163,6 +3253,154 @@ private void initEnemyAerisDamagedFrames() {
     // Verify all frames loaded
     for (int i = 0; i < 3; i++) {
         System.out.println("   Enemy Aeris Damaged Frame " + i + " " + (enemyAerisDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initSeleneIdleFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/selene_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    seleneIdleFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                seleneIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Selene idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Selene idle frame " + (i+1) + ": " + e.getMessage());
+                seleneIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Selene idle frame missing: " + f.getAbsolutePath());
+            seleneIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Selene Idle Frame " + i + " " + (seleneIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemySeleneIdleFrames() {
+    for (int i = 0; i < 4; i++) {
+        String path = "assets/selene_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemySeleneIdleFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemySeleneIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Selene idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Selene idle frame " + (i+1) + ": " + e.getMessage());
+                enemySeleneIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Selene idle frame missing: " + f.getAbsolutePath());
+            enemySeleneIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 4; i++) {
+        System.out.println("   Enemy Selene Idle Frame " + i + " " + (enemySeleneIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initSeleneAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/selene_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    seleneAttackFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                seleneAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Selene attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Selene attack frame " + (i+1) + ": " + e.getMessage());
+                seleneAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Selene attack frame missing: " + f.getAbsolutePath());
+            seleneAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Selene Attack Frame " + i + " " + (seleneAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemySeleneAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/selene_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemySeleneAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemySeleneAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Selene attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Selene attack frame " + (i+1) + ": " + e.getMessage());
+                enemySeleneAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Selene attack frame missing: " + f.getAbsolutePath());
+            enemySeleneAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Selene Attack Frame " + i + " " + (enemySeleneAttackFrames[i] != null ? "OK" : "NULL"));
     }
 }
 
@@ -4639,6 +4877,220 @@ private void stopEnemyAerisDamagedAnimation() {
     }
 }
 
+private void startSeleneIdleAnimation() {
+    stopSeleneIdleAnimation(); // Ensure no duplicate timers
+    if (seleneIdleFrames[0] == null || seleneLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Selene idle - frames:" + (seleneIdleFrames[0]!=null) + " label:" + seleneLargePortraitLabel);
+        return;
+    }
+    seleneIdleSequenceIndex = 0;
+    seleneIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 6; // ticks per frame
+    seleneIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (seleneLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Selene)) {
+                stopSeleneIdleAnimation();
+                return;
+            }
+            seleneIdleFrameCounter++;
+            if (seleneIdleFrameCounter >= frameDuration) {
+                seleneIdleFrameCounter = 0;
+                seleneIdleSequenceIndex = (seleneIdleSequenceIndex + 1) % SELENE_IDLE_SEQUENCE.length;
+                int frameIndex = SELENE_IDLE_SEQUENCE[seleneIdleSequenceIndex];
+                if (seleneIdleFrames[frameIndex] != null) {
+                    seleneLargePortraitLabel.setIcon(seleneIdleFrames[frameIndex]);
+                    seleneLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Selene idle timer error: " + ex.getMessage());
+            stopSeleneIdleAnimation();
+        }
+    });
+    seleneIdleAnimationTimer.start();
+    seleneLargePortraitLabel.setIcon(seleneIdleFrames[0]);
+    System.out.println("▶️ Selene idle animation started");
+}
+
+private void stopSeleneIdleAnimation() {
+    if (seleneIdleAnimationTimer != null && seleneIdleAnimationTimer.isRunning()) {
+        seleneIdleAnimationTimer.stop();
+        seleneIdleSequenceIndex = 0;
+        seleneIdleFrameCounter = 0;
+        System.out.println("⏹️ Selene idle animation stopped");
+    }
+}
+
+private void startEnemySeleneIdleAnimation() {
+    stopEnemySeleneIdleAnimation(); // Ensure no duplicate timers
+    if (enemySeleneIdleFrames[0] == null || enemySeleneLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Selene idle - frames:" + (enemySeleneIdleFrames[0]!=null) + " label:" + enemySeleneLargePortraitLabel);
+        return;
+    }
+    enemySeleneIdleSequenceIndex = 0;
+    enemySeleneIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 6; // ticks per frame
+    enemySeleneIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemySeleneLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Selene)) {
+                stopEnemySeleneIdleAnimation();
+                return;
+            }
+            enemySeleneIdleFrameCounter++;
+            if (enemySeleneIdleFrameCounter >= frameDuration) {
+                enemySeleneIdleFrameCounter = 0;
+                enemySeleneIdleSequenceIndex = (enemySeleneIdleSequenceIndex + 1) % SELENE_IDLE_SEQUENCE.length;
+                int frameIndex = SELENE_IDLE_SEQUENCE[enemySeleneIdleSequenceIndex];
+                if (enemySeleneIdleFrames[frameIndex] != null) {
+                    enemySeleneLargePortraitLabel.setIcon(enemySeleneIdleFrames[frameIndex]);
+                    enemySeleneLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Selene idle timer error: " + ex.getMessage());
+            stopEnemySeleneIdleAnimation();
+        }
+    });
+    enemySeleneIdleAnimationTimer.start();
+    enemySeleneLargePortraitLabel.setIcon(enemySeleneIdleFrames[0]);
+    System.out.println("▶️ Enemy Selene idle animation started");
+}
+
+private void stopEnemySeleneIdleAnimation() {
+    if (enemySeleneIdleAnimationTimer != null && enemySeleneIdleAnimationTimer.isRunning()) {
+        enemySeleneIdleAnimationTimer.stop();
+        enemySeleneIdleSequenceIndex = 0;
+        enemySeleneIdleFrameCounter = 0;
+        System.out.println("⏹️ Enemy Selene idle animation stopped");
+    }
+}
+
+private void startSeleneAttackAnimation() {
+    stopSeleneIdleAnimation();
+    if (seleneAttackAnimationTimer != null && seleneAttackAnimationTimer.isRunning()) {
+        seleneAttackAnimationTimer.stop();
+    }
+    if (seleneAttackFrames[0] == null || seleneLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Selene attack - frames:" + (seleneAttackFrames[0]!=null) + " label:" + seleneLargePortraitLabel);
+        return;
+    }
+    currentSeleneAttackFrame = 0;
+    seleneAttackFrameCounter = 0;
+    final int tickMs = 16;
+    seleneAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (seleneLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Selene)) {
+                stopSeleneAttackAnimation();
+                return;
+            }
+            seleneAttackFrameCounter++;
+            int frameTicks = SELENE_ATTACK_FRAME_DURATIONS[currentSeleneAttackFrame];
+            if (seleneAttackFrameCounter >= frameTicks) {
+                seleneAttackFrameCounter = 0;
+                currentSeleneAttackFrame++;
+                if (currentSeleneAttackFrame >= seleneAttackFrames.length) {
+                    // Animation finished, return to idle
+                    stopSeleneAttackAnimation();
+                    seleneAttackAnimationPlaying = false;
+                    if (seleneIdleFrames[0] != null) {
+                        startSeleneIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = seleneAttackFrames[currentSeleneAttackFrame];
+                if (frame != null) {
+                    seleneLargePortraitLabel.setIcon(frame);
+                } else {
+                    seleneLargePortraitLabel.setIcon(seleneAttackFrames[0]);
+                }
+                seleneLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Selene attack timer error: " + ex.getMessage());
+            stopSeleneAttackAnimation();
+        }
+    });
+    seleneAttackAnimationTimer.start();
+    seleneLargePortraitLabel.setIcon(seleneAttackFrames[0]);
+    seleneAttackAnimationPlaying = true;
+    System.out.println("⚔️ Selene attack animation started");
+}
+
+private void stopSeleneAttackAnimation() {
+    if (seleneAttackAnimationTimer != null && seleneAttackAnimationTimer.isRunning()) {
+        seleneAttackAnimationTimer.stop();
+        currentSeleneAttackFrame = 0;
+        seleneAttackFrameCounter = 0;
+        System.out.println("⏹️ Selene attack animation stopped");
+    }
+}
+
+private void startEnemySeleneAttackAnimation() {
+    stopEnemySeleneIdleAnimation();
+    if (enemySeleneAttackAnimationTimer != null && enemySeleneAttackAnimationTimer.isRunning()) {
+        enemySeleneAttackAnimationTimer.stop();
+    }
+    if (enemySeleneAttackFrames[0] == null || enemySeleneLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Selene attack - frames:" + (enemySeleneAttackFrames[0]!=null) + " label:" + enemySeleneLargePortraitLabel);
+        return;
+    }
+    currentEnemySeleneAttackFrame = 0;
+    enemySeleneAttackFrameCounter = 0;
+    final int tickMs = 16;
+    enemySeleneAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemySeleneLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Selene)) {
+                stopEnemySeleneAttackAnimation();
+                return;
+            }
+            enemySeleneAttackFrameCounter++;
+            int frameTicks = SELENE_ATTACK_FRAME_DURATIONS[currentEnemySeleneAttackFrame];
+            if (enemySeleneAttackFrameCounter >= frameTicks) {
+                enemySeleneAttackFrameCounter = 0;
+                currentEnemySeleneAttackFrame++;
+                if (currentEnemySeleneAttackFrame >= enemySeleneAttackFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemySeleneAttackAnimation();
+                    enemySeleneAttackAnimationPlaying = false;
+                    if (enemySeleneIdleFrames[0] != null) {
+                        startEnemySeleneIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemySeleneAttackFrames[currentEnemySeleneAttackFrame];
+                if (frame != null) {
+                    enemySeleneLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemySeleneLargePortraitLabel.setIcon(enemySeleneAttackFrames[0]);
+                }
+                enemySeleneLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Selene attack timer error: " + ex.getMessage());
+            stopEnemySeleneAttackAnimation();
+        }
+    });
+    enemySeleneAttackAnimationTimer.start();
+    enemySeleneLargePortraitLabel.setIcon(enemySeleneAttackFrames[0]);
+    enemySeleneAttackAnimationPlaying = true;
+    System.out.println("⚔️ Enemy Selene attack animation started");
+}
+
+private void stopEnemySeleneAttackAnimation() {
+    if (enemySeleneAttackAnimationTimer != null && enemySeleneAttackAnimationTimer.isRunning()) {
+        enemySeleneAttackAnimationTimer.stop();
+        currentEnemySeleneAttackFrame = 0;
+        enemySeleneAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Selene attack animation stopped");
+    }
+}
+
 private void startValeriusAttackAnimation() {
     // Stop all other Valerius animations
     stopValeriusIdleAnimation();
@@ -5313,6 +5765,25 @@ private void showAerisAttackAnimation() {
     }
 }
 
+private void showSeleneAttackAnimation() {
+    System.out.println("⚔️ showSeleneAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (seleneAttackAnimationPlaying) {
+        System.out.println("⏭️ Selene attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof Selene && seleneLargePortraitLabel != null) {
+        if (seleneAttackFrames[0] != null) {
+            startSeleneAttackAnimation();
+        } else {
+            System.out.println("⚠️ Selene attack frames not loaded, skipping attack animation");
+            seleneAttackAnimationPlaying = false;
+        }
+    }
+}
+
 private void showEnemyAerisAttackAnimation() {
     System.out.println("⚔️ showEnemyAerisAttackAnimation called!");
 
@@ -5337,6 +5808,25 @@ private void showEnemyAerisAttackAnimation() {
         }
     } else {
         System.out.println("⚠️ Enemy Aeris attack animation conditions not met");
+    }
+}
+
+private void showEnemySeleneAttackAnimation() {
+    System.out.println("⚔️ showEnemySeleneAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemySeleneAttackAnimationPlaying) {
+        System.out.println("⏭️ Enemy Selene attack animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof Selene && enemySeleneLargePortraitLabel != null) {
+        if (enemySeleneAttackFrames[0] != null) {
+            startEnemySeleneAttackAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Selene attack frames not loaded, skipping attack animation");
+            enemySeleneAttackAnimationPlaying = false;
+        }
     }
 }
 
@@ -6666,6 +7156,30 @@ private void setupClickHandlers() {
                }
            }
 
+           // Selene idle
+           if (character instanceof Selene) {
+               if (character == currentEnemy) {
+                   if (enemySeleneIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered enemy Selene idle frame 0 (flipped)");
+                       return enemySeleneIdleFrames[0];
+                   }
+               } else {
+                   if (seleneIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered Selene idle frame 0");
+                       return seleneIdleFrames[0];
+                   }
+               }
+               // Fallback to static portrait
+               String[] fallback = {"assets/char1.png", "assets/selene.jpg"};
+               for (String path : fallback) {
+                   File file = new File(path);
+                   if (file.exists()) {
+                       System.out.println("✅ Fallback: Loading " + path);
+                       return new ImageIcon(path);
+                   }
+               }
+           }
+
              // Default for other characters
          String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
          for (String path : possiblePaths) {
@@ -6870,6 +7384,9 @@ private void setupClickHandlers() {
     }
     if (playerCharacter instanceof Aeris && result == ShotResult.SUNK) {
         showAerisAttackAnimation();
+    }
+    if (playerCharacter instanceof Selene && result == ShotResult.SUNK) {
+        showSeleneAttackAnimation();
     }
     if (playerCharacter instanceof Valerius && result == ShotResult.SUNK) {
         showValeriusAttackAnimation();
@@ -7097,6 +7614,9 @@ private void enemyTurn() {
                 }
                 if (currentEnemy instanceof Aeris) {
                     showEnemyAerisAttackAnimation();
+                }
+                if (currentEnemy instanceof Selene) {
+                    showEnemySeleneAttackAnimation();
                 }
                 if (playerCharacter instanceof Kael) {
                     startKaelDamagedAnimation();
