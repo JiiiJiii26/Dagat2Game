@@ -31,8 +31,8 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = false;   
-    private String testEnemyName = "Morgana";
+    private boolean testMode = true;   
+    private String testEnemyName = "Aeris";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -264,6 +264,32 @@ private int currentEnemyMorganaDamagedFrame = 0;
 private int enemyMorganaDamagedFrameCounter = 0;
 private boolean enemyMorganaDamagedAnimationPlaying = false;
 
+private ImageIcon[] aerisIdleFrames = new ImageIcon[3];
+private Timer aerisIdleAnimationTimer;
+private int aerisIdleSequenceIndex = 0;
+private int aerisIdleFrameCounter = 0;
+private boolean aerisIdleAnimationPlaying = false;
+private static final int[] AERIS_IDLE_SEQUENCE = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
+
+private ImageIcon[] enemyAerisIdleFrames = new ImageIcon[3];
+private Timer enemyAerisIdleAnimationTimer;
+private int enemyAerisIdleSequenceIndex = 0;
+private int enemyAerisIdleFrameCounter = 0;
+private boolean enemyAerisIdleAnimationPlaying = false;
+
+private ImageIcon[] aerisAttackFrames = new ImageIcon[3];
+private Timer aerisAttackAnimationTimer;
+private int currentAerisAttackFrame = 0;
+private int aerisAttackFrameCounter = 0;
+private boolean aerisAttackAnimationPlaying = false;
+private static final int[] AERIS_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemyAerisAttackFrames = new ImageIcon[3];
+private Timer enemyAerisAttackAnimationTimer;
+private int currentEnemyAerisAttackFrame = 0;
+private int enemyAerisAttackFrameCounter = 0;
+private boolean enemyAerisAttackAnimationPlaying = false;
+
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
 private int currentValeriusAttackFrame = 0;
@@ -297,6 +323,9 @@ private JLabel enemySkyeLargePortraitLabel;
 
 private JLabel morganaLargePortraitLabel;
 private JLabel enemyMorganaLargePortraitLabel;
+
+private JLabel aerisLargePortraitLabel;
+private JLabel enemyAerisLargePortraitLabel;
 
 private JLabel jijiLargePortraitLabel;
 
@@ -936,6 +965,13 @@ private class WaveBackgroundPanel extends JPanel {
         initMorganaDamagedFrames();
         initEnemyMorganaAttackFrames();
         initEnemyMorganaDamagedFrames();
+        initAerisIdleFrames();
+        initEnemyAerisIdleFrames();
+        initAerisAttackFrames();
+        initEnemyAerisAttackFrames();
+        initMorganaDamagedFrames();
+        initEnemyMorganaAttackFrames();
+        initEnemyMorganaDamagedFrames();
         initValeriusAttackFrames();
         initValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
@@ -1238,6 +1274,10 @@ private void createBattleUI(CampaignWave wave) {
     stopMorganaDamagedAnimation();
     stopEnemyMorganaIdleAnimation();
     stopEnemyMorganaDamagedAnimation();
+    stopAerisIdleAnimation();
+    stopAerisAttackAnimation();
+    stopEnemyAerisIdleAnimation();
+    stopEnemyAerisAttackAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -1739,6 +1779,31 @@ enemyBoardPanel.setCellHeight(64);
                 startMorganaIdleAnimation();
             }
         }
+    } else if (playerCharacter instanceof Aeris) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            aerisLargePortraitLabel = new JLabel(portrait);
+            aerisLargePortraitLabel.setToolTipText("Aeris: \"Adapt or perish.\"");
+            aerisLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            aerisLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            aerisLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.add(aerisLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel nameTag = new JLabel("💪 AERIS", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255));
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+
+            if (aerisIdleFrames[0] != null) {
+                startAerisIdleAnimation();
+            }
+        }
     } else {
         JPanel emptyPanel = new JPanel();
         emptyPanel.setOpaque(false);
@@ -1882,6 +1947,31 @@ enemyBoardPanel.setCellHeight(64);
 
             if (enemyMorganaIdleFrames[0] != null) {
                 startEnemyMorganaIdleAnimation();
+            }
+        }
+    } else if (currentEnemy instanceof Aeris) {
+        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+        if (enemyPortrait != null) {
+            enemyAerisLargePortraitLabel = new JLabel(enemyPortrait);
+            enemyAerisLargePortraitLabel.setToolTipText("Enemy Aeris: \"Adapt or perish.\"");
+            enemyAerisLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            enemyAerisLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            enemyAerisLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel eastWrapper = new JPanel(new BorderLayout());
+            eastWrapper.setOpaque(false);
+            eastWrapper.setPreferredSize(new Dimension(150, 140));
+            eastWrapper.add(enemyAerisLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel enemyNameTag = new JLabel("💪 AERIS", SwingConstants.CENTER);
+            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            enemyNameTag.setForeground(new Color(255, 100, 100));
+            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+
+            if (enemyAerisIdleFrames[0] != null) {
+                startEnemyAerisIdleAnimation();
             }
         }
     } else {
@@ -2834,6 +2924,154 @@ private void initEnemyMorganaDamagedFrames() {
     // Verify all frames loaded
     for (int i = 0; i < 3; i++) {
         System.out.println("   Enemy Morgana Damaged Frame " + i + " " + (enemyMorganaDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initAerisIdleFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/aeris_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    aerisIdleFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                aerisIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Aeris idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Aeris idle frame " + (i+1) + ": " + e.getMessage());
+                aerisIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Aeris idle frame missing: " + f.getAbsolutePath());
+            aerisIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Aeris Idle Frame " + i + " " + (aerisIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyAerisIdleFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/aeris_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyAerisIdleFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyAerisIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Aeris idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Aeris idle frame " + (i+1) + ": " + e.getMessage());
+                enemyAerisIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Aeris idle frame missing: " + f.getAbsolutePath());
+            enemyAerisIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Aeris Idle Frame " + i + " " + (enemyAerisIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initAerisAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/aeris_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    aerisAttackFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                aerisAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Aeris attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Aeris attack frame " + (i+1) + ": " + e.getMessage());
+                aerisAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Aeris attack frame missing: " + f.getAbsolutePath());
+            aerisAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Aeris Attack Frame " + i + " " + (aerisAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyAerisAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/aeris_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyAerisAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyAerisAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Aeris attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Aeris attack frame " + (i+1) + ": " + e.getMessage());
+                enemyAerisAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Aeris attack frame missing: " + f.getAbsolutePath());
+            enemyAerisAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Aeris Attack Frame " + i + " " + (enemyAerisAttackFrames[i] != null ? "OK" : "NULL"));
     }
 }
 
@@ -3953,6 +4191,222 @@ private void stopEnemyMorganaDamagedAnimation() {
     }
 }
 
+private void startAerisIdleAnimation() {
+    stopAerisIdleAnimation(); // Ensure no duplicate timers
+    if (aerisIdleFrames[0] == null || aerisLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Aeris idle - frames:" + (aerisIdleFrames[0]!=null) + " label:" + aerisLargePortraitLabel);
+        return;
+    }
+    aerisIdleSequenceIndex = 0;
+    aerisIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 6; // ticks per frame
+    aerisIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (aerisLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Aeris)) {
+                stopAerisIdleAnimation();
+                return;
+            }
+            aerisIdleFrameCounter++;
+            if (aerisIdleFrameCounter >= frameDuration) {
+                aerisIdleFrameCounter = 0;
+                aerisIdleSequenceIndex = (aerisIdleSequenceIndex + 1) % AERIS_IDLE_SEQUENCE.length;
+                int frameIndex = AERIS_IDLE_SEQUENCE[aerisIdleSequenceIndex];
+                if (aerisIdleFrames[frameIndex] != null) {
+                    aerisLargePortraitLabel.setIcon(aerisIdleFrames[frameIndex]);
+                    aerisLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Aeris idle timer error: " + ex.getMessage());
+            stopAerisIdleAnimation();
+        }
+    });
+    aerisIdleAnimationTimer.start();
+    aerisLargePortraitLabel.setIcon(aerisIdleFrames[0]);
+    System.out.println("▶️ Aeris idle animation started");
+}
+
+private void stopAerisIdleAnimation() {
+    if (aerisIdleAnimationTimer != null && aerisIdleAnimationTimer.isRunning()) {
+        aerisIdleAnimationTimer.stop();
+        aerisIdleSequenceIndex = 0;
+        aerisIdleFrameCounter = 0;
+        System.out.println("⏹️ Aeris idle animation stopped");
+    }
+}
+
+private void startEnemyAerisIdleAnimation() {
+    stopEnemyAerisIdleAnimation(); // Ensure no duplicate timers
+    if (enemyAerisIdleFrames[0] == null || enemyAerisLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Aeris idle - frames:" + (enemyAerisIdleFrames[0]!=null) + " label:" + enemyAerisLargePortraitLabel);
+        return;
+    }
+    enemyAerisIdleSequenceIndex = 0;
+    enemyAerisIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 6; // ticks per frame
+    enemyAerisIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyAerisLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Aeris)) {
+                stopEnemyAerisIdleAnimation();
+                return;
+            }
+            enemyAerisIdleFrameCounter++;
+            if (enemyAerisIdleFrameCounter >= frameDuration) {
+                enemyAerisIdleFrameCounter = 0;
+                enemyAerisIdleSequenceIndex = (enemyAerisIdleSequenceIndex + 1) % AERIS_IDLE_SEQUENCE.length;
+                int frameIndex = AERIS_IDLE_SEQUENCE[enemyAerisIdleSequenceIndex];
+                if (enemyAerisIdleFrames[frameIndex] != null) {
+                    enemyAerisLargePortraitLabel.setIcon(enemyAerisIdleFrames[frameIndex]);
+                    enemyAerisLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Aeris idle timer error: " + ex.getMessage());
+            stopEnemyAerisIdleAnimation();
+        }
+    });
+    enemyAerisIdleAnimationTimer.start();
+    enemyAerisLargePortraitLabel.setIcon(enemyAerisIdleFrames[0]);
+    System.out.println("▶️ Enemy Aeris idle animation started");
+}
+
+private void stopEnemyAerisIdleAnimation() {
+    if (enemyAerisIdleAnimationTimer != null && enemyAerisIdleAnimationTimer.isRunning()) {
+        enemyAerisIdleAnimationTimer.stop();
+        enemyAerisIdleSequenceIndex = 0;
+        enemyAerisIdleFrameCounter = 0;
+        System.out.println("⏹️ Enemy Aeris idle animation stopped");
+    }
+}
+
+private void startAerisAttackAnimation() {
+    stopAerisIdleAnimation();
+    if (aerisAttackAnimationTimer != null && aerisAttackAnimationTimer.isRunning()) {
+        aerisAttackAnimationTimer.stop();
+    }
+    if (aerisAttackFrames[0] == null || aerisLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Aeris attack - frames:" + (aerisAttackFrames[0]!=null) + " label:" + aerisLargePortraitLabel);
+        return;
+    }
+    currentAerisAttackFrame = 0;
+    aerisAttackFrameCounter = 0;
+    final int tickMs = 16;
+    aerisAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (aerisLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Aeris)) {
+                stopAerisAttackAnimation();
+                return;
+            }
+            aerisAttackFrameCounter++;
+            int frameTicks = AERIS_ATTACK_FRAME_DURATIONS[currentAerisAttackFrame];
+            if (aerisAttackFrameCounter >= frameTicks) {
+                aerisAttackFrameCounter = 0;
+                currentAerisAttackFrame++;
+                if (currentAerisAttackFrame >= aerisAttackFrames.length) {
+                    // Animation finished, return to idle
+                    stopAerisAttackAnimation();
+                    aerisAttackAnimationPlaying = false;
+                    if (aerisIdleFrames[0] != null) {
+                        startAerisIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = aerisAttackFrames[currentAerisAttackFrame];
+                if (frame != null) {
+                    aerisLargePortraitLabel.setIcon(frame);
+                } else {
+                    aerisLargePortraitLabel.setIcon(aerisAttackFrames[0]);
+                }
+                aerisLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Aeris attack timer error: " + ex.getMessage());
+            stopAerisAttackAnimation();
+        }
+    });
+    aerisAttackAnimationTimer.start();
+    aerisLargePortraitLabel.setIcon(aerisAttackFrames[0]);
+    aerisAttackAnimationPlaying = true;
+    System.out.println("⚔️ Aeris attack animation started");
+}
+
+private void stopAerisAttackAnimation() {
+    if (aerisAttackAnimationTimer != null && aerisAttackAnimationTimer.isRunning()) {
+        aerisAttackAnimationTimer.stop();
+        currentAerisAttackFrame = 0;
+        aerisAttackFrameCounter = 0;
+        System.out.println("⏹️ Aeris attack animation stopped");
+    }
+}
+
+private void startEnemyAerisAttackAnimation() {
+    System.out.println("▶️ startEnemyAerisAttackAnimation called");
+    stopEnemyAerisIdleAnimation();
+    if (enemyAerisAttackAnimationTimer != null && enemyAerisAttackAnimationTimer.isRunning()) {
+        enemyAerisAttackAnimationTimer.stop();
+    }
+    if (enemyAerisAttackFrames[0] == null || enemyAerisLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Aeris attack - frames:" + (enemyAerisAttackFrames[0]!=null) + " label:" + enemyAerisLargePortraitLabel);
+        return;
+    }
+    System.out.println("✅ Starting enemy Aeris attack animation with frames loaded");
+    currentEnemyAerisAttackFrame = 0;
+    enemyAerisAttackFrameCounter = 0;
+    final int tickMs = 16;
+    enemyAerisAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyAerisLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Aeris)) {
+                stopEnemyAerisAttackAnimation();
+                return;
+            }
+            enemyAerisAttackFrameCounter++;
+            int frameTicks = AERIS_ATTACK_FRAME_DURATIONS[currentEnemyAerisAttackFrame];
+            if (enemyAerisAttackFrameCounter >= frameTicks) {
+                enemyAerisAttackFrameCounter = 0;
+                currentEnemyAerisAttackFrame++;
+                if (currentEnemyAerisAttackFrame >= enemyAerisAttackFrames.length) {
+                    // Animation finished, return to idle
+                    stopEnemyAerisAttackAnimation();
+                    enemyAerisAttackAnimationPlaying = false;
+                    if (enemyAerisIdleFrames[0] != null) {
+                        startEnemyAerisIdleAnimation();
+                    }
+                    return;
+                }
+                ImageIcon frame = enemyAerisAttackFrames[currentEnemyAerisAttackFrame];
+                if (frame != null) {
+                    enemyAerisLargePortraitLabel.setIcon(frame);
+                } else {
+                    enemyAerisLargePortraitLabel.setIcon(enemyAerisAttackFrames[0]);
+                }
+                enemyAerisLargePortraitLabel.repaint();
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Aeris attack timer error: " + ex.getMessage());
+            stopEnemyAerisAttackAnimation();
+        }
+    });
+    enemyAerisAttackAnimationTimer.start();
+    enemyAerisLargePortraitLabel.setIcon(enemyAerisAttackFrames[0]);
+    enemyAerisAttackAnimationPlaying = true;
+    System.out.println("⚔️ Enemy Aeris attack animation started");
+}
+
+private void stopEnemyAerisAttackAnimation() {
+    if (enemyAerisAttackAnimationTimer != null && enemyAerisAttackAnimationTimer.isRunning()) {
+        enemyAerisAttackAnimationTimer.stop();
+        currentEnemyAerisAttackFrame = 0;
+        enemyAerisAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Aeris attack animation stopped");
+    }
+}
+
 private void startValeriusAttackAnimation() {
     // Stop all other Valerius animations
     stopValeriusIdleAnimation();
@@ -4605,6 +5059,52 @@ private void showEnemyMorganaAttackAnimation() {
             System.out.println("⚠️ Enemy Morgana attack frames not loaded, skipping attack animation");
             enemyMorganaAttackAnimationPlaying = false;
         }
+    }
+}
+
+private void showAerisAttackAnimation() {
+    System.out.println("⚔️ showAerisAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (aerisAttackAnimationPlaying) {
+        System.out.println("⏭️ Aeris attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof Aeris && aerisLargePortraitLabel != null) {
+        if (aerisAttackFrames[0] != null) {
+            startAerisAttackAnimation();
+        } else {
+            System.out.println("⚠️ Aeris attack frames not loaded, skipping attack animation");
+            aerisAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showEnemyAerisAttackAnimation() {
+    System.out.println("⚔️ showEnemyAerisAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemyAerisAttackAnimationPlaying) {
+        System.out.println("⏭️ Enemy Aeris attack animation already playing, skipping...");
+        return;
+    }
+
+    System.out.println("⚔️ Checking enemy Aeris attack animation conditions:");
+    System.out.println("  - currentEnemy instanceof Aeris: " + (currentEnemy instanceof Aeris));
+    System.out.println("  - enemyAerisLargePortraitLabel != null: " + (enemyAerisLargePortraitLabel != null));
+    System.out.println("  - enemyAerisAttackFrames[0] != null: " + (enemyAerisAttackFrames[0] != null));
+
+    if (currentEnemy instanceof Aeris && enemyAerisLargePortraitLabel != null) {
+        if (enemyAerisAttackFrames[0] != null) {
+            System.out.println("✅ Starting enemy Aeris attack animation");
+            startEnemyAerisAttackAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Aeris attack frames not loaded, skipping attack animation");
+            enemyAerisAttackAnimationPlaying = false;
+        }
+    } else {
+        System.out.println("⚠️ Enemy Aeris attack animation conditions not met");
     }
 }
 
@@ -5886,31 +6386,55 @@ private void setupClickHandlers() {
               }
           }
 
-          // Morgana idle
-          if (character instanceof characters.Morgana) {
-              if (character == currentEnemy) {
-                  if (enemyMorganaIdleFrames[0] != null) {
-                      System.out.println("✅ Returning pre-rendered enemy Morgana idle frame 0 (flipped)");
-                      return enemyMorganaIdleFrames[0];
-                  }
-              } else {
-                  if (morganaIdleFrames[0] != null) {
-                      System.out.println("✅ Returning pre-rendered Morgana idle frame 0");
-                      return morganaIdleFrames[0];
-                  }
-              }
-              // Fallback
-              String[] fallback = {"assets/morgana_idle1.png", "assets/morgana.gif", "assets/morgana_idle.gif"};
-              for (String path : fallback) {
-                  File file = new File(path);
-                  if (file.exists()) {
-                      System.out.println("✅ Fallback: Loading " + path);
-                      return new ImageIcon(path);
-                  }
-              }
-          }
+           // Morgana idle
+           if (character instanceof characters.Morgana) {
+               if (character == currentEnemy) {
+                   if (enemyMorganaIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered enemy Morgana idle frame 0 (flipped)");
+                       return enemyMorganaIdleFrames[0];
+                   }
+               } else {
+                   if (morganaIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered Morgana idle frame 0");
+                       return morganaIdleFrames[0];
+                   }
+               }
+               // Fallback
+               String[] fallback = {"assets/morgana_idle1.png", "assets/morgana.gif", "assets/morgana_idle.gif"};
+               for (String path : fallback) {
+                   File file = new File(path);
+                   if (file.exists()) {
+                       System.out.println("✅ Fallback: Loading " + path);
+                       return new ImageIcon(path);
+                   }
+               }
+           }
 
-            // Default for other characters
+           // Aeris idle
+           if (character instanceof Aeris) {
+               if (character == currentEnemy) {
+                   if (enemyAerisIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered enemy Aeris idle frame 0 (flipped)");
+                       return enemyAerisIdleFrames[0];
+                   }
+               } else {
+                   if (aerisIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered Aeris idle frame 0");
+                       return aerisIdleFrames[0];
+                   }
+               }
+               // Fallback to static portrait
+               String[] fallback = {"assets/char5.png", "assets/aeris.jpg"};
+               for (String path : fallback) {
+                   File file = new File(path);
+                   if (file.exists()) {
+                       System.out.println("✅ Fallback: Loading " + path);
+                       return new ImageIcon(path);
+                   }
+               }
+           }
+
+             // Default for other characters
          String[] possiblePaths = {"assets/" + name + ".gif", "assets/" + name + "_idle.gif"};
          for (String path : possiblePaths) {
              File file = new File(path);
@@ -6111,6 +6635,9 @@ private void setupClickHandlers() {
     }
     if (playerCharacter instanceof Kael && result == ShotResult.SUNK) {
         showKaelAttackAnimation();
+    }
+    if (playerCharacter instanceof Aeris && result == ShotResult.SUNK) {
+        showAerisAttackAnimation();
     }
     if (playerCharacter instanceof Valerius && result == ShotResult.SUNK) {
         showValeriusAttackAnimation();
@@ -6332,6 +6859,9 @@ private void enemyTurn() {
                 }
                 if (currentEnemy instanceof characters.Morgana) {
                     showEnemyMorganaAttackAnimation();
+                }
+                if (currentEnemy instanceof Aeris) {
+                    showEnemyAerisAttackAnimation();
                 }
                 if (playerCharacter instanceof Kael) {
                     startKaelDamagedAnimation();
