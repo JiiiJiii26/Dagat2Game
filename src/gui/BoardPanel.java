@@ -145,8 +145,8 @@ public class BoardPanel extends JPanel {
                 }
                 repaint();
             });
- 
-            // animationTimer.start();  // ocean swap disabled
+
+            animationTimer.start();
         }
 
     try {
@@ -578,10 +578,10 @@ public class BoardPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-         if (!oceanFrames.isEmpty()) {
+          if (!oceanFrames.isEmpty()) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            Image img = oceanFrames.get(0);
+            Image img = oceanFrames.get(currentFrameIndex);
         if (img != null) {
             g2d.drawImage(img, 0, 0, getBoardWidth(), getBoardHeight(), this);
     }
