@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Selene";
+    private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -316,6 +316,19 @@ private int enemySeleneIdleSequenceIndex = 0;
 private int enemySeleneIdleFrameCounter = 0;
 private boolean enemySeleneIdleAnimationPlaying = false;
 
+private ImageIcon[] flueIdleFrames = new ImageIcon[3];
+private Timer flueIdleAnimationTimer;
+private int flueIdleSequenceIndex = 0;
+private int flueIdleFrameCounter = 0;
+private boolean flueIdleAnimationPlaying = false;
+private static final int[] FLUE_IDLE_SEQUENCE = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
+
+private ImageIcon[] enemyFlueIdleFrames = new ImageIcon[3];
+private Timer enemyFlueIdleAnimationTimer;
+private int enemyFlueIdleSequenceIndex = 0;
+private int enemyFlueIdleFrameCounter = 0;
+private boolean enemyFlueIdleAnimationPlaying = false;
+
 private ImageIcon[] seleneAttackFrames = new ImageIcon[3];
 private Timer seleneAttackAnimationTimer;
 private int currentSeleneAttackFrame = 0;
@@ -381,6 +394,9 @@ private JLabel enemyAerisLargePortraitLabel;
 
 private JLabel seleneLargePortraitLabel;
 private JLabel enemySeleneLargePortraitLabel;
+
+private JLabel flueLargePortraitLabel;
+private JLabel enemyFlueLargePortraitLabel;
 
 private JLabel jijiLargePortraitLabel;
 
@@ -1028,6 +1044,8 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemyAerisDamagedFrames();
         initSeleneIdleFrames();
         initEnemySeleneIdleFrames();
+        initFlueIdleFrames();
+        initEnemyFlueIdleFrames();
         initSeleneAttackFrames();
         initSeleneDamagedFrames();
         initEnemySeleneAttackFrames();
@@ -1348,6 +1366,8 @@ private void createBattleUI(CampaignWave wave) {
     stopEnemyAerisAttackAnimation();
     stopEnemyAerisDamagedAnimation();
     stopEnemySeleneIdleAnimation();
+    stopFlueIdleAnimation();
+    stopEnemyFlueIdleAnimation();
     stopSeleneAttackAnimation();
     stopSeleneDamagedAnimation();
     stopEnemySeleneAttackAnimation();
@@ -1878,6 +1898,31 @@ enemyBoardPanel.setCellHeight(64);
                 startSeleneIdleAnimation();
             }
         }
+    } else if (playerCharacter instanceof Flue) {
+        Icon portrait = getCharacterPortrait(playerCharacter);
+        if (portrait != null) {
+            flueLargePortraitLabel = new JLabel(portrait);
+            flueLargePortraitLabel.setToolTipText("Flue: \"Code is my weapon.\"");
+            flueLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            flueLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            flueLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel westWrapper = new JPanel(new BorderLayout());
+            westWrapper.setOpaque(false);
+            westWrapper.setPreferredSize(new Dimension(150, 140));
+            westWrapper.add(flueLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel nameTag = new JLabel("💻 FLUE", SwingConstants.CENTER);
+            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            nameTag.setForeground(new Color(100, 200, 255));
+            westWrapper.add(nameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+
+            if (flueIdleFrames[0] != null) {
+                startFlueIdleAnimation();
+            }
+        }
     } else if (playerCharacter instanceof Aeris) {
         Icon portrait = getCharacterPortrait(playerCharacter);
         if (portrait != null) {
@@ -2096,6 +2141,31 @@ enemyBoardPanel.setCellHeight(64);
 
             if (enemySeleneIdleFrames[0] != null) {
                 startEnemySeleneIdleAnimation();
+            }
+        }
+    } else if (currentEnemy instanceof Flue) {
+        Icon enemyPortrait = getCharacterPortrait(currentEnemy);
+        if (enemyPortrait != null) {
+            enemyFlueLargePortraitLabel = new JLabel(enemyPortrait);
+            enemyFlueLargePortraitLabel.setToolTipText("Enemy Flue: \"Code is my weapon.\"");
+            enemyFlueLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+            enemyFlueLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+            enemyFlueLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+
+            JPanel eastWrapper = new JPanel(new BorderLayout());
+            eastWrapper.setOpaque(false);
+            eastWrapper.setPreferredSize(new Dimension(150, 140));
+            eastWrapper.add(enemyFlueLargePortraitLabel, BorderLayout.CENTER);
+
+            JLabel enemyNameTag = new JLabel("💻 FLUE", SwingConstants.CENTER);
+            enemyNameTag.setFont(new Font("Arial", Font.BOLD, 12));
+            enemyNameTag.setForeground(new Color(255, 100, 100));
+            eastWrapper.add(enemyNameTag, BorderLayout.SOUTH);
+
+            combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
+
+            if (enemyFlueIdleFrames[0] != null) {
+                startEnemyFlueIdleAnimation();
             }
         }
     } else {
@@ -3344,6 +3414,80 @@ private void initEnemySeleneIdleFrames() {
     // Verify all frames loaded
     for (int i = 0; i < 4; i++) {
         System.out.println("   Enemy Selene Idle Frame " + i + " " + (enemySeleneIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initFlueIdleFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/flue_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    flueIdleFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                flueIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Flue idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Flue idle frame " + (i+1) + ": " + e.getMessage());
+                flueIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Flue idle frame missing: " + f.getAbsolutePath());
+            flueIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Flue Idle Frame " + i + " " + (flueIdleFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemyFlueIdleFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/flue_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemyFlueIdleFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemyFlueIdleFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Flue idle frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Flue idle frame " + (i+1) + ": " + e.getMessage());
+                enemyFlueIdleFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Flue idle frame missing: " + f.getAbsolutePath());
+            enemyFlueIdleFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Flue Idle Frame " + i + " " + (enemyFlueIdleFrames[i] != null ? "OK" : "NULL"));
     }
 }
 
@@ -5076,6 +5220,98 @@ private void stopEnemySeleneIdleAnimation() {
         enemySeleneIdleSequenceIndex = 0;
         enemySeleneIdleFrameCounter = 0;
         System.out.println("⏹️ Enemy Selene idle animation stopped");
+    }
+}
+
+private void startFlueIdleAnimation() {
+    stopFlueIdleAnimation(); // Ensure no duplicate timers
+    if (flueIdleFrames[0] == null || flueLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Flue idle - frames:" + (flueIdleFrames[0]!=null) + " label:" + flueLargePortraitLabel);
+        return;
+    }
+    flueIdleSequenceIndex = 0;
+    flueIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 6; // ticks per frame
+    flueIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (flueLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof Flue)) {
+                stopFlueIdleAnimation();
+                return;
+            }
+            flueIdleFrameCounter++;
+            if (flueIdleFrameCounter >= frameDuration) {
+                flueIdleFrameCounter = 0;
+                flueIdleSequenceIndex = (flueIdleSequenceIndex + 1) % FLUE_IDLE_SEQUENCE.length;
+                int frameIndex = FLUE_IDLE_SEQUENCE[flueIdleSequenceIndex];
+                if (flueIdleFrames[frameIndex] != null) {
+                    flueLargePortraitLabel.setIcon(flueIdleFrames[frameIndex]);
+                    flueLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Flue idle timer error: " + ex.getMessage());
+            stopFlueIdleAnimation();
+        }
+    });
+    flueIdleAnimationTimer.start();
+    flueLargePortraitLabel.setIcon(flueIdleFrames[0]);
+    System.out.println("▶️ Flue idle animation started");
+}
+
+private void stopFlueIdleAnimation() {
+    if (flueIdleAnimationTimer != null && flueIdleAnimationTimer.isRunning()) {
+        flueIdleAnimationTimer.stop();
+        flueIdleSequenceIndex = 0;
+        flueIdleFrameCounter = 0;
+        System.out.println("⏹️ Flue idle animation stopped");
+    }
+}
+
+private void startEnemyFlueIdleAnimation() {
+    stopEnemyFlueIdleAnimation(); // Ensure no duplicate timers
+    if (enemyFlueIdleFrames[0] == null || enemyFlueLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Flue idle - frames:" + (enemyFlueIdleFrames[0]!=null) + " label:" + enemyFlueLargePortraitLabel);
+        return;
+    }
+    enemyFlueIdleSequenceIndex = 0;
+    enemyFlueIdleFrameCounter = 0;
+    final int tickMs = 16;
+    final int frameDuration = 6; // ticks per frame
+    enemyFlueIdleAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemyFlueLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof Flue)) {
+                stopEnemyFlueIdleAnimation();
+                return;
+            }
+            enemyFlueIdleFrameCounter++;
+            if (enemyFlueIdleFrameCounter >= frameDuration) {
+                enemyFlueIdleFrameCounter = 0;
+                enemyFlueIdleSequenceIndex = (enemyFlueIdleSequenceIndex + 1) % FLUE_IDLE_SEQUENCE.length;
+                int frameIndex = FLUE_IDLE_SEQUENCE[enemyFlueIdleSequenceIndex];
+                if (enemyFlueIdleFrames[frameIndex] != null) {
+                    enemyFlueLargePortraitLabel.setIcon(enemyFlueIdleFrames[frameIndex]);
+                    enemyFlueLargePortraitLabel.repaint();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Flue idle timer error: " + ex.getMessage());
+            stopEnemyFlueIdleAnimation();
+        }
+    });
+    enemyFlueIdleAnimationTimer.start();
+    enemyFlueLargePortraitLabel.setIcon(enemyFlueIdleFrames[0]);
+    System.out.println("▶️ Enemy Flue idle animation started");
+}
+
+private void stopEnemyFlueIdleAnimation() {
+    if (enemyFlueIdleAnimationTimer != null && enemyFlueIdleAnimationTimer.isRunning()) {
+        enemyFlueIdleAnimationTimer.stop();
+        enemyFlueIdleSequenceIndex = 0;
+        enemyFlueIdleFrameCounter = 0;
+        System.out.println("⏹️ Enemy Flue idle animation stopped");
     }
 }
 
@@ -7403,6 +7639,30 @@ private void setupClickHandlers() {
                }
                // Fallback to static portrait
                String[] fallback = {"assets/char1.png", "assets/selene.jpg"};
+               for (String path : fallback) {
+                   File file = new File(path);
+                   if (file.exists()) {
+                       System.out.println("✅ Fallback: Loading " + path);
+                       return new ImageIcon(path);
+                   }
+               }
+           }
+
+           // Flue idle
+           if (character instanceof Flue) {
+               if (character == currentEnemy) {
+                   if (enemyFlueIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered enemy Flue idle frame 0 (flipped)");
+                       return enemyFlueIdleFrames[0];
+                   }
+               } else {
+                   if (flueIdleFrames[0] != null) {
+                       System.out.println("✅ Returning pre-rendered Flue idle frame 0");
+                       return flueIdleFrames[0];
+                   }
+               }
+               // Fallback to static portrait
+               String[] fallback = {"assets/char2.png", "assets/flue.jpg"};
                for (String path : fallback) {
                    File file = new File(path);
                    if (file.exists()) {
