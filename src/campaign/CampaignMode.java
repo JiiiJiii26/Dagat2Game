@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = false;   
-    private String testEnemyName = "Valerius";
+    private String testEnemyName = "Skye";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -198,6 +198,32 @@ private Timer enemySkyeIdleAnimationTimer;
 private int enemySkyeIdleSequenceIndex = 0;
 private int enemySkyeIdleFrameCounter = 0;
 private boolean enemySkyeIdleAnimationPlaying = false;
+
+private ImageIcon[] skyeAttackFrames = new ImageIcon[3];
+private Timer skyeAttackAnimationTimer;
+private int currentSkyeAttackFrame = 0;
+private int skyeAttackFrameCounter = 0;
+private boolean skyeAttackAnimationPlaying = false;
+private static final int[] SKYE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemySkyeAttackFrames = new ImageIcon[3];
+private Timer enemySkyeAttackAnimationTimer;
+private int currentEnemySkyeAttackFrame = 0;
+private int enemySkyeAttackFrameCounter = 0;
+private boolean enemySkyeAttackAnimationPlaying = false;
+
+private ImageIcon[] skyeDamagedFrames = new ImageIcon[3];
+private Timer skyeDamagedAnimationTimer;
+private int currentSkyeDamagedFrame = 0;
+private int skyeDamagedFrameCounter = 0;
+private boolean skyeDamagedAnimationPlaying = false;
+private static final int[] SKYE_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemySkyeDamagedFrames = new ImageIcon[3];
+private Timer enemySkyeDamagedAnimationTimer;
+private int currentEnemySkyeDamagedFrame = 0;
+private int enemySkyeDamagedFrameCounter = 0;
+private boolean enemySkyeDamagedAnimationPlaying = false;
 
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
@@ -858,6 +884,10 @@ private class WaveBackgroundPanel extends JPanel {
         initEnemyValeriusIdleFrames();
         initSkyeIdleFrames();
         initEnemySkyeIdleFrames();
+        initSkyeAttackFrames();
+        initSkyeDamagedFrames();
+        initEnemySkyeAttackFrames();
+        initEnemySkyeDamagedFrames();
         initValeriusAttackFrames();
         initValeriusDamagedFrames();
         initEnemyValeriusAttackFrames();
@@ -1152,6 +1182,10 @@ private void createBattleUI(CampaignWave wave) {
     stopEnemyValeriusIdleAnimation();
     stopSkyeIdleAnimation();
     stopEnemySkyeIdleAnimation();
+    stopSkyeAttackAnimation();
+    stopEnemySkyeAttackAnimation();
+    stopSkyeDamagedAnimation();
+    stopEnemySkyeDamagedAnimation();
     stopKaelAttackAnimation();
     stopEnemyKaelAttackAnimation();
     stopValeriusAttackAnimation();
@@ -2331,6 +2365,156 @@ private void initEnemySkyeIdleFrames() {
     }
 }
 
+private void initSkyeAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/skye_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    skyeAttackFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                skyeAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Skye attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Skye attack frame " + (i+1) + ": " + e.getMessage());
+                skyeAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Skye attack frame missing: " + f.getAbsolutePath());
+            skyeAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Skye Attack Frame " + i + " " + (skyeAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initSkyeDamagedFrames() {
+    // For now, use the same frames as idle for damaged (can be updated with actual damaged frames later)
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/skye_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    skyeDamagedFrames[i] = null;
+                    continue;
+                }
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                skyeDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded Skye damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading Skye damaged frame " + (i+1) + ": " + e.getMessage());
+                skyeDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Skye damaged frame missing: " + f.getAbsolutePath());
+            skyeDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Skye Damaged Frame " + i + " " + (skyeDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemySkyeAttackFrames() {
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/skye_atk" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemySkyeAttackFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemySkyeAttackFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Skye attack frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Skye attack frame " + (i+1) + ": " + e.getMessage());
+                enemySkyeAttackFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Skye attack frame missing: " + f.getAbsolutePath());
+            enemySkyeAttackFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Skye Attack Frame " + i + " " + (enemySkyeAttackFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
+private void initEnemySkyeDamagedFrames() {
+    // For now, use the same frames as idle for damaged (can be updated with actual damaged frames later)
+    for (int i = 0; i < 3; i++) {
+        String path = "assets/skye_idle" + (i + 1) + ".png";
+        File f = new File(path);
+        if (f.exists()) {
+            try {
+                BufferedImage base = ImageIO.read(f);
+                if (base == null) {
+                    System.out.println("⚠️ ImageIO returned null for: " + path);
+                    enemySkyeDamagedFrames[i] = null;
+                    continue;
+                }
+                // Flip horizontally
+                BufferedImage flipped = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = flipped.createGraphics();
+                AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+                tx.translate(-base.getWidth(), 0);
+                g.setTransform(tx);
+                g.drawImage(base, 0, 0, null);
+                g.dispose();
+                // Target dimensions for portrait area (150x120), centered
+                int targetW = 150;
+                int targetH = 120;
+                Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+                enemySkyeDamagedFrames[i] = new ImageIcon(scaled);
+                System.out.println("✅ Loaded and flipped enemy Skye damaged frame " + (i + 1));
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading enemy Skye damaged frame " + (i+1) + ": " + e.getMessage());
+                enemySkyeDamagedFrames[i] = null;
+            }
+        } else {
+            System.out.println("⚠️ Enemy Skye damaged frame missing: " + f.getAbsolutePath());
+            enemySkyeDamagedFrames[i] = null;
+        }
+    }
+    // Verify all frames loaded
+    for (int i = 0; i < 3; i++) {
+        System.out.println("   Enemy Skye Damaged Frame " + i + " " + (enemySkyeDamagedFrames[i] != null ? "OK" : "NULL"));
+    }
+}
+
 private void initValeriusAttackFrames() {
     for (int i = 0; i < 4; i++) {
         String path = "assets/valerius_atk" + (i + 1) + ".png";
@@ -2819,6 +3003,270 @@ private void stopEnemySkyeIdleAnimation() {
         enemySkyeIdleSequenceIndex = 0;
         enemySkyeIdleFrameCounter = 0;
         System.out.println("⏹️ Enemy Skye idle animation stopped");
+    }
+}
+
+private void startSkyeAttackAnimation() {
+    // Stop all other Skye animations
+    stopSkyeIdleAnimation();
+    if (skyeAttackAnimationTimer != null && skyeAttackAnimationTimer.isRunning()) {
+        skyeAttackAnimationTimer.stop();
+    }
+    if (skyeAttackFrames[0] == null || skyeLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Skye attack - frames:" + (skyeAttackFrames[0]!=null) + " label:" + skyeLargePortraitLabel);
+        return;
+    }
+    currentSkyeAttackFrame = 0;
+    skyeAttackFrameCounter = 0;
+    final int tickMs = 16;
+    skyeAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (skyeLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof characters.Skye)) {
+                stopSkyeAttackAnimation();
+                return;
+            }
+            skyeAttackFrameCounter++;
+            int frameTicks = SKYE_ATTACK_FRAME_DURATIONS[currentSkyeAttackFrame];
+            if (skyeAttackFrameCounter >= frameTicks) {
+                skyeAttackFrameCounter = 0;
+                currentSkyeAttackFrame = (currentSkyeAttackFrame + 1) % skyeAttackFrames.length;
+                ImageIcon frame = skyeAttackFrames[currentSkyeAttackFrame];
+                if (frame != null) {
+                    skyeLargePortraitLabel.setIcon(frame);
+                    skyeLargePortraitLabel.repaint();
+                } else {
+                    skyeLargePortraitLabel.setIcon(skyeAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentSkyeAttackFrame == skyeAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopSkyeAttackAnimation();
+                    skyeAttackAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        if (skyeLargePortraitLabel != null) {
+                            skyeLargePortraitLabel.setIcon(getCharacterPortrait(playerCharacter));
+                            skyeLargePortraitLabel.repaint();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Skye attack timer error: " + ex.getMessage());
+            stopSkyeAttackAnimation();
+        }
+    });
+    skyeAttackAnimationTimer.start();
+    System.out.println("⚔️ Skye attack animation started");
+}
+
+private void stopSkyeAttackAnimation() {
+    if (skyeAttackAnimationTimer != null && skyeAttackAnimationTimer.isRunning()) {
+        skyeAttackAnimationTimer.stop();
+        currentSkyeAttackFrame = 0;
+        skyeAttackFrameCounter = 0;
+        System.out.println("⏹️ Skye attack animation stopped");
+    }
+}
+
+private void startEnemySkyeAttackAnimation() {
+    // Stop all other enemy Skye animations
+    stopEnemySkyeIdleAnimation();
+    if (enemySkyeAttackAnimationTimer != null && enemySkyeAttackAnimationTimer.isRunning()) {
+        enemySkyeAttackAnimationTimer.stop();
+    }
+    if (enemySkyeAttackFrames[0] == null || enemySkyeLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Skye attack - frames:" + (enemySkyeAttackFrames[0]!=null) + " label:" + enemySkyeLargePortraitLabel);
+        return;
+    }
+    currentEnemySkyeAttackFrame = 0;
+    enemySkyeAttackFrameCounter = 0;
+    final int tickMs = 16;
+    enemySkyeAttackAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemySkyeLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof characters.Skye)) {
+                stopEnemySkyeAttackAnimation();
+                return;
+            }
+            enemySkyeAttackFrameCounter++;
+            int frameTicks = SKYE_ATTACK_FRAME_DURATIONS[currentEnemySkyeAttackFrame];
+            if (enemySkyeAttackFrameCounter >= frameTicks) {
+                enemySkyeAttackFrameCounter = 0;
+                currentEnemySkyeAttackFrame = (currentEnemySkyeAttackFrame + 1) % enemySkyeAttackFrames.length;
+                ImageIcon frame = enemySkyeAttackFrames[currentEnemySkyeAttackFrame];
+                if (frame != null) {
+                    enemySkyeLargePortraitLabel.setIcon(frame);
+                    enemySkyeLargePortraitLabel.repaint();
+                } else {
+                    enemySkyeLargePortraitLabel.setIcon(enemySkyeAttackFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentEnemySkyeAttackFrame == enemySkyeAttackFrames.length - 1) {
+                    // Stop attack timer before refresh
+                    stopEnemySkyeAttackAnimation();
+                    enemySkyeAttackAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        if (enemySkyeLargePortraitLabel != null) {
+                            enemySkyeLargePortraitLabel.setIcon(getCharacterPortrait(currentEnemy));
+                            enemySkyeLargePortraitLabel.repaint();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Skye attack timer error: " + ex.getMessage());
+            stopEnemySkyeAttackAnimation();
+        }
+    });
+    enemySkyeAttackAnimationTimer.start();
+    System.out.println("⚔️ Enemy Skye attack animation started");
+}
+
+private void stopEnemySkyeAttackAnimation() {
+    if (enemySkyeAttackAnimationTimer != null && enemySkyeAttackAnimationTimer.isRunning()) {
+        enemySkyeAttackAnimationTimer.stop();
+        currentEnemySkyeAttackFrame = 0;
+        enemySkyeAttackFrameCounter = 0;
+        System.out.println("⏹️ Enemy Skye attack animation stopped");
+    }
+}
+
+private void startSkyeDamagedAnimation() {
+    // Stop all other Skye animations
+    stopSkyeIdleAnimation();
+    if (skyeDamagedAnimationTimer != null && skyeDamagedAnimationTimer.isRunning()) {
+        skyeDamagedAnimationTimer.stop();
+    }
+    if (skyeDamagedFrames[0] == null || skyeLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start Skye damaged - frames:" + (skyeDamagedFrames[0]!=null) + " label:" + skyeLargePortraitLabel);
+        return;
+    }
+    currentSkyeDamagedFrame = 0;
+    skyeDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    skyeDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (skyeLargePortraitLabel == null) return;
+            if (!(playerCharacter instanceof characters.Skye)) {
+                stopSkyeDamagedAnimation();
+                return;
+            }
+            skyeDamagedFrameCounter++;
+            int frameTicks = SKYE_DAMAGED_FRAME_DURATIONS[currentSkyeDamagedFrame];
+            if (skyeDamagedFrameCounter >= frameTicks) {
+                skyeDamagedFrameCounter = 0;
+                currentSkyeDamagedFrame = (currentSkyeDamagedFrame + 1) % skyeDamagedFrames.length;
+                ImageIcon frame = skyeDamagedFrames[currentSkyeDamagedFrame];
+                if (frame != null) {
+                    skyeLargePortraitLabel.setIcon(frame);
+                    skyeLargePortraitLabel.repaint();
+                } else {
+                    skyeLargePortraitLabel.setIcon(skyeDamagedFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentSkyeDamagedFrame == skyeDamagedFrames.length - 1) {
+                    // Stop damaged timer before refresh
+                    stopSkyeDamagedAnimation();
+                    skyeDamagedAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        if (skyeLargePortraitLabel != null) {
+                            skyeLargePortraitLabel.setIcon(getCharacterPortrait(playerCharacter));
+                            skyeLargePortraitLabel.repaint();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Skye damaged timer error: " + ex.getMessage());
+            stopSkyeDamagedAnimation();
+        }
+    });
+    skyeDamagedAnimationTimer.start();
+    System.out.println("💥 Skye damaged animation started");
+}
+
+private void stopSkyeDamagedAnimation() {
+    if (skyeDamagedAnimationTimer != null && skyeDamagedAnimationTimer.isRunning()) {
+        skyeDamagedAnimationTimer.stop();
+        currentSkyeDamagedFrame = 0;
+        skyeDamagedFrameCounter = 0;
+        System.out.println("⏹️ Skye damaged animation stopped");
+    }
+}
+
+private void startEnemySkyeDamagedAnimation() {
+    // Stop all other enemy Skye animations
+    stopEnemySkyeIdleAnimation();
+    if (enemySkyeDamagedAnimationTimer != null && enemySkyeDamagedAnimationTimer.isRunning()) {
+        enemySkyeDamagedAnimationTimer.stop();
+    }
+    if (enemySkyeDamagedFrames[0] == null || enemySkyeLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Skye damaged - frames:" + (enemySkyeDamagedFrames[0]!=null) + " label:" + enemySkyeLargePortraitLabel);
+        return;
+    }
+    currentEnemySkyeDamagedFrame = 0;
+    enemySkyeDamagedFrameCounter = 0;
+    final int tickMs = 16;
+    enemySkyeDamagedAnimationTimer = new Timer(tickMs, e -> {
+        try {
+            if (enemySkyeLargePortraitLabel == null) return;
+            if (!(currentEnemy instanceof characters.Skye)) {
+                stopEnemySkyeDamagedAnimation();
+                return;
+            }
+            enemySkyeDamagedFrameCounter++;
+            int frameTicks = SKYE_DAMAGED_FRAME_DURATIONS[currentEnemySkyeDamagedFrame];
+            if (enemySkyeDamagedFrameCounter >= frameTicks) {
+                enemySkyeDamagedFrameCounter = 0;
+                currentEnemySkyeDamagedFrame = (currentEnemySkyeDamagedFrame + 1) % enemySkyeDamagedFrames.length;
+                ImageIcon frame = enemySkyeDamagedFrames[currentEnemySkyeDamagedFrame];
+                if (frame != null) {
+                    enemySkyeLargePortraitLabel.setIcon(frame);
+                    enemySkyeLargePortraitLabel.repaint();
+                } else {
+                    enemySkyeLargePortraitLabel.setIcon(enemySkyeDamagedFrames[0]);
+                }
+                // On last frame, schedule return to idle
+                if (currentEnemySkyeDamagedFrame == enemySkyeDamagedFrames.length - 1) {
+                    // Stop damaged timer before refresh
+                    stopEnemySkyeDamagedAnimation();
+                    enemySkyeDamagedAnimationPlaying = false;
+                    // Small delay before returning to normal portrait
+                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
+                        if (enemySkyeLargePortraitLabel != null) {
+                            enemySkyeLargePortraitLabel.setIcon(getCharacterPortrait(currentEnemy));
+                            enemySkyeLargePortraitLabel.repaint();
+                        }
+                    });
+                    returnTimer.setRepeats(false);
+                    returnTimer.start();
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("⚠️ Enemy Skye damaged timer error: " + ex.getMessage());
+            stopEnemySkyeDamagedAnimation();
+        }
+    });
+    enemySkyeDamagedAnimationTimer.start();
+    System.out.println("💥 Enemy Skye damaged animation started");
+}
+
+private void stopEnemySkyeDamagedAnimation() {
+    if (enemySkyeDamagedAnimationTimer != null && enemySkyeDamagedAnimationTimer.isRunning()) {
+        enemySkyeDamagedAnimationTimer.stop();
+        currentEnemySkyeDamagedFrame = 0;
+        enemySkyeDamagedFrameCounter = 0;
+        System.out.println("⏹️ Enemy Skye damaged animation stopped");
     }
 }
 
@@ -3397,6 +3845,82 @@ private void showEnemyKaelAttackAnimation() {
         } else {
             System.out.println("⚠️ Enemy Kael attack frames not loaded, skipping attack animation");
             enemyKaelAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showSkyeAttackAnimation() {
+    System.out.println("⚔️ showSkyeAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (skyeAttackAnimationPlaying) {
+        System.out.println("⏭️ Skye attack animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof characters.Skye && skyeLargePortraitLabel != null) {
+        if (skyeAttackFrames[0] != null) {
+            startSkyeAttackAnimation();
+        } else {
+            System.out.println("⚠️ Skye attack frames not loaded, skipping attack animation");
+            skyeAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showEnemySkyeAttackAnimation() {
+    System.out.println("⚔️ showEnemySkyeAttackAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemySkyeAttackAnimationPlaying) {
+        System.out.println("⏭️ Enemy Skye attack animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof characters.Skye && enemySkyeLargePortraitLabel != null) {
+        if (enemySkyeAttackFrames[0] != null) {
+            startEnemySkyeAttackAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Skye attack frames not loaded, skipping attack animation");
+            enemySkyeAttackAnimationPlaying = false;
+        }
+    }
+}
+
+private void showSkyeDamagedAnimation() {
+    System.out.println("💥 showSkyeDamagedAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (skyeDamagedAnimationPlaying) {
+        System.out.println("⏭️ Skye damaged animation already playing, skipping...");
+        return;
+    }
+
+    if (playerCharacter instanceof characters.Skye && skyeLargePortraitLabel != null) {
+        if (skyeDamagedFrames[0] != null) {
+            startSkyeDamagedAnimation();
+        } else {
+            System.out.println("⚠️ Skye damaged frames not loaded, skipping damaged animation");
+            skyeDamagedAnimationPlaying = false;
+        }
+    }
+}
+
+private void showEnemySkyeDamagedAnimation() {
+    System.out.println("💥 showEnemySkyeDamagedAnimation called!");
+
+    // Only play once per turn and if not already playing
+    if (enemySkyeDamagedAnimationPlaying) {
+        System.out.println("⏭️ Enemy Skye damaged animation already playing, skipping...");
+        return;
+    }
+
+    if (currentEnemy instanceof characters.Skye && enemySkyeLargePortraitLabel != null) {
+        if (enemySkyeDamagedFrames[0] != null) {
+            startEnemySkyeDamagedAnimation();
+        } else {
+            System.out.println("⚠️ Enemy Skye damaged frames not loaded, skipping damaged animation");
+            enemySkyeDamagedAnimationPlaying = false;
         }
     }
 }
@@ -4846,6 +5370,9 @@ private void setupClickHandlers() {
     if (playerCharacter instanceof Valerius && result == ShotResult.SUNK) {
         showValeriusAttackAnimation();
     }
+    if (playerCharacter instanceof characters.Skye && result == ShotResult.SUNK) {
+        showSkyeAttackAnimation();
+    }
 
     if (currentEnemy instanceof Jiji && result == ShotResult.SUNK) {
         Jiji enemyJiji = (Jiji) currentEnemy;
@@ -4857,6 +5384,9 @@ private void setupClickHandlers() {
     }
     if (currentEnemy instanceof Valerius && result == ShotResult.SUNK) {
         startEnemyValeriusDamagedAnimation();
+    }
+    if (currentEnemy instanceof characters.Skye && result == ShotResult.SUNK) {
+        showEnemySkyeDamagedAnimation();
     }
     } else {
         updateStatusLabel("💧 Miss...", Color.CYAN);
