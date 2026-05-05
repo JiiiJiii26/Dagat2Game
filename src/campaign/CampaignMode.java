@@ -31,8 +31,8 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = false;   
-    private String testEnemyName = "Flue";
+    private boolean testMode = true;   
+    private String testEnemyName = "Skye";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -4489,11 +4489,10 @@ private void startSkyeAttackAnimation() {
                     // Stop attack timer before refresh
                     stopSkyeAttackAnimation();
                     skyeAttackAnimationPlaying = false;
-                    // Small delay before returning to normal portrait
+                    // Small delay before returning to idle animation
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         if (skyeLargePortraitLabel != null) {
-                            skyeLargePortraitLabel.setIcon(getCharacterPortrait(playerCharacter));
-                            skyeLargePortraitLabel.repaint();
+                            startSkyeIdleAnimation();
                         }
                     });
                     returnTimer.setRepeats(false);
@@ -4555,11 +4554,10 @@ private void startEnemySkyeAttackAnimation() {
                     // Stop attack timer before refresh
                     stopEnemySkyeAttackAnimation();
                     enemySkyeAttackAnimationPlaying = false;
-                    // Small delay before returning to normal portrait
+                    // Small delay before returning to idle animation
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         if (enemySkyeLargePortraitLabel != null) {
-                            enemySkyeLargePortraitLabel.setIcon(getCharacterPortrait(currentEnemy));
-                            enemySkyeLargePortraitLabel.repaint();
+                            startEnemySkyeIdleAnimation();
                         }
                     });
                     returnTimer.setRepeats(false);
@@ -4621,11 +4619,10 @@ private void startSkyeDamagedAnimation() {
                     // Stop damaged timer before refresh
                     stopSkyeDamagedAnimation();
                     skyeDamagedAnimationPlaying = false;
-                    // Small delay before returning to normal portrait
+                    // Small delay before returning to idle animation
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         if (skyeLargePortraitLabel != null) {
-                            skyeLargePortraitLabel.setIcon(getCharacterPortrait(playerCharacter));
-                            skyeLargePortraitLabel.repaint();
+                            startSkyeIdleAnimation();
                         }
                     });
                     returnTimer.setRepeats(false);
@@ -4687,11 +4684,10 @@ private void startEnemySkyeDamagedAnimation() {
                     // Stop damaged timer before refresh
                     stopEnemySkyeDamagedAnimation();
                     enemySkyeDamagedAnimationPlaying = false;
-                    // Small delay before returning to normal portrait
+                    // Small delay before returning to idle animation
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         if (enemySkyeLargePortraitLabel != null) {
-                            enemySkyeLargePortraitLabel.setIcon(getCharacterPortrait(currentEnemy));
-                            enemySkyeLargePortraitLabel.repaint();
+                            startEnemySkyeIdleAnimation();
                         }
                     });
                     returnTimer.setRepeats(false);
