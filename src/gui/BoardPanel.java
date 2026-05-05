@@ -516,26 +516,27 @@ public class BoardPanel extends JPanel {
     }
     
     private void initializeLayout() {
-        setLayout(null);
-        int panelWidth = SIZE * cellWidth;
-        int panelHeight = SIZE * cellHeight;
-        setPreferredSize(new Dimension(panelWidth, panelHeight));
-        setMinimumSize(new Dimension(panelWidth, panelHeight));
-        setBounds(0, 0, panelWidth, panelHeight);
-        
-        gridButtons = new JButton[SIZE][SIZE];
-        
-        for (int row = 0; row < SIZE; row++) {
-            for (int col = 0; col < SIZE; col++) {
-                Cell cell = board.getCell(row, col);
-                JButton button = createCellButton(row, col, cell);
-                button.setBounds(col * cellWidth, row * cellHeight, cellWidth, cellHeight);
-                updateButtonAppearance(button, cell, row, col);
-                gridButtons[row][col] = button;
-                add(button);
-            }
+    setLayout(null);
+    int panelWidth = SIZE * cellWidth;
+    int panelHeight = SIZE * cellHeight + 20; 
+    setPreferredSize(new Dimension(panelWidth, panelHeight));
+    setMinimumSize(new Dimension(panelWidth, panelHeight));
+    setMaximumSize(new Dimension(panelWidth, panelHeight));
+    setBounds(0, 0, panelWidth, panelHeight);
+    
+    gridButtons = new JButton[SIZE][SIZE];
+    
+    for (int row = 0; row < SIZE; row++) {
+        for (int col = 0; col < SIZE; col++) {
+            Cell cell = board.getCell(row, col);
+            JButton button = createCellButton(row, col, cell);
+            button.setBounds(col * cellWidth, row * cellHeight, cellWidth, cellHeight); 
+            updateButtonAppearance(button, cell, row, col);
+            gridButtons[row][col] = button;
+            add(button);
         }
     }
+}
     
     private void reinitializeLayout() {
         removeAll();
@@ -606,7 +607,7 @@ public class BoardPanel extends JPanel {
                         int shipWidth, shipHeight;
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.7);
+                            shipHeight = (int)(cellHeight * 1.0);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
@@ -664,7 +665,7 @@ public class BoardPanel extends JPanel {
                             int shipWidth, shipHeight;
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.7);
+                                shipHeight = (int)(cellHeight * 1.0);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -726,7 +727,7 @@ public class BoardPanel extends JPanel {
                             // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.7);
+                                shipHeight = (int)(cellHeight * 1.0);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -788,7 +789,7 @@ public class BoardPanel extends JPanel {
                             // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.7);
+                                shipHeight = (int)(cellHeight * 1.0);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -850,7 +851,7 @@ public class BoardPanel extends JPanel {
                             // Make horizontal and vertical ships the same size
                             if (isHorizontal) {
                                 shipWidth = (maxY - minY + 1) * cellWidth;
-                                shipHeight = (int)(cellHeight * 1.7);
+                                shipHeight = (int)(cellHeight * 1.0);
                             } else {
                                 shipWidth = (int)(cellWidth * 1.7);
                                 shipHeight = (maxX - minX + 1) * cellHeight;
@@ -988,7 +989,7 @@ public class BoardPanel extends JPanel {
                         int shipWidth, shipHeight;
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.7);
+                            shipHeight = (int)(cellHeight * 1.0);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
@@ -1093,7 +1094,7 @@ public class BoardPanel extends JPanel {
                         int shipWidth, shipHeight;
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.7);
+                            shipHeight = (int)(cellHeight * 1.0);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
@@ -1198,7 +1199,7 @@ public class BoardPanel extends JPanel {
                         int shipWidth, shipHeight;
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.7);
+                            shipHeight = (int)(cellHeight * 1.0);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
@@ -1300,7 +1301,7 @@ public class BoardPanel extends JPanel {
                         int shipWidth, shipHeight;
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.7);
+                            shipHeight = (int)(cellHeight * 1.0);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
@@ -1402,7 +1403,7 @@ public class BoardPanel extends JPanel {
                         int shipWidth, shipHeight;
                         if (isHorizontal) {
                             shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.7);
+                            shipHeight = (int)(cellHeight * 1.0);
                         } else {
                             shipWidth = (int)(cellWidth * 1.7);
                             shipHeight = (maxX - minX + 1) * cellHeight;
