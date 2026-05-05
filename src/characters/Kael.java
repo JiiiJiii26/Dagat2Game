@@ -87,8 +87,8 @@ public class Kael extends GameCharacter {
     
     
     Cell destCell = playerBoard.getCell(toX, toY);
-    if (destCell.hasShip() || destCell.isFiredUpon()) {
-        System.out.println("⚠️ Destination is occupied or already damaged!");
+    if (destCell.hasShip()) {
+        System.out.println("⚠️ Destination is occupied by another ship!");
         return false;
     }
     
@@ -106,7 +106,22 @@ public class Kael extends GameCharacter {
         System.out.println("⚠️ Could not find the ship!");
         return false;
     }
-    
+
+    // Count undamaged cells on the ship
+    int undamagedCellCount = 0;
+    for (Ship.Coordinate pos : targetShip.getPositions()) {
+        Cell cell = playerBoard.getCell(pos.getX(), pos.getY());
+        if (!cell.isFiredUpon()) {
+            undamagedCellCount++;
+        }
+    }
+
+    // Don't allow teleporting if ship only has one undamaged cell left
+    if (undamagedCellCount <= 1) {
+        System.out.println("⚠️ Cannot teleport " + targetShip.getName() + " - it only has " + undamagedCellCount + " undamaged cell(s) left!");
+        return false;
+    }
+
     System.out.println("🌑 KAEL uses SHADOW STEP: \"" + targetShip.getName() + " shifts through the shadows!\"");
     spendEnergy(100);
     
