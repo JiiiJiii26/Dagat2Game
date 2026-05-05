@@ -182,14 +182,14 @@ public void onShipSunk() {
             return false;
         }
         
-        System.out.println("⚡ Jiji uses OVERCLOCK: \"Processing power maximum! Synergy mode activated!\"");
+        System.out.println("⚡ Jiji uses OVERCLOCK: \"Makes other skills enhance!\"");
         spendMana(100);
-        
-        
+
+
         overclockActive = true;
         overclockBonusTurns = 2;
         overclockTargets.clear();
-        
+
         System.out.println("⚡ OVERCLOCK ACTIVE for 2 turns!");
         System.out.println("   → Data Leech will mark cells for chain reaction!");
         System.out.println("   → System Overload will trigger on ALL marked cells!");

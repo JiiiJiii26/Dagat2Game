@@ -146,7 +146,7 @@ public class SkillPanel extends JPanel {
     static {
         SKILLS.put("Jiji", new SkillDef[]{
             new SkillDef(1, "DATA LEECH",       50,  true,  false, false, "Reveals 2 random enemy cells. Marks them for chain reactions."),
-            new SkillDef(2, "OVERCLOCK",        120, false, false, false, "Next shot fires twice. Grants extra turn on hit."),
+            new SkillDef(2, "OVERCLOCK",        120, false, false, false, "Makes other skills enhance."),
             new SkillDef(3, "SYSTEM OVERLOAD",  400, true,  false, false, "Reveals a full enemy ship. With Overclock, destroys it."),
         });
         SKILLS.put("Kael", new SkillDef[]{
