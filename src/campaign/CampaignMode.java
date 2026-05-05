@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Kael";
+    private String testEnemyName = "Skye";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -984,6 +984,11 @@ private class WaveBackgroundPanel extends JPanel {
                         Ship.Coordinate pos = sunkShip.getPositions().get(0);
                         enemySkye.useNineLives(enemyBoard, pos.getX(), pos.getY());
                         showEnemySkillMessage("Skye revives one of her ships! Nine Lives!");
+                        // Refresh enemy board to show revived cells as attackable again
+                        if (enemyBoardPanel != null) {
+                            enemyBoardPanel.refreshColors();
+                            enemyBoardPanel.repaint();
+                        }
                     }
                 }
                 break;
