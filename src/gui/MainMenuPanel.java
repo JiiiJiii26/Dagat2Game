@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.Random;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import audio.MusicManager;
 
 public class MainMenuPanel extends JPanel {
     
@@ -87,38 +86,38 @@ public class MainMenuPanel extends JPanel {
     }
     
     private void spawnParticles() {
-        if (random.nextInt(3) == 0) {
-            int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
+    if (random.nextInt(6) == 0) {  
+        int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
+        smokeList.add(new SmokeParticle(
+            pos[0] + random.nextInt(30) - 15,
+            pos[1] + random.nextInt(10),
+            random.nextInt(8) + 6
+        ));
+    }
+    
+    if (random.nextInt(120) == 0) {  
+        int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
+        flashList.add(new CannonFlash(pos[0], pos[1]));
+        
+        for (int i = 0; i < 4; i++) { 
             smokeList.add(new SmokeParticle(
-                pos[0] + random.nextInt(30) - 15,
+                pos[0] + random.nextInt(40) - 20,
                 pos[1] + random.nextInt(10),
-                random.nextInt(8) + 6
+                random.nextInt(12) + 8
             ));
         }
+    }
+    
+    if (random.nextInt(80) == 0) {  
+        int[] pos = SPLASH_POSITIONS[random.nextInt(SPLASH_POSITIONS.length)];
+        int cx = pos[0] + random.nextInt(60) - 30;
+        int cy = pos[1] + random.nextInt(20) - 10;
         
-        if (random.nextInt(60) == 0) {
-            int[] pos = CANNON_POSITIONS[random.nextInt(CANNON_POSITIONS.length)];
-            flashList.add(new CannonFlash(pos[0], pos[1]));
-            
-            for (int i = 0; i < 8; i++) {
-                smokeList.add(new SmokeParticle(
-                    pos[0] + random.nextInt(40) - 20,
-                    pos[1] + random.nextInt(10),
-                    random.nextInt(12) + 8
-                ));
-            }
-        }
-        
-        if (random.nextInt(40) == 0) {
-            int[] pos = SPLASH_POSITIONS[random.nextInt(SPLASH_POSITIONS.length)];
-            int cx = pos[0] + random.nextInt(60) - 30;
-            int cy = pos[1] + random.nextInt(20) - 10;
-            
-            for (int i = 0; i < 12; i++) {
-                splashList.add(new SplashParticle(cx, cy));
-            }
+        for (int i = 0; i < 6; i++) {  
+            splashList.add(new SplashParticle(cx, cy));
         }
     }
+}
     
     private void updateParticles() {
         Iterator<SmokeParticle> si = smokeList.iterator();
