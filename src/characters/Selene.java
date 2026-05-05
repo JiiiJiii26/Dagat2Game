@@ -100,6 +100,23 @@ public class Selene extends GameCharacter {
         starfallLinkCooldown = 0;
         System.out.println("🌙 Selene cooldowns reset!");
     }
+
+    public void resetMoonPhase() {
+        // Reset moon phase to initial state (day time, no night effects)
+        turnCounter = 0;
+        nightTime = false;
+        nightTurnsRemaining = 0;
+        nightStartedThisTurn = false;
+        nightSkillsAvailable = false;
+        eclipseMode = false;
+        eclipseTurns = 0;
+        moonPowerStacks = 0;
+        moonBlessingActive = false;
+        blessingTurns = 0;
+        linkActive = false;
+        linkTurns = 0;
+        linkedCells.clear();
+    }
     
    public void updateMoonPhase() {
     boolean wasNight = nightTime;
@@ -182,8 +199,9 @@ public class Selene extends GameCharacter {
     private void exitNightTime() {
         nightTime = false;
         nightSkillsAvailable = false;
+        turnCounter = 0; // Reset turn counter for next day/night cycle
         System.out.println("🌅 Night ends. Selene returns to normal.");
-        
+
         if (moonPowerStacks > 0) {
             moonPowerStacks = Math.max(0, moonPowerStacks - 2);
             System.out.println("🌙 Moon power decays to " + moonPowerStacks);
@@ -259,10 +277,10 @@ public class Selene extends GameCharacter {
             System.out.println("🌑🌑🌑 SELENE uses LUNAR ECLIPSE!");
         } else if (nightTime) {
             minX = Math.max(0, centerX - 1);
-            maxX = Math.min(9, centerX + 2);
+            maxX = Math.min(9, centerX + 1);
             minY = Math.max(0, centerY - 1);
-            maxY = Math.min(9, centerY + 2);
-            System.out.println("🌙✨ SELENE uses LUNAR REVELATION!");
+            maxY = Math.min(9, centerY + 1);
+            System.out.println("🌙✨ SELENE uses LUNAR STRIKE!");
         } else {
             minX = Math.max(0, centerX - 1);
             maxX = Math.min(9, centerX + 1);
@@ -275,8 +293,15 @@ public class Selene extends GameCharacter {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 Cell cell = enemyBoard.getCell(x, y);
-                if (!cell.isFiredUpon()) {
-                    enemyBoard.fire(x, y);
+                if (nightTime || eclipseMode) {
+                    // Enhanced version: damage (fire) the cells
+                    if (!cell.isFiredUpon()) {
+                        enemyBoard.fire(x, y);
+                        cellsAffected++;
+                    }
+                } else {
+                    // Non-enhanced version: just reveal the cells without damaging
+                    cell.setRevealed(true);
                     cellsAffected++;
                 }
             }
@@ -541,8 +566,8 @@ public class Selene extends GameCharacter {
                 linkedCells.clear();
             }
         }
-        
-        updateMoonPhase();
+
+        // Moon phase is now updated only in campaign mode, not here
     }
     
     public void endTurn() {

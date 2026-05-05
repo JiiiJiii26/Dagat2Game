@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Aeris";
+    private String testEnemyName = "Selene";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -467,11 +467,10 @@ private void startMoonPhaseTimer() {
     
     moonPhaseTimer = new Timer(1000, e -> {
         if (playerCharacter instanceof Selene && !playerTurn) {
-            
+            // Moon phase now advances properly during player turns only
+            // This timer no longer advances moon phase to prevent double advancement
             Selene selene = (Selene) playerCharacter;
-            selene.updateMoonPhase();
-            
-            
+
             if (!selene.isNightTime() && selene.getTurnsUntilNight() > 0) {
                 System.out.println("🌅 Day time. Night in " + selene.getTurnsUntilNight() + " turns");
             }
@@ -830,11 +829,16 @@ private class WaveBackgroundPanel extends JPanel {
 
     private void useSeleneEnemySkill() {
         Selene enemySelene = (Selene) currentEnemy;
-        
+
+        // Reset enemy Selene's moon phase to prevent conflicts with player Selene
+        // Enemy Selene should never be in night time or eclipse mode
+        enemySelene.resetMoonPhase();
+
         int skillChoice = enemyRandom.nextInt(3);
-        
+
         switch(skillChoice) {
-            case 0: 
+            case 0:
+                // Enemy Selene always uses normal mana costs (no night bonuses)
                 if (enemySelene.hasEnoughMana(60)) {
                     System.out.println("🔮 Enemy Selene uses LUNAR REVEAL!");
                     int x = enemyRandom.nextInt(10);
@@ -843,7 +847,8 @@ private class WaveBackgroundPanel extends JPanel {
                     showEnemySkillMessage("Selene reveals a 3x3 area of your board!");
                 }
                 break;
-            case 1: 
+            case 1:
+                // Enemy Selene always uses normal mana costs (no night bonuses)
                 if (enemySelene.hasEnoughMana(120)) {
                     System.out.println("🌙 Enemy Selene uses CRESCENT STRIKE!");
                     int x = enemyRandom.nextInt(10);
@@ -854,7 +859,8 @@ private class WaveBackgroundPanel extends JPanel {
                     }
                 }
                 break;
-            case 2: 
+            case 2:
+                // Enemy Selene always uses normal mana costs (no night bonuses)
                 if (enemySelene.hasEnoughMana(300)) {
                     System.out.println("⭐ Enemy Selene uses STARFALL LINK!");
                     enemySelene.useStarfallLink(playerBoard);
@@ -8578,6 +8584,14 @@ private void setupClickHandlers() {
     enemyBoardPanel.updateCell(row, col, result);
     updateShipCounters();
 
+    // Check for victory after player attack
+    if (enemyBoard.allShipsSunk()) {
+        updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
+        audio.MusicManager.getInstance().playSound("victory");
+        waveComplete();
+        return;
+    }
+
     if (playerCharacter instanceof Jiji) {
         ((Jiji) playerCharacter).updateTurnCounter();
     } else if (playerCharacter instanceof Kael) {
@@ -8640,10 +8654,7 @@ private void enemyTurn() {
         flue.updateVirusSpread(enemyBoard);
     }
     
-    if (playerCharacter instanceof Selene) {
-        Selene selene = (Selene) playerCharacter;
-        selene.updateMoonPhase();
-    }
+    // Selene's moon phase only updates on her turn, not enemy turns
     
     Timer delayTimer = new Timer(500, e -> {
         if (playerCharacter instanceof Skye) {
@@ -9079,10 +9090,10 @@ private void enemyTurn() {
         if (selene.consumeNightJustStarted()) {
             System.out.println("🌙 Night just started! Refreshing UI...");
             updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
-            
+
             if (currentWaveIndex < waves.size()) {
                 createBattleUI(waves.get(currentWaveIndex));
-                return;
+                // Don't return - continue with normal turn setup
             }
         }
         
@@ -9092,7 +9103,7 @@ private void enemyTurn() {
             updateStatusLabel("🌅 Night ends. Skills return to normal.", Color.CYAN);
             if (currentWaveIndex < waves.size()) {
                 createBattleUI(waves.get(currentWaveIndex));
-                return;
+                // Don't return - continue with normal turn setup
             }
         }
     }

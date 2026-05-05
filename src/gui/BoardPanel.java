@@ -1536,7 +1536,21 @@ public class BoardPanel extends JPanel {
             }
             button.setOpaque(false);
             button.setContentAreaFilled(false);
-        } 
+        }
+        else if (cellColor.equals(new Color(255, 200, 100))) { // Revealed ship
+            button.setOpaque(true);
+            button.setContentAreaFilled(true);
+            button.setBackground(new Color(255, 200, 100, 180)); // Semi-transparent orange
+            button.setText("👁️"); // Eye emoji to indicate revealed
+            button.setForeground(Color.BLACK);
+        }
+        else if (cellColor.equals(new Color(200, 200, 150))) { // Revealed empty
+            button.setOpaque(true);
+            button.setContentAreaFilled(true);
+            button.setBackground(new Color(200, 200, 150, 180)); // Semi-transparent light brown
+            button.setText("🔍"); // Magnifying glass to indicate scanned
+            button.setForeground(Color.BLACK);
+        }
         else if (cellColor.equals(Cell.MISS_GRAY)) {
             button.setForeground(Color.WHITE);
             button.setText("•");
@@ -1544,7 +1558,7 @@ public class BoardPanel extends JPanel {
             button.setOpaque(true);
             button.setContentAreaFilled(true);
             button.setBackground(new Color(80, 100, 120, 180));
-        } 
+        }
         else {
             if ((showShips || cell.isRevealed()) && cell.hasShip() && !cell.isFiredUpon()) {
                 if (cell.getShip() != null && cell.getShip().isShielded()) {
