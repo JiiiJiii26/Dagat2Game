@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Skye";
+    private String testEnemyName = "Jiji";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -1936,6 +1936,7 @@ mainPanel.add(topArea, BorderLayout.NORTH);
             
             initJijiIdleFrames();
             initJijiDamagedFrames();
+            initJijiAttackFrames();
             Jiji jiji = (Jiji) playerCharacter;
             if (jiji.isDamaged()) {
                 if (jijiDamagedFrames[0] != null) {
@@ -2493,6 +2494,7 @@ private void initJijiIdleFrames() {
 }
 
 private void startIdleAnimation() {
+    // Ensure damaged animation is not running
     stopDamagedAnimation();
     if (idleAnimationTimer != null && idleAnimationTimer.isRunning()) {
         idleAnimationTimer.stop();
@@ -2503,7 +2505,7 @@ private void startIdleAnimation() {
     }
     currentCycleSlot = 0;
     slotCounter = 0;
-    final int tickMs = 16;
+    final int tickMs = 16; // ~60 FPS base tick
     idleAnimationTimer = new Timer(tickMs, e -> {
         try {
             if (jijiLargePortraitLabel == null) return;
@@ -2515,11 +2517,14 @@ private void startIdleAnimation() {
             int slotTicks = CYCLE_DURATIONS[currentCycleSlot];
             if (slotCounter >= slotTicks) {
                 slotCounter = 0;
+                int prevSlot = currentCycleSlot;
                 currentCycleSlot = (currentCycleSlot + 1) % CYCLE_DURATIONS.length;
+                if (currentCycleSlot == 0) {
+                    System.out.println("🔄 Idle cycle completed, restarting");
+                }
                 int frameIdx = SLOT_FRAME_MAP[currentCycleSlot];
                 ImageIcon baseFrame = jijiIdleFrames[frameIdx];
                 if (baseFrame != null) {
-                    // Simply set the icon – no sway
                     jijiLargePortraitLabel.setIcon(baseFrame);
                 } else {
                     jijiLargePortraitLabel.setIcon(jijiIdleFrames[0]);
@@ -2532,7 +2537,7 @@ private void startIdleAnimation() {
     });
     idleAnimationTimer.start();
     jijiLargePortraitLabel.setIcon(jijiIdleFrames[SLOT_FRAME_MAP[0]]);
-    System.out.println("▶️ Jiji idle animation started (no sway)");
+    System.out.println("▶️ Jiji idle animation started (12-slot pattern)");
 }
 
 
@@ -2558,9 +2563,9 @@ private void initJijiDamagedFrames() {
                     continue;
                 }
                 System.out.println("   Damaged frame " + (i+1) + " raw: " + base.getWidth() + "x" + base.getHeight());
-                Image scaled = base.getScaledInstance(250, 200, Image.SCALE_SMOOTH);
+                Image scaled = base.getScaledInstance(150, 120, Image.SCALE_SMOOTH);
                 jijiDamagedFrames[i] = new ImageIcon(scaled);
-                System.out.println("✅ Loaded damaged frame " + (i + 1) + " → 250x200");
+                System.out.println("✅ Loaded damaged frame " + (i + 1) + " → 150x120");
             } catch (Exception e) {
                 System.out.println("⚠️ Error loading damaged frame " + (i+1) + ": " + e.getMessage());
                 jijiDamagedFrames[i] = null;
@@ -2595,7 +2600,14 @@ private void startDamagedAnimation() {
             int frameTicks = DAMAGED_FRAME_DURATIONS[currentDamagedFrame];
             if (damagedFrameCounter >= frameTicks) {
                 damagedFrameCounter = 0;
-                currentDamagedFrame = (currentDamagedFrame + 1) % jijiDamagedFrames.length;
+                currentDamagedFrame++;
+                if (currentDamagedFrame >= jijiDamagedFrames.length) {
+                    // Animation finished, return to idle
+                    stopDamagedAnimation();
+                    jijiDamagedAnimationPlaying = false;
+                    startIdleAnimation();
+                    return;
+                }
                 ImageIcon frame = jijiDamagedFrames[currentDamagedFrame];
                 if (frame != null) {
                     jijiLargePortraitLabel.setIcon(frame);
@@ -2611,7 +2623,7 @@ private void startDamagedAnimation() {
     damagedAnimationTimer.start();
     // Set initial frame directly (already 250x200 from init)
     jijiLargePortraitLabel.setIcon(jijiDamagedFrames[0]);
-    System.out.println("💢 Jiji damaged animation started (250px width)");
+    System.out.println("💢 Jiji damaged animation started (150px width)");
 }
 
 private void stopDamagedAnimation() {
@@ -2635,7 +2647,7 @@ private void initJijiAttackFrames() {
                     jijiAttackFrames[i] = null;
                     continue;
                 }
-                Image scaled = base.getScaledInstance(250, 200, Image.SCALE_SMOOTH);
+                Image scaled = base.getScaledInstance(150, 120, Image.SCALE_SMOOTH);
                 jijiAttackFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded attack frame " + (i + 1));
             } catch (Exception e) {
@@ -2687,9 +2699,24 @@ private void startAttackAnimation() {
                     stopAttackAnimation();
                     jijiAttackAnimationPlaying = false;
                     jijiAttackPlayedThisTurn = true;
-                    // Small delay before returning to normal portrait
+                    // Small delay before returning to idle/damaged
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
-                        refreshJijiPortrait();
+                        if (playerCharacter instanceof Jiji) {
+                            Jiji jiji = (Jiji) playerCharacter;
+                            if (jiji.isDamaged()) {
+                                if (jijiDamagedFrames[0] != null) {
+                                    startDamagedAnimation();
+                                } else {
+                                    System.out.println("⚠️ Damaged frames not available, showing static");
+                                }
+                            } else {
+                                if (jijiIdleFrames[0] != null) {
+                                    startIdleAnimation();
+                                } else {
+                                    System.out.println("⚠️ Idle frames failed to load, keeping static portrait");
+                                }
+                            }
+                        }
                     });
                     returnTimer.setRepeats(false);
                     returnTimer.start();
@@ -6985,9 +7012,9 @@ private void initEnemyJijiIdleFrames() {
                 g.setTransform(tx);
                 g.drawImage(base, 0, 0, null);
                 g.dispose();
-                // Target dimensions for portrait area (250x200), centered
-                int targetW = 250;
-                int targetH = 200;
+                // Target dimensions for portrait area (150x120), centered - match player size
+                int targetW = 150;
+                int targetH = 120;
                 Image scaled = flipped.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 enemyJijiIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded and flipped enemy idle frame " + (i + 1));
@@ -7038,18 +7065,7 @@ private void startEnemyIdleAnimation() {
                 int frameIdx = SLOT_FRAME_MAP[enemyCurrentIdleFrame];
                 ImageIcon baseFrame = enemyJijiIdleFrames[frameIdx];
                 if (baseFrame != null) {
-                    // Apply subtle per-slot horizontal sway
-                    int offsetX = SLOT_OFFSET_X[enemyCurrentIdleFrame];
-                    if (offsetX != 0) {
-                        BufferedImage shifted = new BufferedImage(250, 200, BufferedImage.TYPE_INT_ARGB);
-                        Graphics2D g = shifted.createGraphics();
-                        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                        g.drawImage(baseFrame.getImage(), offsetX, 0, null);
-                        g.dispose();
-                        enemyJijiLargePortraitLabel.setIcon(new ImageIcon(shifted));
-                    } else {
-                        enemyJijiLargePortraitLabel.setIcon(baseFrame);
-                    }
+                    enemyJijiLargePortraitLabel.setIcon(baseFrame);
                 } else {
                     enemyJijiLargePortraitLabel.setIcon(enemyJijiIdleFrames[0]);
                 }
@@ -7094,9 +7110,9 @@ private void initEnemyJijiDamagedFrames() {
                 g.drawImage(base, 0, 0, null);
                 g.dispose();
                 System.out.println("   Enemy damaged frame " + (i+1) + " raw: " + base.getWidth() + "x" + base.getHeight());
-                Image scaled = flipped.getScaledInstance(250, 200, Image.SCALE_SMOOTH);
+                Image scaled = flipped.getScaledInstance(150, 120, Image.SCALE_SMOOTH);
                 enemyJijiDamagedFrames[i] = new ImageIcon(scaled);
-                System.out.println("✅ Loaded and flipped enemy damaged frame " + (i + 1) + " → 250x200");
+                System.out.println("✅ Loaded and flipped enemy damaged frame " + (i + 1) + " → 150x120");
             } catch (Exception e) {
                 System.out.println("⚠️ Error loading enemy damaged frame " + (i+1) + ": " + e.getMessage());
                 enemyJijiDamagedFrames[i] = null;
@@ -7154,7 +7170,7 @@ private void startEnemyDamagedAnimation() {
     enemyDamagedAnimationTimer.start();
     // Set initial frame directly (already 250x200 from init)
     enemyJijiLargePortraitLabel.setIcon(enemyJijiDamagedFrames[0]);
-    System.out.println("💢 Enemy Jiji damaged animation started (250px width)");
+    System.out.println("💢 Enemy Jiji damaged animation started (150px width)");
 }
 
 private void stopEnemyDamagedAnimation() {
@@ -7186,7 +7202,7 @@ private void initEnemyJijiAttackFrames() {
                 g.setTransform(tx);
                 g.drawImage(base, 0, 0, null);
                 g.dispose();
-                Image scaled = flipped.getScaledInstance(250, 200, Image.SCALE_SMOOTH);
+                Image scaled = flipped.getScaledInstance(150, 120, Image.SCALE_SMOOTH);
                 enemyJijiAttackFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded and flipped enemy attack frame " + (i + 1));
             } catch (Exception e) {
