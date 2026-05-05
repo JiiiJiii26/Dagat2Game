@@ -7678,6 +7678,10 @@ private void executeSkill(int targetX, int targetY) {
                 case 2:
                     System.out.println("Using Fortification.GRID at (" + targetX + "," + targetY + ")");
                     success = flue.useFortification(playerBoard, targetX, targetY);
+                    if (success && playerBoardPanel != null) {
+                        // Specifically update the repaired cell to remove red border
+                        playerBoardPanel.updateCell(targetX, targetY, ShotResult.MISS);
+                    }
                     shouldEndTurn = true;
                     break;
                 case 3:

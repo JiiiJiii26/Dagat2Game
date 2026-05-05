@@ -316,7 +316,10 @@ private Board getEnemyBoard() {
         cell.setFiredUpon(false);
         cell.setHasShip(true);
         cell.setShip(targetShip);
-        
+
+        // Reset board's fired status so the cell can be attacked again
+        playerBoard.resetFiredStatus(targetX, targetY);
+
         targetShip.repair();
         
         System.out.println("🛡️ Cell (" + targetX + "," + targetY + ") on " + targetShip.getName() + " has been REPAIRED!");
