@@ -1,5 +1,5 @@
 package campaign;
-//test comment
+
 import javax.swing.*;
 import javax.swing.border.*;
 import java.util.ArrayList;
