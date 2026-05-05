@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Selene";
+    private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -481,19 +481,22 @@ private void startMoonPhaseTimer() {
 
 private class WaveBackgroundPanel extends JPanel {
     private Image backgroundImage;
+    private Image[] oceanFrames;
+    private int currentOceanFrame = 0;
     private float waveOffset = 0;
    private int shakeX = 0;
         private int shakeY = 0;
         private int shakeIntensity = 0;
         private Color flashColor = null;
         private Timer animTimer;
+        private Timer oceanAnimTimer;
         private boolean animationEnabled = true;
     
     public WaveBackgroundPanel() {
         setLayout(new BorderLayout());
         setOpaque(false);
-        
-        
+
+
         try {
             ImageIcon icon = new ImageIcon("assets/battle_background.png");
             backgroundImage = icon.getImage();
@@ -502,16 +505,34 @@ private class WaveBackgroundPanel extends JPanel {
             System.out.println("⚠️ Could not load background image");
         }
 
-        
+        // Load ocean animation frames
+        oceanFrames = new Image[3];
+        boolean oceanLoaded = false;
+        for (int i = 0; i < 3; i++) {
+            try {
+                ImageIcon oceanIcon = new ImageIcon("assets/oceanfloor" + (i + 1) + ".jpg");
+                oceanFrames[i] = oceanIcon.getImage();
+                System.out.println("✅ Ocean frame " + (i + 1) + " loaded!");
+                oceanLoaded = true;
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not load oceanfloor" + (i + 1) + ".jpg");
+                oceanFrames[i] = null;
+            }
+        }
+
+        if (!oceanLoaded) {
+            System.out.println("⚠️ No ocean frames loaded, using static background");
+        }
+
         animTimer = new Timer(30, e -> {
             if (!animationEnabled) return;
-            
+
             waveOffset += 0.05f;
-            
+
             if (shakeIntensity > 0) {
                 shakeX = (int)((Math.random() - 0.5) * shakeIntensity);
                 shakeY = (int)((Math.random() - 0.5) * shakeIntensity);
-                shakeIntensity -= 2; 
+                shakeIntensity -= 2;
             } else {
                 shakeX = 0;
                 shakeY = 0;
@@ -519,6 +540,16 @@ private class WaveBackgroundPanel extends JPanel {
             repaint();
         });
         animTimer.start();
+
+        // Ocean animation timer - cycle through frames every 500ms
+        if (oceanLoaded) {
+            oceanAnimTimer = new Timer(500, e -> {
+                if (!animationEnabled) return;
+                currentOceanFrame = (currentOceanFrame + 1) % oceanFrames.length;
+            });
+            oceanAnimTimer.start();
+            System.out.println("🌊 Ocean animation started!");
+        }
     }
 
     public void triggerShake(int intensity) {
@@ -547,11 +578,16 @@ private class WaveBackgroundPanel extends JPanel {
         int height = getHeight();
         
         
-        if (backgroundImage != null) {
+        // Draw ocean animation frames if available
+        boolean oceanDrawn = false;
+        if (oceanFrames != null && oceanFrames[currentOceanFrame] != null) {
+            g2d.drawImage(oceanFrames[currentOceanFrame], 0, 0, width, height, this);
+            oceanDrawn = true;
+        } else if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, width, height, this);
         } else {
-            
-            GradientPaint gp = new GradientPaint(0, 0, new Color(20, 40, 80), 
+
+            GradientPaint gp = new GradientPaint(0, 0, new Color(20, 40, 80),
                                                    0, height, new Color(10, 20, 50));
             g2d.setPaint(gp);
             g2d.fillRect(0, 0, width, height);
@@ -579,6 +615,9 @@ private class WaveBackgroundPanel extends JPanel {
     public void stopAnimation() {
         if (animTimer != null) {
                 animTimer.stop();
+        }
+        if (oceanAnimTimer != null) {
+            oceanAnimTimer.stop();
         }
     }
 }
