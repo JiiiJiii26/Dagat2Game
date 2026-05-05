@@ -590,30 +590,32 @@ public class BoardPanel extends JPanel {
        
         boolean canShowShips = showShips || (board != null && !board.getShips().isEmpty() && hasAnyRevealedShips());
         
-        if (canShowShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
-            for (Ship ship : board.getShips()) {
-                if ("Carrier".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
-                    List<Ship.Coordinate> positions = ship.getPositions();
-                    if (positions.size() >= 2) {
-                        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
-                        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
-                        for (Ship.Coordinate pos : positions) {
-                            minX = Math.min(minX, pos.getX());
-                            minY = Math.min(minY, pos.getY());
-                            maxX = Math.max(maxX, pos.getX());
-                            maxY = Math.max(maxY, pos.getY());
-                        }
-                        boolean isHorizontal = (maxY - minY) > (maxX - minX);
-                        int shipWidth, shipHeight;
-                        if (isHorizontal) {
-                            shipWidth = (maxY - minY + 1) * cellWidth;
-                            shipHeight = (int)(cellHeight * 1.0);
-                        } else {
-                            shipWidth = (int)(cellWidth * 1.7);
-                            shipHeight = (maxX - minX + 1) * cellHeight;
-                        }
-                        int drawX = minY * cellWidth;
-                        int drawY = minX * cellHeight + carrierOffset;
+            if (canShowShips && carrierImageRaw != null && board != null && !board.getShips().isEmpty()) {
+                for (Ship ship : board.getShips()) {
+                    if ("Carrier".equals(ship.getName()) && !ship.isSunk() && (showShips || ship.isFullyRevealed())) {
+                        List<Ship.Coordinate> positions = ship.getPositions();
+                        if (positions.size() >= 2) {
+                            int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                            int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+                            for (Ship.Coordinate pos : positions) {
+                                minX = Math.min(minX, pos.getX());
+                                minY = Math.min(minY, pos.getY());
+                                maxX = Math.max(maxX, pos.getX());
+                                maxY = Math.max(maxY, pos.getY());
+                            }
+                            boolean isHorizontal = (maxY - minY) > (maxX - minX);
+                            int shipWidth, shipHeight;
+                            if (isHorizontal) {
+                                shipWidth = (maxY - minY + 1) * cellWidth;
+                                shipHeight = (int)(cellHeight * 1.0);
+                            } else {
+                                shipWidth = (int)(cellWidth * 1.7);
+                                shipHeight = (maxX - minX + 1) * cellHeight;
+                            }
+                            int drawX = minY * cellWidth;
+                            int drawY = minX * cellHeight + carrierOffset;
+
+
                         
                         // For vertical ships, center the image properly
                         if (!isHorizontal && carrierImageRaw != null) {
@@ -635,13 +637,9 @@ public class BoardPanel extends JPanel {
                             Image scaledRotated = rotatedCarrier.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
                             g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
                         } else if (carrierImageRaw != null) {
-                            // For horizontal ships, center vertically
-                            int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
-                            int offsetY = extraHeight / 2;
-                            int centeredDrawY = drawY - offsetY;
-                            
-                            Image scaledCarrier = carrierImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
-                            g.drawImage(scaledCarrier, drawX, centeredDrawY, null);
+                             // Horizontal ships fill the cell height, no vertical centering needed
+                             Image scaledCarrier = carrierImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                             g.drawImage(scaledCarrier, drawX, drawY, null);
                         }
                     }
                     break;
@@ -692,14 +690,10 @@ public class BoardPanel extends JPanel {
                                 // Scale to fit
                                 Image scaledRotated = rotatedBattleship.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
-                            } else if (battleshipImageRaw != null) {
-                                // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
-                                int offsetY = extraHeight / 2;
-                                int centeredDrawY = drawY - offsetY;
-                                
-                                Image scaledBattleship = battleshipImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
-                                g.drawImage(scaledBattleship, drawX, centeredDrawY, null);
+                             } else if (battleshipImageRaw != null) {
+                                 // Horizontal ships fill the cell height, no vertical centering needed
+                                 Image scaledBattleship = battleshipImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                 g.drawImage(scaledBattleship, drawX, drawY, null);
                             }
                         }
                         break;
@@ -754,14 +748,10 @@ public class BoardPanel extends JPanel {
                                 // Scale to fit
                                 Image scaledRotated = rotatedCruiser.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
-                            } else if (cruiserImageRaw != null) {
-                                // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
-                                int offsetY = extraHeight / 2;
-                                int centeredDrawY = drawY - offsetY;
-                                
-                                Image scaledCruiser = cruiserImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
-                                g.drawImage(scaledCruiser, drawX, centeredDrawY, null);
+                             } else if (cruiserImageRaw != null) {
+                                 // Horizontal ships fill the cell height, no vertical centering needed
+                                 Image scaledCruiser = cruiserImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                 g.drawImage(scaledCruiser, drawX, drawY, null);
                             }
                         }
                         break;
@@ -816,14 +806,10 @@ public class BoardPanel extends JPanel {
                                 // Scale to fit
                                 Image scaledRotated = rotatedSubmarine.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
-                            } else if (submarineImageRaw != null) {
-                                // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
-                                int offsetY = extraHeight / 2;
-                                int centeredDrawY = drawY - offsetY;
-                                
-                                Image scaledSubmarine = submarineImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
-                                g.drawImage(scaledSubmarine, drawX, centeredDrawY, null);
+                             } else if (submarineImageRaw != null) {
+                                 // Horizontal ships fill the cell height, no vertical centering needed
+                                 Image scaledSubmarine = submarineImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                 g.drawImage(scaledSubmarine, drawX, drawY, null);
                             }
                         }
                         break;
@@ -878,14 +864,10 @@ public class BoardPanel extends JPanel {
                                 // Scale to fit
                                 Image scaledRotated = rotatedDestroyer.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
                                 g.drawImage(scaledRotated, minY * cellWidth - offsetX, drawY, null);
-                            } else if (destroyerImageRaw != null) {
-                                // For horizontal ships, center vertically
-                                int extraHeight = (int)(cellHeight * 1.7) - cellHeight;
-                                int offsetY = extraHeight / 2;
-                                int centeredDrawY = drawY - offsetY;
-                                
-                                Image scaledDestroyer = destroyerImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
-                                g.drawImage(scaledDestroyer, drawX, centeredDrawY, null);
+                             } else if (destroyerImageRaw != null) {
+                                 // Horizontal ships fill the cell height, no vertical centering needed
+                                 Image scaledDestroyer = destroyerImageRaw.getScaledInstance(shipWidth, shipHeight, Image.SCALE_SMOOTH);
+                                 g.drawImage(scaledDestroyer, drawX, drawY, null);
                             }
                         }
                         break;

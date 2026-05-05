@@ -183,7 +183,7 @@ public class Board {
         if (!isValidPlacement(ship, startX, startY, horizontal)) {
             return false;
         }
-        
+
         if (horizontal) {
             for (int i = 0; i < ship.getSize(); i++) {
                 grid[startX][startY + i].placeShip(ship);
@@ -193,7 +193,7 @@ public class Board {
                 grid[startX + i][startY].placeShip(ship);
             }
         }
-        
+
         ships.add(ship);
         return true;
     }
