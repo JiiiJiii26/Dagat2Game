@@ -31,7 +31,7 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = true;   
+    private boolean testMode = false;   
     private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
@@ -1290,12 +1290,9 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
     private void placeEnemyShips(GameCharacter enemy, Board board) {
-        if (enemy instanceof Jiji || enemy instanceof Kael || enemy instanceof Valerius || enemy instanceof Skye) {
-            placeRandomShips(board);
-        } else {
-            placeDefaultShips(board);
-        }
-    }
+    // All enemies now get random ship placement
+    placeRandomShips(board);
+}
     
     private void placeDefaultShips(Board board) {
         board.placeShip(new Ship("Carrier", 5), 0, 0, true);
@@ -7099,6 +7096,13 @@ private void executeSkill(int targetX, int targetY) {
             turnTimer.startTimer();
         }
     }
+
+    // Check if skill killed all enemy ships
+        if (success && enemyBoard.allShipsSunk()) {
+            updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
+            waveComplete();
+            return;
+        }
 }
 
 private String getShipCountText(Board board) {
