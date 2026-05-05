@@ -1599,9 +1599,9 @@ mainPanel.add(topArea, BorderLayout.NORTH);
     enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
     playerBoardPanel.setCellWidth(92);
-    playerBoardPanel.setCellHeight(64);
+    playerBoardPanel.setCellHeight(61);
     enemyBoardPanel.setCellWidth(92);
-    enemyBoardPanel.setCellHeight(66);
+    enemyBoardPanel.setCellHeight(61);
     if (playerCharacter instanceof Flue) {
         ((Flue) playerCharacter).setEnemyBoard(enemyBoard);
     }
