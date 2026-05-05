@@ -178,18 +178,14 @@ public class Aeris extends GameCharacter {
         double missingPercent = (double) missingHP / maxHealth;
         
         
-        int cellsToDestroy = 6 + (int)(missingPercent * 4); 
-        
         System.out.println("⚔️ AERIS uses RELENTLESS ASCENT: \"My pain is my power!\"");
-        System.out.println("📈 Missing HP: " + missingHP + "/" + maxHealth + " (" + (int)(missingPercent * 100) + "%)");
-        System.out.println("💥 Cells targeted: " + cellsToDestroy);
         spendMana(500);
-        
+
         int cellsDestroyed = 0;
-        StringBuilder hitReport = new StringBuilder("⚔️ Relentless Ascent destroys column " + targetY + ":\n");
-        
-        
-        for (int row = 0; row < cellsToDestroy; row++) {
+        StringBuilder hitReport = new StringBuilder("⚔️ Relentless Ascent destroys entire column " + targetY + ":\n");
+
+
+        for (int row = 0; row < 10; row++) {
             Cell cell = enemyBoard.getCell(row, targetY);
             
             if (!cell.isFiredUpon()) {

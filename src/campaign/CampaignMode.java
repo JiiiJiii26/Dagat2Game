@@ -32,7 +32,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Skye";
+    private String testEnemyName = "Aeris";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
