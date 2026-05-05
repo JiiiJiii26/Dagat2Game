@@ -1565,9 +1565,9 @@ mainPanel.add(topArea, BorderLayout.NORTH);
     enemyBoardPanel = new BoardPanel(false, enemyBoard, false);
     
     playerBoardPanel.setCellWidth(92);
-playerBoardPanel.setCellHeight(64);
-enemyBoardPanel.setCellWidth(92);
-enemyBoardPanel.setCellHeight(64);
+    playerBoardPanel.setCellHeight(64);
+    enemyBoardPanel.setCellWidth(92);
+    enemyBoardPanel.setCellHeight(66);
     if (playerCharacter instanceof Flue) {
         ((Flue) playerCharacter).setEnemyBoard(enemyBoard);
     }
@@ -1607,56 +1607,199 @@ enemyBoardPanel.setCellHeight(64);
     boardArea.setOpaque(false);
     boardArea.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
     
-    // Left board (player)
-    JPanel leftBoardFrame = new JPanel(new BorderLayout());
+    // ===================================================================
+    // LEFT BOARD (PLAYER) - Professional TideBound Design
+    // ===================================================================
+    JPanel leftBoardFrame = new JPanel(new BorderLayout()) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            int w = getWidth(), h = getHeight();
+            
+            // Deep frame with industrial styling
+            Color FRAME_SHADOW = new Color(0x08, 0x18, 0x1A);
+            Color FRAME_FILL = new Color(0x1E, 0x45, 0x48);
+            Color FRAME_BORDER = new Color(0x3A, 0x7A, 0x7E);
+            Color CYAN_ACCENT = new Color(0x5F, 0xD4, 0xE0);
+            
+            // Shadow
+            g2.setColor(FRAME_SHADOW);
+            g2.fillRoundRect(3, 3, w - 6, h - 6, 8, 8);
+            
+            // Frame fill
+            g2.setPaint(new GradientPaint(0, 0, FRAME_FILL, 0, h, FRAME_SHADOW));
+            g2.fillRoundRect(0, 0, w - 6, h - 6, 8, 8);
+            
+            // Border
+            g2.setStroke(new BasicStroke(2.0f));
+            g2.setColor(FRAME_BORDER);
+            g2.drawRoundRect(1, 1, w - 8, h - 8, 8, 8);
+            
+            // Inner cyan accent glow
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.setColor(new Color(0x5F, 0xD4, 0xE0, 60));
+            g2.drawRoundRect(3, 3, w - 12, h - 12, 6, 6);
+            
+            // Corner rivets
+            Color RIVET = new Color(0x6B, 0x4A, 0x2A);
+            int rivetSize = 8;
+            int rivetInset = 12;
+            g2.setColor(RIVET);
+            g2.fillOval(rivetInset, rivetInset, rivetSize, rivetSize);
+            g2.fillOval(w - rivetInset - rivetSize - 6, rivetInset, rivetSize, rivetSize);
+            g2.fillOval(rivetInset, h - rivetInset - rivetSize - 6, rivetSize, rivetSize);
+            g2.fillOval(w - rivetInset - rivetSize - 6, h - rivetInset - rivetSize - 6, rivetSize, rivetSize);
+            
+            g2.dispose();
+        }
+    };
     leftBoardFrame.setOpaque(false);
-    leftBoardFrame.setBorder(BorderFactory.createTitledBorder(
-        BorderFactory.createLineBorder(new Color(0, 255, 0, 150), 2),
-        "⚓ YOUR FLEET",
-        TitledBorder.CENTER,
-        TitledBorder.TOP,
-        new Font("Arial", Font.BOLD, 16),
-        new Color(0, 255, 0, 200)
-    ));
+    leftBoardFrame.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
     
-    JPanel charInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-    charInfoPanel.setOpaque(false);
-    JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName());
-    charNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-    charNameLabel.setForeground(Color.CYAN);
-    charInfoPanel.add(charNameLabel);
-    leftBoardFrame.add(charInfoPanel, BorderLayout.NORTH);
+    // Header with character name
+    JPanel leftHeaderPanel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            int w = getWidth(), h = getHeight();
+            Color CYAN_ACCENT = new Color(0x5F, 0xD4, 0xE0);
+            
+            // Title text
+            g2.setFont(new Font("Consolas", Font.BOLD, 14));
+            String title = "⚓ YOUR FLEET";
+            FontMetrics fm = g2.getFontMetrics();
+            int x = (w - fm.stringWidth(title)) / 2;
+            int y = h / 2 + fm.getAscent() / 2;
+            
+            g2.setColor(new Color(0, 0, 0, 100));
+            g2.drawString(title, x + 1, y + 1);
+            g2.setColor(CYAN_ACCENT);
+            g2.drawString(title, x, y);
+            
+            g2.dispose();
+        }
+    };
+    leftHeaderPanel.setOpaque(false);
+    leftHeaderPanel.setPreferredSize(new Dimension(0, 40));
+    
+    JLabel charNameLabel = new JLabel(getCharacterEmoji(playerCharacter) + " " + playerCharacter.getName(), SwingConstants.CENTER);
+    charNameLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    charNameLabel.setForeground(new Color(0x5F, 0xD4, 0xE0));
+    
+    JPanel leftTopWrapper = new JPanel(new BorderLayout());
+    leftTopWrapper.setOpaque(false);
+    leftTopWrapper.add(leftHeaderPanel, BorderLayout.CENTER);
+    leftTopWrapper.add(charNameLabel, BorderLayout.SOUTH);
+    
+    leftBoardFrame.add(leftTopWrapper, BorderLayout.NORTH);
     leftBoardFrame.add(playerBoardPanel, BorderLayout.CENTER);
     
     playerShipLabel = new JLabel(getShipCountText(playerBoard), SwingConstants.CENTER);
-    playerShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
-    playerShipLabel.setForeground(Color.WHITE);
+    playerShipLabel.setFont(new Font("Consolas", Font.BOLD, 11));
+    playerShipLabel.setForeground(new Color(0xE8, 0xF4, 0xF6));
     leftBoardFrame.add(playerShipLabel, BorderLayout.SOUTH);
     
-    // Right board (enemy)
-    JPanel rightBoardFrame = new JPanel(new BorderLayout());
+    // ===================================================================
+    // RIGHT BOARD (ENEMY) - Professional TideBound Design
+    // ===================================================================
+    JPanel rightBoardFrame = new JPanel(new BorderLayout()) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            int w = getWidth(), h = getHeight();
+            
+            // Deep frame with industrial styling
+            Color FRAME_SHADOW = new Color(0x08, 0x18, 0x1A);
+            Color FRAME_FILL = new Color(0x1E, 0x45, 0x48);
+            Color FRAME_BORDER = new Color(0x3A, 0x7A, 0x7E);
+            
+            // Shadow
+            g2.setColor(FRAME_SHADOW);
+            g2.fillRoundRect(3, 3, w - 6, h - 6, 8, 8);
+            
+            // Frame fill
+            g2.setPaint(new GradientPaint(0, 0, FRAME_FILL, 0, h, FRAME_SHADOW));
+            g2.fillRoundRect(0, 0, w - 6, h - 6, 8, 8);
+            
+            // Border
+            g2.setStroke(new BasicStroke(2.0f));
+            g2.setColor(FRAME_BORDER);
+            g2.drawRoundRect(1, 1, w - 8, h - 8, 8, 8);
+            
+            // Inner red accent for enemy
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.setColor(new Color(255, 100, 100, 60));
+            g2.drawRoundRect(3, 3, w - 12, h - 12, 6, 6);
+            
+            // Corner rivets
+            Color RIVET = new Color(0x6B, 0x4A, 0x2A);
+            int rivetSize = 8;
+            int rivetInset = 12;
+            g2.setColor(RIVET);
+            g2.fillOval(rivetInset, rivetInset, rivetSize, rivetSize);
+            g2.fillOval(w - rivetInset - rivetSize - 6, rivetInset, rivetSize, rivetSize);
+            g2.fillOval(rivetInset, h - rivetInset - rivetSize - 6, rivetSize, rivetSize);
+            g2.fillOval(w - rivetInset - rivetSize - 6, h - rivetInset - rivetSize - 6, rivetSize, rivetSize);
+            
+            g2.dispose();
+        }
+    };
     rightBoardFrame.setOpaque(false);
-    rightBoardFrame.setBorder(BorderFactory.createTitledBorder(
-        BorderFactory.createLineBorder(new Color(255, 0, 0, 150), 2),
-        "ENEMY WATERS",
-        TitledBorder.CENTER,
-        TitledBorder.TOP,
-        new Font("Arial", Font.BOLD, 16),
-        new Color(255, 0, 0, 200)
-    ));
+    rightBoardFrame.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
     
-    JPanel enemyTopPanel = new JPanel(new BorderLayout());
-    enemyTopPanel.setOpaque(false);
+    // Header with enemy name
+    JPanel rightHeaderPanel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            int w = getWidth(), h = getHeight();
+            Color RED_ACCENT = new Color(0xE0, 0x5F, 0x5F);
+            
+            // Title text
+            g2.setFont(new Font("Consolas", Font.BOLD, 14));
+            String title = "⚔ ENEMY WATERS";
+            FontMetrics fm = g2.getFontMetrics();
+            int x = (w - fm.stringWidth(title)) / 2;
+            int y = h / 2 + fm.getAscent() / 2;
+            
+            g2.setColor(new Color(0, 0, 0, 100));
+            g2.drawString(title, x + 1, y + 1);
+            g2.setColor(RED_ACCENT);
+            g2.drawString(title, x, y);
+            
+            g2.dispose();
+        }
+    };
+    rightHeaderPanel.setOpaque(false);
+    rightHeaderPanel.setPreferredSize(new Dimension(0, 40));
+    
     JLabel enemyNameLabel = new JLabel(currentEnemy.getName(), SwingConstants.CENTER);
-    enemyNameLabel.setFont(new Font("Arial", Font.BOLD, 16));
-    enemyNameLabel.setForeground(Color.ORANGE);
-    enemyTopPanel.add(enemyNameLabel, BorderLayout.CENTER);
-    rightBoardFrame.add(enemyTopPanel, BorderLayout.NORTH);
+    enemyNameLabel.setFont(new Font("Arial", Font.BOLD, 12));
+    enemyNameLabel.setForeground(new Color(0xFF, 0xA5, 0x00));
+    
+    JPanel rightTopWrapper = new JPanel(new BorderLayout());
+    rightTopWrapper.setOpaque(false);
+    rightTopWrapper.add(rightHeaderPanel, BorderLayout.CENTER);
+    rightTopWrapper.add(enemyNameLabel, BorderLayout.SOUTH);
+    
+    rightBoardFrame.add(rightTopWrapper, BorderLayout.NORTH);
     rightBoardFrame.add(enemyBoardPanel, BorderLayout.CENTER);
     
     enemyShipLabel = new JLabel(getShipCountText(enemyBoard), SwingConstants.CENTER);
-    enemyShipLabel.setFont(new Font("Arial", Font.BOLD, 12));
-    enemyShipLabel.setForeground(Color.WHITE);
+    enemyShipLabel.setFont(new Font("Consolas", Font.BOLD, 11));
+    enemyShipLabel.setForeground(new Color(0xE8, 0xF4, 0xF6));
     rightBoardFrame.add(enemyShipLabel, BorderLayout.SOUTH);
     
     boardArea.add(leftBoardFrame);
