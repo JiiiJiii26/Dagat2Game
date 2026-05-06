@@ -193,6 +193,8 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         }
     }
 
+
+
     // Semi-transparent colored banner with player label
     private JPanel createPlayerBanner(String text, Color color) {
         JPanel banner = new JPanel(new BorderLayout()) {

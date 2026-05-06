@@ -31,8 +31,8 @@ public class CampaignMode {
    
 
 
-    private boolean testMode = false;   
-    private String testEnemyName = "Flue";
+    private boolean testMode = true;   
+    private String testEnemyName = "Selene";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
