@@ -32,12 +32,51 @@ public class Main {
     private static MultiplayerBattlePanel multiplayerBattlePanel;
 
     public static void main(String[] args) {
+        // Debug system information
+        System.out.println("=== Tidebound Debug Info ===");
+        System.out.println("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+        System.out.println("Java: " + System.getProperty("java.version"));
+        System.out.println("User: " + System.getProperty("user.name"));
+
+        // Check screen information
+        java.awt.GraphicsEnvironment ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
+        java.awt.GraphicsDevice[] gs = ge.getScreenDevices();
+        for (int i = 0; i < gs.length; i++) {
+            java.awt.DisplayMode dm = gs[i].getDisplayMode();
+            System.out.println("Screen " + i + ": " + dm.getWidth() + "x" + dm.getHeight() + " @ " + dm.getRefreshRate() + "Hz");
+        }
+
+        // Check available fonts (first 10)
+        String[] fonts = ge.getAvailableFontFamilyNames();
+        System.out.println("Available fonts (first 10): ");
+        for (int i = 0; i < Math.min(10, fonts.length); i++) {
+            System.out.println("  - " + fonts[i]);
+        }
+        boolean hasPressStart = false;
+        for (String font : fonts) {
+            if (font.equalsIgnoreCase("Press Start 2P")) {
+                hasPressStart = true;
+                break;
+            }
+        }
+        System.out.println("Press Start 2P available: " + hasPressStart);
+        System.out.println("============================");
+
         frame = new JFrame("🌊 Tidebound - Naval Battle 🌊");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
         frame.setMinimumSize(new Dimension(900, 700));
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setLocationRelativeTo(null);
+
+        // Try to enable better rendering on high-DPI displays
+        try {
+            System.setProperty("sun.java2d.uiScale", "1.0");
+            System.setProperty("awt.useSystemAAFontSettings", "on");
+            System.setProperty("swing.aatext", "true");
+        } catch (Exception e) {
+            System.out.println("Could not set rendering properties: " + e.getMessage());
+        }
 
         showMainMenu();
     }

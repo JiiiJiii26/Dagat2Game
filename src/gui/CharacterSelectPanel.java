@@ -153,17 +153,31 @@ public class CharacterSelectPanel extends JPanel {
     }
 
     private void loadCustomFont() {
-        try {
-            File fontFile = new File("assets/pixel_font.ttf");
-            if (fontFile.exists()) {
-                customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
-                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(customFont);
-            } else {
-                customFont = new Font("Monospaced", Font.BOLD, 16);
+        // Use the same font picking logic as other UI panels for consistency
+        customFont = pickFont(16f, Font.BOLD);
+        System.out.println("CharacterSelectPanel using font: " + customFont.getFamily());
+    }
+
+    private static Font pickFont(float size, int style) {
+        String[] candidates = {"Press Start 2P", "Consolas", "Monospaced"};
+        for (String name : candidates) {
+            Font f = new Font(name, style, (int) size);
+            // More reliable font detection - check if the font name is available
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            String[] availableFonts = ge.getAvailableFontFamilyNames();
+            boolean fontAvailable = false;
+            for (String availableFont : availableFonts) {
+                if (availableFont.equalsIgnoreCase(name)) {
+                    fontAvailable = true;
+                    break;
+                }
             }
-        } catch (Exception e) {
-            customFont = new Font("Monospaced", Font.BOLD, 16);
+            if (fontAvailable || name.equals("Monospaced")) {
+                System.out.println("Selected font: " + name + " for " + (fontAvailable ? "available" : "fallback"));
+                return f;
+            }
         }
+        return new Font(Font.MONOSPACED, style, (int) size);
     }
 
     private void loadImages() {

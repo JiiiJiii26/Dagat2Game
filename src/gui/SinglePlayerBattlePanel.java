@@ -79,9 +79,21 @@ public class SinglePlayerBattlePanel extends JPanel {
     
     private static Font pickFont(float size, int style) {
         String[] candidates = {"Press Start 2P", "Consolas", "Monospaced"};
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        String[] availableFonts = ge.getAvailableFontFamilyNames();
+
         for (String name : candidates) {
-            Font f = new Font(name, style, (int) size);
-            if (f.getFamily().equalsIgnoreCase(name) || name.equals("Monospaced")) return f;
+            boolean fontAvailable = false;
+            for (String availableFont : availableFonts) {
+                if (availableFont.equalsIgnoreCase(name)) {
+                    fontAvailable = true;
+                    break;
+                }
+            }
+            if (fontAvailable || name.equals("Monospaced")) {
+                Font f = new Font(name, style, (int) size);
+                return f;
+            }
         }
         return new Font(Font.MONOSPACED, style, (int) size);
     }
