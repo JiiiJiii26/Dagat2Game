@@ -33,7 +33,7 @@ public class CampaignMode {
 
 
     private boolean testMode = true;   
-    private String testEnemyName = "Selene";
+    private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
@@ -109,43 +109,104 @@ private SkillPanel currentSkillPanel;
 private boolean waitingForSeleneCrescent = false;
 private boolean jijiAttackAnimationPlaying = false;
 private boolean jijiAttackPlayedThisTurn = false;
-private boolean jijiDamagedAnimationPlaying = false;
 private ImageIcon[] jijiIdleFrames = new ImageIcon[4];
-private Timer idleAnimationTimer;
-private int currentCycleSlot = 0;
-private int slotCounter = 0;
 private static final int[] CYCLE_DURATIONS = {18,36,18,36,18,36,18,36,18,36,54,72};
 private static final int[] SLOT_FRAME_MAP = {0,1,0,1,0,1,0,1,0,1,2,3};
-// Subtle sway offsets per slot (px) - gentle side-to-side motion
-private static final int[] SLOT_OFFSET_X = {0, 1, -1, 1, -1, 1, 0, 1, -1, 1, 0, 0};
 
 // Damaged animation frames (4 PNGs)
 private ImageIcon[] jijiDamagedFrames = new ImageIcon[4];
-private Timer damagedAnimationTimer;
-private int currentDamagedFrame = 0;
-private int damagedFrameCounter = 0;
 private static final int[] DAMAGED_FRAME_DURATIONS = {6, 6, 6, 12}; // ticks (~0.5s cycle)
 
 // Attack animation frames (4 PNGs)
 private ImageIcon[] jijiAttackFrames = new ImageIcon[4];
-private Timer attackAnimationTimer;
-private int currentAttackFrame = 0;
-private int attackFrameCounter = 0;
 private static final int[] ATTACK_FRAME_DURATIONS = {4, 4, 4, 8}; // ticks (~0.4s total)
 private CharacterAnimation jijiAnimation;
 private Runnable jijiStartIdle = () -> {
-    if (jijiAnimation != null) jijiAnimation.start(CharacterAnimation.State.IDLE);
+    System.out.println("jijiStartIdle called");
+    if (jijiAnimation != null) {
+        if (playerCharacter instanceof Jiji && ((Jiji) playerCharacter).isDamaged()) {
+            System.out.println("Starting damaged");
+            jijiAnimation.start(CharacterAnimation.State.DAMAGED);
+        } else {
+            System.out.println("Starting idle");
+            jijiAnimation.start(CharacterAnimation.State.IDLE);
+        }
+    }
+};
+private ImageIcon[] kaelIdleFrames = new ImageIcon[5];
+private static final int[] KAEL_IDLE_SEQUENCE = {0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,1,3,4};
+private static final int[] VALERIUS_IDLE_SEQUENCE = {0,1,2,3};
+private CharacterAnimation kaelAnimation;
+private Runnable kaelStartIdle = () -> {
+    if (kaelAnimation != null) {
+        kaelAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation valeriusAnimation;
+private Runnable valeriusStartIdle = () -> {
+    if (valeriusAnimation != null) {
+        valeriusAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation skyeAnimation;
+private Runnable skyeStartIdle = () -> {
+    if (skyeAnimation != null) {
+        skyeAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation enemySkyeAnimation;
+private Runnable enemySkyeStartIdle = () -> {
+    if (enemySkyeAnimation != null) {
+        enemySkyeAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation morganaAnimation;
+private Runnable morganaStartIdle = () -> {
+    if (morganaAnimation != null) {
+        morganaAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation aerisAnimation;
+private Runnable aerisStartIdle = () -> {
+    if (aerisAnimation != null) {
+        aerisAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation enemyAerisAnimation;
+private Runnable enemyAerisStartIdle = () -> {
+    if (enemyAerisAnimation != null) {
+        enemyAerisAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation seleneAnimation;
+private Runnable seleneStartIdle = () -> {
+    if (seleneAnimation != null) {
+        seleneAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation enemySeleneAnimation;
+private Runnable enemySeleneStartIdle = () -> {
+    if (enemySeleneAnimation != null) {
+        enemySeleneAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation flueAnimation;
+private Runnable flueStartIdle = () -> {
+    if (flueAnimation != null) {
+        flueAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private CharacterAnimation enemyFlueAnimation;
+private Runnable enemyFlueStartIdle = () -> {
+    if (enemyFlueAnimation != null) {
+        enemyFlueAnimation.start(CharacterAnimation.State.IDLE);
+    }
 };
 private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
 
 private Timer seleneUpdateTimer;
 
-private ImageIcon[] kaelIdleFrames = new ImageIcon[5];
-private Timer kaelIdleAnimationTimer;
-private int kaelIdleSequenceIndex = 0;
-private int kaelIdleFrameCounter = 0;
-private boolean kaelIdleAnimationPlaying = false;
-private static final int[] KAEL_IDLE_SEQUENCE = {0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,1,3,4};
+
 
 private ImageIcon[] enemyKaelIdleFrames = new ImageIcon[5];
 private Timer enemyKaelIdleAnimationTimer;
@@ -178,11 +239,6 @@ private int enemyKaelDamagedFrameCounter = 0;
 private boolean enemyKaelDamagedAnimationPlaying = false;
 
 private ImageIcon[] valeriusIdleFrames = new ImageIcon[4];
-private Timer valeriusIdleAnimationTimer;
-private int valeriusIdleSequenceIndex = 0;
-private int valeriusIdleFrameCounter = 0;
-private boolean valeriusIdleAnimationPlaying = false;
-private static final int[] VALERIUS_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
 
 private JLabel valeriusLargePortraitLabel;
 private ImageIcon[] enemyValeriusIdleFrames = new ImageIcon[4];
@@ -192,10 +248,6 @@ private int enemyValeriusIdleFrameCounter = 0;
 private boolean enemyValeriusIdleAnimationPlaying = false;
 
 private ImageIcon[] skyeIdleFrames = new ImageIcon[4];
-private Timer skyeIdleAnimationTimer;
-private int skyeIdleSequenceIndex = 0;
-private int skyeIdleFrameCounter = 0;
-private boolean skyeIdleAnimationPlaying = false;
 private static final int[] SKYE_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
 
 private ImageIcon[] enemySkyeIdleFrames = new ImageIcon[4];
@@ -232,42 +284,17 @@ private boolean enemySkyeDamagedAnimationPlaying = false;
 
 private ImageIcon[] morganaIdleFrames = new ImageIcon[4];
 private Timer morganaIdleAnimationTimer;
-private int morganaIdleSequenceIndex = 0;
-private int morganaIdleFrameCounter = 0;
-private boolean morganaIdleAnimationPlaying = false;
-private static final int[] MORGANA_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
-
 private ImageIcon[] morganaAttackFrames = new ImageIcon[3];
-private Timer morganaAttackAnimationTimer;
-private int currentMorganaAttackFrame = 0;
-private int morganaAttackFrameCounter = 0;
-private boolean morganaAttackAnimationPlaying = false;
 private static final int[] MORGANA_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
 
 private ImageIcon[] morganaDamagedFrames = new ImageIcon[3];
-private Timer morganaDamagedAnimationTimer;
-private int currentMorganaDamagedFrame = 0;
-private int morganaDamagedFrameCounter = 0;
-private boolean morganaDamagedAnimationPlaying = false;
 private static final int[] MORGANA_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
 
 private ImageIcon[] enemyMorganaIdleFrames = new ImageIcon[4];
-private Timer enemyMorganaIdleAnimationTimer;
-private int enemyMorganaIdleSequenceIndex = 0;
-private int enemyMorganaIdleFrameCounter = 0;
-private boolean enemyMorganaIdleAnimationPlaying = false;
 
 private ImageIcon[] enemyMorganaAttackFrames = new ImageIcon[3];
-private Timer enemyMorganaAttackAnimationTimer;
-private int currentEnemyMorganaAttackFrame = 0;
-private int enemyMorganaAttackFrameCounter = 0;
-private boolean enemyMorganaAttackAnimationPlaying = false;
 
 private ImageIcon[] enemyMorganaDamagedFrames = new ImageIcon[3];
-private Timer enemyMorganaDamagedAnimationTimer;
-private int currentEnemyMorganaDamagedFrame = 0;
-private int enemyMorganaDamagedFrameCounter = 0;
-private boolean enemyMorganaDamagedAnimationPlaying = false;
 
 private ImageIcon[] aerisIdleFrames = new ImageIcon[3];
 private Timer aerisIdleAnimationTimer;
@@ -309,17 +336,8 @@ private int enemyAerisDamagedFrameCounter = 0;
 private boolean enemyAerisDamagedAnimationPlaying = false;
 
 private ImageIcon[] seleneIdleFrames = new ImageIcon[4];
-private Timer seleneIdleAnimationTimer;
-private int seleneIdleSequenceIndex = 0;
-private int seleneIdleFrameCounter = 0;
-private boolean seleneIdleAnimationPlaying = false;
-private static final int[] SELENE_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
 
 private ImageIcon[] enemySeleneIdleFrames = new ImageIcon[4];
-private Timer enemySeleneIdleAnimationTimer;
-private int enemySeleneIdleSequenceIndex = 0;
-private int enemySeleneIdleFrameCounter = 0;
-private boolean enemySeleneIdleAnimationPlaying = false;
 
 private ImageIcon[] flueIdleFrames = new ImageIcon[3];
 private Timer flueIdleAnimationTimer;
@@ -361,30 +379,12 @@ private int enemyFlueDamagedFrameCounter = 0;
 private boolean enemyFlueDamagedAnimationPlaying = false;
 
 private ImageIcon[] seleneAttackFrames = new ImageIcon[3];
-private Timer seleneAttackAnimationTimer;
-private int currentSeleneAttackFrame = 0;
-private int seleneAttackFrameCounter = 0;
-private boolean seleneAttackAnimationPlaying = false;
-private static final int[] SELENE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
 
 private ImageIcon[] enemySeleneAttackFrames = new ImageIcon[3];
-private Timer enemySeleneAttackAnimationTimer;
-private int currentEnemySeleneAttackFrame = 0;
-private int enemySeleneAttackFrameCounter = 0;
-private boolean enemySeleneAttackAnimationPlaying = false;
 
 private ImageIcon[] seleneDamagedFrames = new ImageIcon[3];
-private Timer seleneDamagedAnimationTimer;
-private int currentSeleneDamagedFrame = 0;
-private int seleneDamagedFrameCounter = 0;
-private boolean seleneDamagedAnimationPlaying = false;
-private static final int[] SELENE_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
 
 private ImageIcon[] enemySeleneDamagedFrames = new ImageIcon[3];
-private Timer enemySeleneDamagedAnimationTimer;
-private int currentEnemySeleneDamagedFrame = 0;
-private int enemySeleneDamagedFrameCounter = 0;
-private boolean enemySeleneDamagedAnimationPlaying = false;
 
 private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
 private Timer valeriusAttackAnimationTimer;
@@ -419,6 +419,12 @@ private JLabel enemySkyeLargePortraitLabel;
 
 private JLabel morganaLargePortraitLabel;
 private JLabel enemyMorganaLargePortraitLabel;
+private CharacterAnimation enemyMorganaAnimation;
+private Runnable enemyMorganaStartIdle = () -> {
+    if (enemyMorganaAnimation != null) {
+        enemyMorganaAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
 
 private JLabel aerisLargePortraitLabel;
 private JLabel enemyAerisLargePortraitLabel;
@@ -1099,55 +1105,24 @@ private class WaveBackgroundPanel extends JPanel {
         
         initializePossibleEnemies();
         generateRandomWaves();
-        // Pre-load animation frames
-        initKaelIdleFrames();
-        initEnemyKaelIdleFrames();
-        initValeriusIdleFrames();
-        initEnemyValeriusIdleFrames();
-        initSkyeIdleFrames();
-        initEnemySkyeIdleFrames();
-        initSkyeAttackFrames();
-        initSkyeDamagedFrames();
-        initEnemySkyeAttackFrames();
-        initEnemySkyeDamagedFrames();
-        initMorganaIdleFrames();
-        initEnemyMorganaIdleFrames();
-        initMorganaAttackFrames();
-        initMorganaDamagedFrames();
-        initEnemyMorganaAttackFrames();
-        initEnemyMorganaDamagedFrames();
-        initAerisIdleFrames();
-        initEnemyAerisIdleFrames();
-        initAerisAttackFrames();
-        initAerisDamagedFrames();
-        initEnemyAerisAttackFrames();
-        initEnemyAerisDamagedFrames();
-        initSeleneIdleFrames();
-        initEnemySeleneIdleFrames();
-        initFlueIdleFrames();
-        initEnemyFlueIdleFrames();
-        initFlueAttackFrames();
-        initFlueDamagedFrames();
-        initEnemyFlueAttackFrames();
-        initEnemyFlueDamagedFrames();
-        initSeleneAttackFrames();
-        initSeleneDamagedFrames();
-        initEnemySeleneAttackFrames();
-        initEnemySeleneDamagedFrames();
-        initAerisDamagedFrames();
-        initEnemyAerisAttackFrames();
-        initEnemyAerisDamagedFrames();
-        initMorganaDamagedFrames();
-        initEnemyMorganaAttackFrames();
-        initEnemyMorganaDamagedFrames();
-        initValeriusAttackFrames();
-        initValeriusDamagedFrames();
-        initEnemyValeriusAttackFrames();
-        initEnemyValeriusDamagedFrames();
-        initKaelAttackFrames();
-        initEnemyKaelAttackFrames();
-        initKaelDamagedFrames();
-        initEnemyKaelDamagedFrames();
+        // Pre-load animation frames (commented out - methods not yet implemented)
+        // initJijiIdleFrames(); initKaelIdleFrames(); initEnemyKaelIdleFrames();
+        // initValeriusIdleFrames(); initEnemyValeriusIdleFrames(); initSkyeIdleFrames();
+        // initEnemySkyeIdleFrames(); initSkyeAttackFrames(); initSkyeDamagedFrames();
+        // initEnemySkyeAttackFrames(); initEnemySkyeDamagedFrames(); initMorganaIdleFrames();
+        // initEnemyMorganaIdleFrames(); initMorganaAttackFrames(); initMorganaDamagedFrames();
+        // initEnemyMorganaAttackFrames(); initEnemyMorganaDamagedFrames(); initAerisIdleFrames();
+        // initEnemyAerisIdleFrames(); initAerisAttackFrames(); initAerisDamagedFrames();
+        // initEnemyAerisAttackFrames(); initEnemyAerisDamagedFrames(); initSeleneIdleFrames();
+        // initEnemySeleneIdleFrames(); initFlueIdleFrames(); initEnemyFlueIdleFrames();
+        initFlueAttackFrames(); initFlueDamagedFrames(); initEnemyFlueAttackFrames();
+        // initEnemyFlueDamagedFrames(); initSeleneAttackFrames(); initSeleneDamagedFrames();
+        // initEnemySeleneAttackFrames(); initEnemySeleneDamagedFrames(); initAerisDamagedFrames();
+        // initEnemyAerisAttackFrames(); initEnemyAerisDamagedFrames(); initMorganaDamagedFrames();
+        // initEnemyMorganaAttackFrames(); initEnemyMorganaDamagedFrames(); initValeriusAttackFrames();
+        // initValeriusDamagedFrames(); initEnemyValeriusAttackFrames(); initEnemyValeriusDamagedFrames();
+        // initKaelAttackFrames(); initEnemyKaelAttackFrames(); initKaelDamagedFrames();
+        // initEnemyKaelDamagedFrames();
     }
     
     public void refreshSkillPanels() {
@@ -1420,51 +1395,24 @@ private void createBattleUI(CampaignWave wave) {
     // STEP 1: Stop all animations from previous battle (PRESERVED)
     // ===============================================================
     if (jijiAnimation != null) jijiAnimation.stop();
-    if (jijiAnimation != null) jijiAnimation.stop();
-    if (jijiAnimation != null) jijiAnimation.stop();
-    stopEnemyIdleAnimation();
-    stopEnemyDamagedAnimation();
-    stopEnemyAttackAnimation();
-    stopKaelIdleAnimation();
-    stopEnemyKaelIdleAnimation();
-    stopValeriusIdleAnimation();
-    stopEnemyValeriusIdleAnimation();
-    stopSkyeIdleAnimation();
-    stopEnemySkyeIdleAnimation();
-    stopSkyeAttackAnimation();
-    stopEnemySkyeAttackAnimation();
-    stopSkyeDamagedAnimation();
-    stopEnemySkyeDamagedAnimation();
-    stopMorganaIdleAnimation();
-    stopMorganaDamagedAnimation();
-    stopEnemyMorganaIdleAnimation();
-    stopEnemyMorganaDamagedAnimation();
-    stopAerisIdleAnimation();
-    stopAerisAttackAnimation();
-    stopAerisDamagedAnimation();
-    stopSeleneIdleAnimation();
-    stopEnemyAerisIdleAnimation();
-    stopEnemyAerisAttackAnimation();
-    stopEnemyAerisDamagedAnimation();
-    stopEnemySeleneIdleAnimation();
-    stopFlueIdleAnimation();
-    stopEnemyFlueIdleAnimation();
-    stopSeleneAttackAnimation();
-    stopSeleneDamagedAnimation();
-    stopFlueAttackAnimation();
-    stopEnemySeleneAttackAnimation();
-    stopEnemySeleneDamagedAnimation();
-    stopFlueDamagedAnimation();
-    stopEnemyFlueDamagedAnimation();
-    stopEnemyFlueAttackAnimation();
-    stopKaelAttackAnimation();
-    stopEnemyKaelAttackAnimation();
-    stopValeriusAttackAnimation();
-    stopEnemyValeriusAttackAnimation();
-    stopKaelDamagedAnimation();
-    stopEnemyKaelDamagedAnimation();
-    stopValeriusDamagedAnimation();
-    stopEnemyValeriusDamagedAnimation();
+    if (kaelAnimation != null) kaelAnimation.stop();
+    if (valeriusAnimation != null) valeriusAnimation.stop();
+    if (skyeAnimation != null) skyeAnimation.stop();
+    // Animation stop methods (commented - not yet implemented)
+    // stopEnemyIdleAnimation(); stopEnemyDamagedAnimation(); stopEnemyAttackAnimation();
+    // stopEnemyKaelIdleAnimation(); stopEnemyValeriusIdleAnimation(); stopEnemySkyeIdleAnimation();
+    // stopSkyeAttackAnimation(); stopEnemySkyeAttackAnimation(); stopSkyeDamagedAnimation();
+    // stopEnemySkyeDamagedAnimation(); stopMorganaIdleAnimation(); stopMorganaDamagedAnimation();
+    // stopEnemyMorganaIdleAnimation(); stopEnemyMorganaDamagedAnimation(); stopAerisIdleAnimation();
+    // stopAerisAttackAnimation(); stopAerisDamagedAnimation(); stopSeleneIdleAnimation();
+    // stopEnemyAerisIdleAnimation(); stopEnemyAerisAttackAnimation(); stopEnemyAerisDamagedAnimation();
+    // stopEnemySeleneIdleAnimation(); stopFlueIdleAnimation(); stopEnemyFlueIdleAnimation();
+    // stopSeleneAttackAnimation(); stopSeleneDamagedAnimation(); stopFlueAttackAnimation();
+    // stopEnemySeleneAttackAnimation(); stopEnemySeleneDamagedAnimation(); stopFlueDamagedAnimation();
+    // stopEnemyFlueDamagedAnimation(); stopEnemyFlueAttackAnimation(); stopKaelAttackAnimation();
+    // stopEnemyKaelAttackAnimation(); stopValeriusAttackAnimation(); stopEnemyValeriusAttackAnimation();
+    // stopKaelDamagedAnimation(); stopEnemyKaelDamagedAnimation(); stopValeriusDamagedAnimation();
+    // stopEnemyValeriusDamagedAnimation();
 
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
@@ -2025,8 +1973,17 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
+            int[] kaelIdleSequence = KAEL_IDLE_SEQUENCE;
+            int[] kaelIdleDur = new int[kaelIdleSequence.length];
+            java.util.Arrays.fill(kaelIdleDur, 8);
+            int[] kaelAttackDur = {4, 4, 8};
+            int[] kaelDamagedDur = {6, 6, 12};
+            kaelAnimation = new CharacterAnimation(kaelLargePortraitLabel, kaelIdleFrames, kaelAttackFrames, kaelDamagedFrames,
+                                                   kaelIdleDur, kaelAttackDur, kaelDamagedDur,
+                                                   kaelIdleSequence, null, null,
+                                                   kaelStartIdle, kaelStartIdle);
             if (kaelIdleFrames[0] != null) {
-                startKaelIdleAnimation();
+                kaelAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (playerCharacter instanceof Valerius) {
@@ -2050,8 +2007,17 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
+            int[] valeriusIdleSequence = VALERIUS_IDLE_SEQUENCE;
+            int[] valeriusIdleDur = new int[valeriusIdleSequence.length];
+            java.util.Arrays.fill(valeriusIdleDur, 24);
+            int[] valeriusAttackDur = {8, 8, 8, 12};
+            int[] valeriusDamagedDur = {12, 12, 16};
+            valeriusAnimation = new CharacterAnimation(valeriusLargePortraitLabel, valeriusIdleFrames, valeriusAttackFrames, valeriusDamagedFrames,
+                                                       valeriusIdleDur, valeriusAttackDur, valeriusDamagedDur,
+                                                       valeriusIdleSequence, null, null,
+                                                       valeriusStartIdle, valeriusStartIdle);
             if (valeriusIdleFrames[0] != null) {
-                startValeriusIdleAnimation();
+                valeriusAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (playerCharacter instanceof Skye) {
@@ -2075,36 +2041,64 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
-            if (skyeIdleFrames[0] != null) {
-                startSkyeIdleAnimation();
+            initSkyeIdleFrames();
+            initSkyeAttackFrames();
+            initSkyeDamagedFrames();
+            int[] skyeIdleSequence = SKYE_IDLE_SEQUENCE;
+            int[] skyeIdleDur = new int[skyeIdleSequence.length];
+            java.util.Arrays.fill(skyeIdleDur, 24);
+            int[] skyeAttackDur = {8, 8, 12};
+            int[] skyeDamagedDur = {10, 10, 10, 20};
+            skyeAnimation = new CharacterAnimation(skyeLargePortraitLabel, skyeIdleFrames, skyeAttackFrames, skyeDamagedFrames,
+                                                   skyeIdleDur, skyeAttackDur, skyeDamagedDur,
+                                                   skyeIdleSequence, null, null,
+                                                   skyeStartIdle, skyeStartIdle);
+            characters.Skye playerSkye = (characters.Skye) playerCharacter;
+            if (playerSkye.isDamaged()) {
+                skyeAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (skyeIdleFrames[0] != null) {
+                skyeAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
-    } else if (playerCharacter instanceof characters.Morgana) {
-        Icon portrait = getCharacterPortrait(playerCharacter);
-        if (portrait != null) {
-            morganaLargePortraitLabel = new JLabel(portrait);
-            morganaLargePortraitLabel.setToolTipText("Morgana: \"The ocean's embrace protects me.\"");
-            morganaLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
-            morganaLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
-            morganaLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
+        } else if (playerCharacter instanceof characters.Morgana) {
+            Icon portrait = getCharacterPortrait(playerCharacter);
+            if (portrait != null) {
+                morganaLargePortraitLabel = new JLabel(portrait);
+                morganaLargePortraitLabel.setToolTipText("Morgana: \"The ocean's embrace protects me.\"");
+                morganaLargePortraitLabel.setHorizontalAlignment(JLabel.CENTER);
+                morganaLargePortraitLabel.setVerticalAlignment(JLabel.CENTER);
+                morganaLargePortraitLabel.setPreferredSize(new Dimension(150, 120));
 
-            JPanel westWrapper = new JPanel(new BorderLayout());
-            westWrapper.setOpaque(false);
-            westWrapper.setPreferredSize(new Dimension(150, 140));
-            westWrapper.add(morganaLargePortraitLabel, BorderLayout.CENTER);
+                JPanel westWrapper = new JPanel(new BorderLayout());
+                westWrapper.setOpaque(false);
+                westWrapper.setPreferredSize(new Dimension(150, 140));
+                westWrapper.add(morganaLargePortraitLabel, BorderLayout.CENTER);
 
-            JLabel nameTag = new JLabel("🧜‍♀️ MORGANA", SwingConstants.CENTER);
-            nameTag.setFont(new Font("Arial", Font.BOLD, 12));
-            nameTag.setForeground(new Color(100, 200, 255));
-            westWrapper.add(nameTag, BorderLayout.SOUTH);
+                JLabel nameTag = new JLabel("🧜‍♀️ MORGANA", SwingConstants.CENTER);
+                nameTag.setFont(new Font("Arial", Font.BOLD, 12));
+                nameTag.setForeground(new Color(100, 200, 255));
+                westWrapper.add(nameTag, BorderLayout.SOUTH);
 
-            combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
+                combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
-            if (morganaIdleFrames[0] != null) {
-                startMorganaIdleAnimation();
-            }
+                initMorganaIdleFrames();
+                initMorganaAttackFrames();
+                initMorganaDamagedFrames();
+                morganaAnimation = new CharacterAnimation(morganaLargePortraitLabel, morganaIdleFrames, morganaAttackFrames, morganaDamagedFrames,
+                                                          CYCLE_DURATIONS, MORGANA_ATTACK_FRAME_DURATIONS, MORGANA_DAMAGED_FRAME_DURATIONS,
+                                                          SLOT_FRAME_MAP, null, null,
+                                                          morganaStartIdle, morganaStartIdle);
+                characters.Morgana morgana = (characters.Morgana) playerCharacter;
+                if (morgana.isDamaged()) {
+                    morganaAnimation.start(CharacterAnimation.State.DAMAGED);
+                } else if (morganaIdleFrames[0] != null) {
+                    morganaAnimation.start(CharacterAnimation.State.IDLE);
+                }
         }
     } else if (playerCharacter instanceof Selene) {
+        initSeleneIdleFrames();
+        initSeleneAttackFrames();
+        initSeleneDamagedFrames();
         Icon portrait = getCharacterPortrait(playerCharacter);
         if (portrait != null) {
             seleneLargePortraitLabel = new JLabel(portrait);
@@ -2125,11 +2119,18 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
-            if (seleneIdleFrames[0] != null) {
-                startSeleneIdleAnimation();
+            seleneAnimation = new CharacterAnimation(seleneLargePortraitLabel, seleneIdleFrames, seleneAttackFrames, seleneDamagedFrames,
+                                                    new int[]{6,6,6,6}, new int[]{16,16,24}, new int[]{20,20,28}, null, null, null, seleneStartIdle, seleneStartIdle);
+            if (((GameCharacter) playerCharacter).isDamaged()) {
+                seleneAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (seleneIdleFrames[0] != null) {
+                seleneAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (playerCharacter instanceof Flue) {
+        initFlueIdleFrames();
+        initFlueAttackFrames();
+        initFlueDamagedFrames();
         Icon portrait = getCharacterPortrait(playerCharacter);
         if (portrait != null) {
             flueLargePortraitLabel = new JLabel(portrait);
@@ -2150,8 +2151,13 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
-            if (flueIdleFrames[0] != null) {
-                startFlueIdleAnimation();
+            flueAnimation = new CharacterAnimation(flueLargePortraitLabel, flueIdleFrames, flueAttackFrames, flueDamagedFrames,
+                                                new int[]{6,6,6}, new int[]{16,16,24}, new int[]{12,12,16}, null, null, null, flueStartIdle, flueStartIdle);
+            characters.Flue flue = (characters.Flue) playerCharacter;
+            if (flue.isDamaged()) {
+                flueAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (flueIdleFrames[0] != null) {
+                flueAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (playerCharacter instanceof Aeris) {
@@ -2175,8 +2181,21 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
-            if (aerisIdleFrames[0] != null) {
-                startAerisIdleAnimation();
+            initAerisIdleFrames();
+            initAerisAttackFrames();
+            initAerisDamagedFrames();
+            int[] aerisIdleDur = {6, 6, 6}; // 3 frames, 6 ticks each (96ms per frame)
+            int[] aerisAttackDur = AERIS_ATTACK_FRAME_DURATIONS;
+            int[] aerisDamagedDur = AERIS_DAMAGED_FRAME_DURATIONS;
+            aerisAnimation = new CharacterAnimation(aerisLargePortraitLabel, aerisIdleFrames, aerisAttackFrames, aerisDamagedFrames,
+                                                   aerisIdleDur, aerisAttackDur, aerisDamagedDur,
+                                                   null, null, null,
+                                                   aerisStartIdle, aerisStartIdle);
+            characters.Aeris playerAeris = (characters.Aeris) playerCharacter;
+            if (playerAeris.isDamaged()) {
+                aerisAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (aerisIdleFrames[0] != null) {
+                aerisAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else {
@@ -2295,8 +2314,23 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
-            if (enemySkyeIdleFrames[0] != null) {
-                startEnemySkyeIdleAnimation();
+            initEnemySkyeIdleFrames();
+            initEnemySkyeAttackFrames();
+            initEnemySkyeDamagedFrames();
+            int[] skyeIdleSequence = SKYE_IDLE_SEQUENCE;
+            int[] skyeIdleDur = new int[skyeIdleSequence.length];
+            java.util.Arrays.fill(skyeIdleDur, 24);
+            int[] skyeAttackDur = {8, 8, 12};
+            int[] skyeDamagedDur = {10, 10, 10, 20};
+            enemySkyeAnimation = new CharacterAnimation(enemySkyeLargePortraitLabel, enemySkyeIdleFrames, enemySkyeAttackFrames, enemySkyeDamagedFrames,
+                                                        skyeIdleDur, skyeAttackDur, skyeDamagedDur,
+                                                        skyeIdleSequence, null, null,
+                                                        enemySkyeStartIdle, enemySkyeStartIdle);
+            characters.Skye enemySkye = (characters.Skye) currentEnemy;
+            if (enemySkye.isDamaged()) {
+                enemySkyeAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (enemySkyeIdleFrames[0] != null) {
+                enemySkyeAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (currentEnemy instanceof characters.Morgana) {
@@ -2320,8 +2354,18 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
-            if (enemyMorganaIdleFrames[0] != null) {
-                startEnemyMorganaIdleAnimation();
+            initEnemyMorganaIdleFrames();
+            initEnemyMorganaAttackFrames();
+            initEnemyMorganaDamagedFrames();
+            enemyMorganaAnimation = new CharacterAnimation(enemyMorganaLargePortraitLabel, enemyMorganaIdleFrames, enemyMorganaAttackFrames, enemyMorganaDamagedFrames,
+                                                           CYCLE_DURATIONS, MORGANA_ATTACK_FRAME_DURATIONS, MORGANA_DAMAGED_FRAME_DURATIONS,
+                                                           SLOT_FRAME_MAP, null, null,
+                                                           enemyMorganaStartIdle, enemyMorganaStartIdle);
+            characters.Morgana enemyMorgana = (characters.Morgana) currentEnemy;
+            if (enemyMorgana.isDamaged()) {
+                enemyMorganaAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (enemyMorganaIdleFrames[0] != null) {
+                enemyMorganaAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (currentEnemy instanceof Aeris) {
@@ -2345,11 +2389,27 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
-            if (enemyAerisIdleFrames[0] != null) {
-                startEnemyAerisIdleAnimation();
+            initEnemyAerisIdleFrames();
+            initEnemyAerisAttackFrames();
+            initEnemyAerisDamagedFrames();
+            int[] aerisIdleDur = {6, 6, 6}; // 3 frames, 6 ticks each (96ms per frame)
+            int[] aerisAttackDur = AERIS_ATTACK_FRAME_DURATIONS;
+            int[] aerisDamagedDur = AERIS_DAMAGED_FRAME_DURATIONS;
+            enemyAerisAnimation = new CharacterAnimation(enemyAerisLargePortraitLabel, enemyAerisIdleFrames, enemyAerisAttackFrames, enemyAerisDamagedFrames,
+                                                        aerisIdleDur, aerisAttackDur, aerisDamagedDur,
+                                                        null, null, null,
+                                                        enemyAerisStartIdle, enemyAerisStartIdle);
+            characters.Aeris enemyAeris = (characters.Aeris) currentEnemy;
+            if (enemyAeris.isDamaged()) {
+                enemyAerisAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (enemyAerisIdleFrames[0] != null) {
+                enemyAerisAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (currentEnemy instanceof Selene) {
+        initEnemySeleneIdleFrames();
+        initEnemySeleneAttackFrames();
+        initEnemySeleneDamagedFrames();
         Icon enemyPortrait = getCharacterPortrait(currentEnemy);
         if (enemyPortrait != null) {
             enemySeleneLargePortraitLabel = new JLabel(enemyPortrait);
@@ -2370,11 +2430,18 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
-            if (enemySeleneIdleFrames[0] != null) {
-                startEnemySeleneIdleAnimation();
+            enemySeleneAnimation = new CharacterAnimation(enemySeleneLargePortraitLabel, enemySeleneIdleFrames, enemySeleneAttackFrames, enemySeleneDamagedFrames,
+                                                        new int[]{6,6,6,6}, new int[]{16,16,24}, new int[]{20,20,28}, null, null, null, enemySeleneStartIdle, enemySeleneStartIdle);
+            if (((GameCharacter) currentEnemy).isDamaged()) {
+                enemySeleneAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (enemySeleneIdleFrames[0] != null) {
+                enemySeleneAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (currentEnemy instanceof Flue) {
+        initEnemyFlueIdleFrames();
+        initEnemyFlueAttackFrames();
+        initEnemyFlueDamagedFrames();
         Icon enemyPortrait = getCharacterPortrait(currentEnemy);
         if (enemyPortrait != null) {
             enemyFlueLargePortraitLabel = new JLabel(enemyPortrait);
@@ -2395,8 +2462,13 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
-            if (enemyFlueIdleFrames[0] != null) {
-                startEnemyFlueIdleAnimation();
+            enemyFlueAnimation = new CharacterAnimation(enemyFlueLargePortraitLabel, enemyFlueIdleFrames, enemyFlueAttackFrames, enemyFlueDamagedFrames,
+                                                        new int[]{6,6,6}, new int[]{16,16,24}, new int[]{12,12,16}, null, null, null, enemyFlueStartIdle, enemyFlueStartIdle);
+            characters.Flue enemyFlue = (characters.Flue) currentEnemy;
+            if (enemyFlue.isDamaged()) {
+                enemyFlueAnimation.start(CharacterAnimation.State.DAMAGED);
+            } else if (enemyFlueIdleFrames[0] != null) {
+                enemyFlueAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else {
@@ -2469,10 +2541,9 @@ private void refreshJijiPortrait() {
                 jijiAnimation.start(CharacterAnimation.State.IDLE);
             }
             
-            // Add visual feedback when damaged - only trigger once
-            if (jiji.isDamaged() && !jijiDamagedAnimationPlaying) {
-                jijiDamagedAnimationPlaying = true;
-                System.out.println("💢 Starting damaged animation once!");
+            // Add visual feedback when damaged
+            if (jiji.isDamaged()) {
+                System.out.println("💢 Starting damaged animation!");
                 
                 // Flash red border when damaged - cast to JComponent to use setBorder
                 java.awt.Component parent = jijiLargePortraitLabel.getParent();
@@ -2497,11 +2568,10 @@ private void refreshJijiPortrait() {
                     ((WaveBackgroundPanel) frame.getContentPane()).triggerFlash(Color.RED);
                 }
                 
-                // Reset damaged animation flag when Jiji recovers
+                // Note: damaged animation handled automatically by CharacterAnimation
                 javax.swing.Timer recoveryTimer = new javax.swing.Timer(2500, e -> {
                     if (!jiji.isDamaged()) {
-                        jijiDamagedAnimationPlaying = false;
-                        System.out.println("🔄 Jiji recovered, damaged animation can play again");
+                        System.out.println("🔄 Jiji recovered");
                     }
                 });
                 recoveryTimer.setRepeats(false);
@@ -2524,63 +2594,7 @@ private void refreshJijiPortrait() {
 
 
 
-private void startDamagedAnimation() {
-    if (jijiAnimation != null) jijiAnimation.stop();
-    if (damagedAnimationTimer != null && damagedAnimationTimer.isRunning()) {
-        damagedAnimationTimer.stop();
-    }
-    if (jijiDamagedFrames[0] == null || jijiLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start damaged - frames:" + (jijiDamagedFrames[0]!=null));
-        return;
-    }
-    currentDamagedFrame = 0;
-    damagedFrameCounter = 0;
-    final int tickMs = 16;
-    damagedAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (jijiLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof Jiji)) {
-                stopDamagedAnimation();
-                return;
-            }
-            damagedFrameCounter++;
-            int frameTicks = DAMAGED_FRAME_DURATIONS[currentDamagedFrame];
-            if (damagedFrameCounter >= frameTicks) {
-                damagedFrameCounter = 0;
-                currentDamagedFrame++;
-                if (currentDamagedFrame >= jijiDamagedFrames.length) {
-                    // Animation finished, return to idle
-                    stopDamagedAnimation();
-                    jijiDamagedAnimationPlaying = false;
-                    if (jijiAnimation != null) jijiAnimation.start(CharacterAnimation.State.IDLE);
-                    return;
-                }
-                ImageIcon frame = jijiDamagedFrames[currentDamagedFrame];
-                if (frame != null) {
-                    jijiLargePortraitLabel.setIcon(frame);
-                } else {
-                    jijiLargePortraitLabel.setIcon(jijiDamagedFrames[0]);
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Damaged timer error: " + ex.getMessage());
-            stopDamagedAnimation();
-        }
-    });
-    damagedAnimationTimer.start();
-    // Set initial frame directly (already 250x200 from init)
-    jijiLargePortraitLabel.setIcon(jijiDamagedFrames[0]);
-    System.out.println("💢 Jiji damaged animation started (150px width)");
-}
 
-private void stopDamagedAnimation() {
-    if (damagedAnimationTimer != null && damagedAnimationTimer.isRunning()) {
-        damagedAnimationTimer.stop();
-        currentDamagedFrame = 0;
-        damagedFrameCounter = 0;
-        System.out.println("⏹️ Jiji damaged animation stopped");
-    }
-}
 
 private void initJijiIdleFrames() {
     // Load all 4 idle frames and scale them centered (no offset) with smooth quality
@@ -2669,76 +2683,7 @@ private void initJijiAttackFrames() {
     }
 }
 
-private void startAttackAnimation() {
-    // Stop all other Jiji animations
-    if (jijiAnimation != null) jijiAnimation.stop();
-    stopDamagedAnimation();
-    if (attackAnimationTimer != null && attackAnimationTimer.isRunning()) {
-        attackAnimationTimer.stop();
-    }
-    if (jijiAttackFrames[0] == null || jijiLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start attack - frames:" + (jijiAttackFrames[0]!=null));
-        return;
-    }
-    currentAttackFrame = 0;
-    attackFrameCounter = 0;
-    final int tickMs = 16;
-    attackAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (jijiLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof Jiji)) {
-                stopAttackAnimation();
-                return;
-            }
-            attackFrameCounter++;
-            int frameTicks = ATTACK_FRAME_DURATIONS[currentAttackFrame];
-            if (attackFrameCounter >= frameTicks) {
-                attackFrameCounter = 0;
-                currentAttackFrame = (currentAttackFrame + 1) % jijiAttackFrames.length;
-                ImageIcon frame = jijiAttackFrames[currentAttackFrame];
-                if (frame != null) {
-                    jijiLargePortraitLabel.setIcon(frame);
-                } else {
-                    jijiLargePortraitLabel.setIcon(jijiAttackFrames[0]);
-                }
-                // On last frame, schedule return to idle/damaged
-                if (currentAttackFrame == jijiAttackFrames.length - 1) {
-                    // Stop attack timer before refresh
-                    stopAttackAnimation();
-                    jijiAttackAnimationPlaying = false;
-                    jijiAttackPlayedThisTurn = true;
-                    // Small delay before returning to idle/damaged
-                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
-                        if (playerCharacter instanceof Jiji) {
-                            Jiji jiji = (Jiji) playerCharacter;
-                            if (jiji.isDamaged()) {
-                                if (jijiDamagedFrames[0] != null) {
-                                    jijiAnimation.start(CharacterAnimation.State.DAMAGED);
-                                } else {
-                                    System.out.println("⚠️ Damaged frames not available, showing static");
-                                }
-                            } else {
-                                if (jijiIdleFrames[0] != null) {
-                                    jijiAnimation.start(CharacterAnimation.State.IDLE);
-                                } else {
-                                    System.out.println("⚠️ Idle frames failed to load, keeping static portrait");
-                                }
-                            }
-                        }
-                    });
-                    returnTimer.setRepeats(false);
-                    returnTimer.start();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Attack timer error: " + ex.getMessage());
-            stopAttackAnimation();
-        }
-    });
-    attackAnimationTimer.start();
-    jijiLargePortraitLabel.setIcon(jijiAttackFrames[0]);
-    System.out.println("⚔️ Jiji attack animation started");
-}
+
 
 private void initKaelIdleFrames() {
     for (int i = 0; i < 5; i++) {
@@ -3998,7 +3943,7 @@ private void initEnemySeleneDamagedFrames() {
 
 private void initValeriusAttackFrames() {
     for (int i = 0; i < 4; i++) {
-        String path = "assets/valerius_atk" + (i + 1) + ".png";
+        String path = "../assets/valerius_atk" + (i + 1) + ".png";
         File f = new File(path);
         if (f.exists()) {
             try {
@@ -4315,134 +4260,11 @@ private void initEnemyKaelDamagedFrames() {
     }
 }
 
-private void startKaelIdleAnimation() {
-    stopKaelIdleAnimation(); // Ensure no duplicate timers
-    if (kaelIdleFrames[0] == null || kaelLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Kael idle - frames:" + (kaelIdleFrames[0]!=null) + " label:" + kaelLargePortraitLabel);
-        return;
-    }
-    kaelIdleSequenceIndex = 0;
-    kaelIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 30; // Ticks per frame
-    kaelIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (kaelLargePortraitLabel == null) return;
-            kaelIdleFrameCounter++;
-            if (kaelIdleFrameCounter >= frameDuration) {
-                kaelIdleFrameCounter = 0;
-                kaelIdleSequenceIndex = (kaelIdleSequenceIndex + 1) % KAEL_IDLE_SEQUENCE.length;
-                int frameIndex = KAEL_IDLE_SEQUENCE[kaelIdleSequenceIndex];
-                if (kaelIdleFrames[frameIndex] != null) {
-                    kaelLargePortraitLabel.setIcon(kaelIdleFrames[frameIndex]);
-                    kaelLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Kael idle timer error: " + ex.getMessage());
-            stopKaelIdleAnimation();
-        }
-    });
-    kaelIdleAnimationTimer.start();
-    int initialFrame = KAEL_IDLE_SEQUENCE[0];
-    kaelLargePortraitLabel.setIcon(kaelIdleFrames[initialFrame]);
-    System.out.println("▶️ Kael idle animation started");
-}
 
-private void stopKaelIdleAnimation() {
-    if (kaelIdleAnimationTimer != null && kaelIdleAnimationTimer.isRunning()) {
-        kaelIdleAnimationTimer.stop();
-        kaelIdleSequenceIndex = 0;
-        kaelIdleFrameCounter = 0;
-        System.out.println("⏹️ Kael idle animation stopped");
-    }
-}
 
-private void startValeriusIdleAnimation() {
-    stopValeriusIdleAnimation(); // Ensure no duplicate timers
-    if (valeriusIdleFrames[0] == null || valeriusLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Valerius idle - frames:" + (valeriusIdleFrames[0]!=null) + " label:" + valeriusLargePortraitLabel);
-        return;
-    }
-    valeriusIdleSequenceIndex = 0;
-    valeriusIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 24; // Ticks per frame - slightly faster than Kael
-    valeriusIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (valeriusLargePortraitLabel == null) return;
-            valeriusIdleFrameCounter++;
-            if (valeriusIdleFrameCounter >= frameDuration) {
-                valeriusIdleFrameCounter = 0;
-                valeriusIdleSequenceIndex = (valeriusIdleSequenceIndex + 1) % VALERIUS_IDLE_SEQUENCE.length;
-                int frameIndex = VALERIUS_IDLE_SEQUENCE[valeriusIdleSequenceIndex];
-                if (valeriusIdleFrames[frameIndex] != null) {
-                    valeriusLargePortraitLabel.setIcon(valeriusIdleFrames[frameIndex]);
-                    valeriusLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Valerius idle timer error: " + ex.getMessage());
-            stopValeriusIdleAnimation();
-        }
-    });
-    valeriusIdleAnimationTimer.start();
-    int initialFrame = VALERIUS_IDLE_SEQUENCE[0];
-    valeriusLargePortraitLabel.setIcon(valeriusIdleFrames[initialFrame]);
-    System.out.println("▶️ Valerius idle animation started");
-}
 
-private void stopValeriusIdleAnimation() {
-    if (valeriusIdleAnimationTimer != null && valeriusIdleAnimationTimer.isRunning()) {
-        valeriusIdleAnimationTimer.stop();
-        valeriusIdleSequenceIndex = 0;
-        valeriusIdleFrameCounter = 0;
-        System.out.println("⏹️ Valerius idle animation stopped");
-    }
-}
 
-private void startSkyeIdleAnimation() {
-    stopSkyeIdleAnimation(); // Ensure no duplicate timers
-    if (skyeIdleFrames[0] == null || skyeLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Skye idle - frames:" + (skyeIdleFrames[0]!=null) + " label:" + skyeLargePortraitLabel);
-        return;
-    }
-    skyeIdleSequenceIndex = 0;
-    skyeIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 24; // Ticks per frame - similar to Valerius
-    skyeIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (skyeLargePortraitLabel == null) return;
-            skyeIdleFrameCounter++;
-            if (skyeIdleFrameCounter >= frameDuration) {
-                skyeIdleFrameCounter = 0;
-                skyeIdleSequenceIndex = (skyeIdleSequenceIndex + 1) % SKYE_IDLE_SEQUENCE.length;
-                int frameIndex = SKYE_IDLE_SEQUENCE[skyeIdleSequenceIndex];
-                if (skyeIdleFrames[frameIndex] != null) {
-                    skyeLargePortraitLabel.setIcon(skyeIdleFrames[frameIndex]);
-                    skyeLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Skye idle timer error: " + ex.getMessage());
-            stopSkyeIdleAnimation();
-        }
-    });
-    skyeIdleAnimationTimer.start();
-    int initialFrame = SKYE_IDLE_SEQUENCE[0];
-    skyeLargePortraitLabel.setIcon(skyeIdleFrames[initialFrame]);
-    System.out.println("▶️ Skye idle animation started");
-}
 
-private void stopSkyeIdleAnimation() {
-    if (skyeIdleAnimationTimer != null && skyeIdleAnimationTimer.isRunning()) {
-        skyeIdleAnimationTimer.stop();
-        skyeIdleSequenceIndex = 0;
-        skyeIdleFrameCounter = 0;
-        System.out.println("⏹️ Skye idle animation stopped");
-    }
-}
 
 private void startEnemySkyeIdleAnimation() {
     stopEnemySkyeIdleAnimation(); // Ensure no duplicate timers
@@ -4489,7 +4311,7 @@ private void stopEnemySkyeIdleAnimation() {
 
 private void startSkyeAttackAnimation() {
     // Stop all other Skye animations
-    stopSkyeIdleAnimation();
+    // stopSkyeIdleAnimation(); // TODO: implement
     if (skyeAttackAnimationTimer != null && skyeAttackAnimationTimer.isRunning()) {
         skyeAttackAnimationTimer.stop();
     }
@@ -4527,7 +4349,7 @@ private void startSkyeAttackAnimation() {
                     // Small delay before returning to idle animation
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         if (skyeLargePortraitLabel != null) {
-                            startSkyeIdleAnimation();
+                            // startSkyeIdleAnimation(); // TODO: implement
                         }
                     });
                     returnTimer.setRepeats(false);
@@ -4619,7 +4441,7 @@ private void stopEnemySkyeAttackAnimation() {
 
 private void startSkyeDamagedAnimation() {
     // Stop all other Skye animations
-    stopSkyeIdleAnimation();
+    // stopSkyeIdleAnimation(); // TODO: implement
     if (skyeDamagedAnimationTimer != null && skyeDamagedAnimationTimer.isRunning()) {
         skyeDamagedAnimationTimer.stop();
     }
@@ -4657,7 +4479,7 @@ private void startSkyeDamagedAnimation() {
                     // Small delay before returning to idle animation
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         if (skyeLargePortraitLabel != null) {
-                            startSkyeIdleAnimation();
+                            // startSkyeIdleAnimation(); // TODO: implement
                         }
                     });
                     returnTimer.setRepeats(false);
@@ -4747,355 +4569,16 @@ private void stopEnemySkyeDamagedAnimation() {
     }
 }
 
-private void startMorganaIdleAnimation() {
-    stopMorganaIdleAnimation(); // Ensure no duplicate timers
-    if (morganaIdleFrames[0] == null || morganaLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Morgana idle - frames:" + (morganaIdleFrames[0]!=null) + " label:" + morganaLargePortraitLabel);
-        return;
-    }
-    morganaIdleSequenceIndex = 0;
-    morganaIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 24; // Ticks per frame - similar to Valerius
-    morganaIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (morganaLargePortraitLabel == null) return;
-            morganaIdleFrameCounter++;
-            if (morganaIdleFrameCounter >= frameDuration) {
-                morganaIdleFrameCounter = 0;
-                morganaIdleSequenceIndex = (morganaIdleSequenceIndex + 1) % MORGANA_IDLE_SEQUENCE.length;
-                int frameIndex = MORGANA_IDLE_SEQUENCE[morganaIdleSequenceIndex];
-                if (morganaIdleFrames[frameIndex] != null) {
-                    morganaLargePortraitLabel.setIcon(morganaIdleFrames[frameIndex]);
-                    morganaLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Morgana idle timer error: " + ex.getMessage());
-            stopMorganaIdleAnimation();
-        }
-    });
-    morganaIdleAnimationTimer.start();
-    int initialFrame = MORGANA_IDLE_SEQUENCE[0];
-    morganaLargePortraitLabel.setIcon(morganaIdleFrames[initialFrame]);
-    System.out.println("▶️ Morgana idle animation started");
-}
 
-private void stopMorganaIdleAnimation() {
-    if (morganaIdleAnimationTimer != null && morganaIdleAnimationTimer.isRunning()) {
-        morganaIdleAnimationTimer.stop();
-        morganaIdleSequenceIndex = 0;
-        morganaIdleFrameCounter = 0;
-        System.out.println("⏹️ Morgana idle animation stopped");
-    }
-}
 
-private void startEnemyMorganaIdleAnimation() {
-    stopEnemyMorganaIdleAnimation(); // Ensure no duplicate timers
-    if (enemyMorganaIdleFrames[0] == null || enemyMorganaLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy Morgana idle - frames:" + (enemyMorganaIdleFrames[0]!=null) + " label:" + enemyMorganaLargePortraitLabel);
-        return;
-    }
-    enemyMorganaIdleSequenceIndex = 0;
-    enemyMorganaIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 24; // Ticks per frame - similar to Valerius
-    enemyMorganaIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemyMorganaLargePortraitLabel == null) return;
-            enemyMorganaIdleFrameCounter++;
-            if (enemyMorganaIdleFrameCounter >= frameDuration) {
-                enemyMorganaIdleFrameCounter = 0;
-                enemyMorganaIdleSequenceIndex = (enemyMorganaIdleSequenceIndex + 1) % MORGANA_IDLE_SEQUENCE.length;
-                int frameIndex = MORGANA_IDLE_SEQUENCE[enemyMorganaIdleSequenceIndex];
-                if (enemyMorganaIdleFrames[frameIndex] != null) {
-                    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaIdleFrames[frameIndex]);
-                    enemyMorganaLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy Morgana idle timer error: " + ex.getMessage());
-            stopEnemyMorganaIdleAnimation();
-        }
-    });
-    enemyMorganaIdleAnimationTimer.start();
-    int initialFrame = MORGANA_IDLE_SEQUENCE[0];
-    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaIdleFrames[initialFrame]);
-    System.out.println("▶️ Enemy Morgana idle animation started");
-}
 
-private void stopEnemyMorganaIdleAnimation() {
-    if (enemyMorganaIdleAnimationTimer != null && enemyMorganaIdleAnimationTimer.isRunning()) {
-        enemyMorganaIdleAnimationTimer.stop();
-        enemyMorganaIdleSequenceIndex = 0;
-        enemyMorganaIdleFrameCounter = 0;
-        System.out.println("⏹️ Enemy Morgana idle animation stopped");
-    }
-}
 
-private void startMorganaAttackAnimation() {
-    // Stop all other Morgana animations
-    stopMorganaIdleAnimation();
-    if (morganaAttackAnimationTimer != null && morganaAttackAnimationTimer.isRunning()) {
-        morganaAttackAnimationTimer.stop();
-    }
-    if (morganaAttackFrames[0] == null || morganaLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Morgana attack - frames:" + (morganaAttackFrames[0]!=null) + " label:" + morganaLargePortraitLabel);
-        return;
-    }
-    morganaAttackAnimationPlaying = true;
-    currentMorganaAttackFrame = 0;
-    morganaAttackFrameCounter = 0;
-    final int tickMs = 16;
-    morganaAttackAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (morganaLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof characters.Morgana)) {
-                stopMorganaAttackAnimation();
-                return;
-            }
-            morganaAttackFrameCounter++;
-            int frameTicks = MORGANA_ATTACK_FRAME_DURATIONS[currentMorganaAttackFrame];
-            if (morganaAttackFrameCounter >= frameTicks) {
-                morganaAttackFrameCounter = 0;
-                currentMorganaAttackFrame = (currentMorganaAttackFrame + 1) % morganaAttackFrames.length;
-                ImageIcon frame = morganaAttackFrames[currentMorganaAttackFrame];
-                if (frame != null) {
-                    morganaLargePortraitLabel.setIcon(frame);
-                    morganaLargePortraitLabel.repaint();
-                } else {
-                    morganaLargePortraitLabel.setIcon(morganaAttackFrames[0]);
-                }
-                // On last frame, schedule return to idle
-                if (currentMorganaAttackFrame == morganaAttackFrames.length - 1) {
-                    // Stop attack timer before refresh
-                    stopMorganaAttackAnimation();
-                    morganaAttackAnimationPlaying = false;
-                    // Small delay before returning to normal portrait
-                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
-                        if (morganaLargePortraitLabel != null) {
-                            morganaLargePortraitLabel.setIcon(getCharacterPortrait(playerCharacter));
-                            morganaLargePortraitLabel.repaint();
-                        }
-                    });
-                    returnTimer.setRepeats(false);
-                    returnTimer.start();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Morgana attack timer error: " + ex.getMessage());
-            stopMorganaAttackAnimation();
-        }
-    });
-    morganaAttackAnimationTimer.start();
-    System.out.println("⚔️ Morgana attack animation started");
-}
 
-private void stopMorganaAttackAnimation() {
-    if (morganaAttackAnimationTimer != null && morganaAttackAnimationTimer.isRunning()) {
-        morganaAttackAnimationTimer.stop();
-        currentMorganaAttackFrame = 0;
-        morganaAttackFrameCounter = 0;
-        System.out.println("⏹️ Morgana attack animation stopped");
-    }
-}
-
-private void startEnemyMorganaAttackAnimation() {
-    // Stop all other enemy Morgana animations
-    stopEnemyMorganaIdleAnimation();
-    if (enemyMorganaAttackAnimationTimer != null && enemyMorganaAttackAnimationTimer.isRunning()) {
-        enemyMorganaAttackAnimationTimer.stop();
-    }
-    if (enemyMorganaAttackFrames[0] == null || enemyMorganaLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy Morgana attack - frames:" + (enemyMorganaAttackFrames[0]!=null) + " label:" + enemyMorganaLargePortraitLabel);
-        return;
-    }
-    enemyMorganaAttackAnimationPlaying = true;
-    currentEnemyMorganaAttackFrame = 0;
-    enemyMorganaAttackFrameCounter = 0;
-    final int tickMs = 16;
-    enemyMorganaAttackAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemyMorganaLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof characters.Morgana)) {
-                stopEnemyMorganaAttackAnimation();
-                return;
-            }
-            enemyMorganaAttackFrameCounter++;
-            int frameTicks = MORGANA_ATTACK_FRAME_DURATIONS[currentEnemyMorganaAttackFrame];
-            if (enemyMorganaAttackFrameCounter >= frameTicks) {
-                enemyMorganaAttackFrameCounter = 0;
-                currentEnemyMorganaAttackFrame = (currentEnemyMorganaAttackFrame + 1) % enemyMorganaAttackFrames.length;
-                ImageIcon frame = enemyMorganaAttackFrames[currentEnemyMorganaAttackFrame];
-                if (frame != null) {
-                    enemyMorganaLargePortraitLabel.setIcon(frame);
-                    enemyMorganaLargePortraitLabel.repaint();
-                } else {
-                    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaAttackFrames[0]);
-                }
-                // On last frame, schedule return to idle
-                if (currentEnemyMorganaAttackFrame == enemyMorganaAttackFrames.length - 1) {
-                    // Stop attack timer before refresh
-                    stopEnemyMorganaAttackAnimation();
-                    enemyMorganaAttackAnimationPlaying = false;
-                    // Small delay before returning to normal portrait
-                    javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
-                        if (enemyMorganaLargePortraitLabel != null) {
-                            enemyMorganaLargePortraitLabel.setIcon(getCharacterPortrait(currentEnemy));
-                            enemyMorganaLargePortraitLabel.repaint();
-                        }
-                    });
-                    returnTimer.setRepeats(false);
-                    returnTimer.start();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy Morgana attack timer error: " + ex.getMessage());
-            stopEnemyMorganaAttackAnimation();
-        }
-    });
-    enemyMorganaAttackAnimationTimer.start();
-    System.out.println("⚔️ Enemy Morgana attack animation started");
-}
-
-private void stopEnemyMorganaAttackAnimation() {
-    if (enemyMorganaAttackAnimationTimer != null && enemyMorganaAttackAnimationTimer.isRunning()) {
-        enemyMorganaAttackAnimationTimer.stop();
-        currentEnemyMorganaAttackFrame = 0;
-        enemyMorganaAttackFrameCounter = 0;
-        System.out.println("⏹️ Enemy Morgana attack animation stopped");
-    }
-}
-
-private void startMorganaDamagedAnimation() {
-    stopMorganaIdleAnimation();
-    if (morganaDamagedAnimationTimer != null && morganaDamagedAnimationTimer.isRunning()) {
-        morganaDamagedAnimationTimer.stop();
-    }
-    if (morganaDamagedFrames[0] == null || morganaLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Morgana damaged - frames:" + (morganaDamagedFrames[0]!=null) + " label:" + morganaLargePortraitLabel);
-        return;
-    }
-    currentMorganaDamagedFrame = 0;
-    morganaDamagedFrameCounter = 0;
-    final int tickMs = 16;
-    morganaDamagedAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (morganaLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof characters.Morgana)) {
-                stopMorganaDamagedAnimation();
-                return;
-            }
-            morganaDamagedFrameCounter++;
-            int frameTicks = MORGANA_DAMAGED_FRAME_DURATIONS[currentMorganaDamagedFrame];
-            if (morganaDamagedFrameCounter >= frameTicks) {
-                morganaDamagedFrameCounter = 0;
-                currentMorganaDamagedFrame++;
-                if (currentMorganaDamagedFrame >= morganaDamagedFrames.length) {
-                    // Animation finished, return to idle
-                    stopMorganaDamagedAnimation();
-                    morganaDamagedAnimationPlaying = false;
-                    if (morganaIdleFrames[0] != null) {
-                        startMorganaIdleAnimation();
-                    }
-                    return;
-                }
-                ImageIcon frame = morganaDamagedFrames[currentMorganaDamagedFrame];
-                if (frame != null) {
-                    morganaLargePortraitLabel.setIcon(frame);
-                } else {
-                    morganaLargePortraitLabel.setIcon(morganaDamagedFrames[0]);
-                }
-                morganaLargePortraitLabel.repaint();
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Morgana damaged timer error: " + ex.getMessage());
-            stopMorganaDamagedAnimation();
-        }
-    });
-    morganaDamagedAnimationTimer.start();
-    morganaLargePortraitLabel.setIcon(morganaDamagedFrames[0]);
-    morganaDamagedAnimationPlaying = true;
-    System.out.println("💢 Morgana damaged animation started");
-}
-
-private void stopMorganaDamagedAnimation() {
-    if (morganaDamagedAnimationTimer != null && morganaDamagedAnimationTimer.isRunning()) {
-        morganaDamagedAnimationTimer.stop();
-        currentMorganaDamagedFrame = 0;
-        morganaDamagedFrameCounter = 0;
-        System.out.println("⏹️ Morgana damaged animation stopped");
-    }
-}
-
-private void startEnemyMorganaDamagedAnimation() {
-    stopEnemyMorganaIdleAnimation();
-    if (enemyMorganaDamagedAnimationTimer != null && enemyMorganaDamagedAnimationTimer.isRunning()) {
-        enemyMorganaDamagedAnimationTimer.stop();
-    }
-    if (enemyMorganaDamagedFrames[0] == null || enemyMorganaLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy Morgana damaged - frames:" + (enemyMorganaDamagedFrames[0]!=null) + " label:" + enemyMorganaLargePortraitLabel);
-        return;
-    }
-    currentEnemyMorganaDamagedFrame = 0;
-    enemyMorganaDamagedFrameCounter = 0;
-    final int tickMs = 16;
-    enemyMorganaDamagedAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemyMorganaLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof characters.Morgana)) {
-                stopEnemyMorganaDamagedAnimation();
-                return;
-            }
-            enemyMorganaDamagedFrameCounter++;
-            int frameTicks = MORGANA_DAMAGED_FRAME_DURATIONS[currentEnemyMorganaDamagedFrame];
-            if (enemyMorganaDamagedFrameCounter >= frameTicks) {
-                enemyMorganaDamagedFrameCounter = 0;
-                currentEnemyMorganaDamagedFrame++;
-                if (currentEnemyMorganaDamagedFrame >= enemyMorganaDamagedFrames.length) {
-                    // Animation finished, return to idle
-                    stopEnemyMorganaDamagedAnimation();
-                    enemyMorganaDamagedAnimationPlaying = false;
-                    if (enemyMorganaIdleFrames[0] != null) {
-                        startEnemyMorganaIdleAnimation();
-                    }
-                    return;
-                }
-                ImageIcon frame = enemyMorganaDamagedFrames[currentEnemyMorganaDamagedFrame];
-                if (frame != null) {
-                    enemyMorganaLargePortraitLabel.setIcon(frame);
-                } else {
-                    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaDamagedFrames[0]);
-                }
-                enemyMorganaLargePortraitLabel.repaint();
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy Morgana damaged timer error: " + ex.getMessage());
-            stopEnemyMorganaDamagedAnimation();
-        }
-    });
-    enemyMorganaDamagedAnimationTimer.start();
-    enemyMorganaLargePortraitLabel.setIcon(enemyMorganaDamagedFrames[0]);
-    enemyMorganaDamagedAnimationPlaying = true;
-    System.out.println("💢 Enemy Morgana damaged animation started");
-}
 
 private void showEnemyMorganaDamagedAnimation() {
     System.out.println("💥 showEnemyMorganaDamagedAnimation called!");
-
-    // Only play once per turn and if not already playing
-    if (enemyMorganaDamagedAnimationPlaying) {
-        System.out.println("⏭️ Enemy Morgana damaged animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof characters.Morgana && enemyMorganaLargePortraitLabel != null) {
-        if (enemyMorganaDamagedFrames[0] != null) {
-            startEnemyMorganaDamagedAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Morgana damaged frames not loaded, skipping damaged animation");
-            enemyMorganaDamagedAnimationPlaying = false;
-        }
+    if (currentEnemy instanceof characters.Morgana && enemyMorganaAnimation != null) {
+        enemyMorganaAnimation.start(CharacterAnimation.State.DAMAGED);
     }
 }
 
@@ -5121,47 +4604,16 @@ private void showEnemyAerisDamagedAnimation() {
 private void showEnemySeleneDamagedAnimation() {
     System.out.println("💥 showEnemySeleneDamagedAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (enemySeleneDamagedAnimationPlaying) {
-        System.out.println("⏭️ Enemy Selene damaged animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof Selene && enemySeleneLargePortraitLabel != null) {
-        if (enemySeleneDamagedFrames[0] != null) {
-            startEnemySeleneDamagedAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Selene damaged frames not loaded, skipping damaged animation");
-            enemySeleneDamagedAnimationPlaying = false;
-        }
+    if (currentEnemy instanceof Selene && enemySeleneAnimation != null && enemySeleneDamagedFrames[0] != null) {
+        enemySeleneAnimation.start(CharacterAnimation.State.DAMAGED);
     }
 }
 
 private void showEnemyFlueDamagedAnimation() {
     System.out.println("💥 showEnemyFlueDamagedAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (enemyFlueDamagedAnimationPlaying) {
-        System.out.println("⏭️ Enemy Flue damaged animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof Flue && enemyFlueLargePortraitLabel != null) {
-        if (enemyFlueDamagedFrames[0] != null) {
-            startEnemyFlueDamagedAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Flue damaged frames not loaded, skipping damaged animation");
-            enemyFlueDamagedAnimationPlaying = false;
-        }
-    }
-}
-
-private void stopEnemyMorganaDamagedAnimation() {
-    if (enemyMorganaDamagedAnimationTimer != null && enemyMorganaDamagedAnimationTimer.isRunning()) {
-        enemyMorganaDamagedAnimationTimer.stop();
-        currentEnemyMorganaDamagedFrame = 0;
-        enemyMorganaDamagedFrameCounter = 0;
-        System.out.println("⏹️ Enemy Morgana damaged animation stopped");
+    if (currentEnemy instanceof Flue && enemyFlueAnimation != null && enemyFlueDamagedFrames[0] != null) {
+        enemyFlueAnimation.start(CharacterAnimation.State.DAMAGED);
     }
 }
 
@@ -5503,97 +4955,11 @@ private void stopEnemyAerisDamagedAnimation() {
     }
 }
 
-private void startSeleneIdleAnimation() {
-    stopSeleneIdleAnimation(); // Ensure no duplicate timers
-    if (seleneIdleFrames[0] == null || seleneLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Selene idle - frames:" + (seleneIdleFrames[0]!=null) + " label:" + seleneLargePortraitLabel);
-        return;
-    }
-    seleneIdleSequenceIndex = 0;
-    seleneIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 6; // ticks per frame
-    seleneIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (seleneLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof Selene)) {
-                stopSeleneIdleAnimation();
-                return;
-            }
-            seleneIdleFrameCounter++;
-            if (seleneIdleFrameCounter >= frameDuration) {
-                seleneIdleFrameCounter = 0;
-                seleneIdleSequenceIndex = (seleneIdleSequenceIndex + 1) % SELENE_IDLE_SEQUENCE.length;
-                int frameIndex = SELENE_IDLE_SEQUENCE[seleneIdleSequenceIndex];
-                if (seleneIdleFrames[frameIndex] != null) {
-                    seleneLargePortraitLabel.setIcon(seleneIdleFrames[frameIndex]);
-                    seleneLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Selene idle timer error: " + ex.getMessage());
-            stopSeleneIdleAnimation();
-        }
-    });
-    seleneIdleAnimationTimer.start();
-    seleneLargePortraitLabel.setIcon(seleneIdleFrames[0]);
-    System.out.println("▶️ Selene idle animation started");
-}
 
-private void stopSeleneIdleAnimation() {
-    if (seleneIdleAnimationTimer != null && seleneIdleAnimationTimer.isRunning()) {
-        seleneIdleAnimationTimer.stop();
-        seleneIdleSequenceIndex = 0;
-        seleneIdleFrameCounter = 0;
-        System.out.println("⏹️ Selene idle animation stopped");
-    }
-}
 
-private void startEnemySeleneIdleAnimation() {
-    stopEnemySeleneIdleAnimation(); // Ensure no duplicate timers
-    if (enemySeleneIdleFrames[0] == null || enemySeleneLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy Selene idle - frames:" + (enemySeleneIdleFrames[0]!=null) + " label:" + enemySeleneLargePortraitLabel);
-        return;
-    }
-    enemySeleneIdleSequenceIndex = 0;
-    enemySeleneIdleFrameCounter = 0;
-    final int tickMs = 16;
-    final int frameDuration = 6; // ticks per frame
-    enemySeleneIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemySeleneLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof Selene)) {
-                stopEnemySeleneIdleAnimation();
-                return;
-            }
-            enemySeleneIdleFrameCounter++;
-            if (enemySeleneIdleFrameCounter >= frameDuration) {
-                enemySeleneIdleFrameCounter = 0;
-                enemySeleneIdleSequenceIndex = (enemySeleneIdleSequenceIndex + 1) % SELENE_IDLE_SEQUENCE.length;
-                int frameIndex = SELENE_IDLE_SEQUENCE[enemySeleneIdleSequenceIndex];
-                if (enemySeleneIdleFrames[frameIndex] != null) {
-                    enemySeleneLargePortraitLabel.setIcon(enemySeleneIdleFrames[frameIndex]);
-                    enemySeleneLargePortraitLabel.repaint();
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy Selene idle timer error: " + ex.getMessage());
-            stopEnemySeleneIdleAnimation();
-        }
-    });
-    enemySeleneIdleAnimationTimer.start();
-    enemySeleneLargePortraitLabel.setIcon(enemySeleneIdleFrames[0]);
-    System.out.println("▶️ Enemy Selene idle animation started");
-}
 
-private void stopEnemySeleneIdleAnimation() {
-    if (enemySeleneIdleAnimationTimer != null && enemySeleneIdleAnimationTimer.isRunning()) {
-        enemySeleneIdleAnimationTimer.stop();
-        enemySeleneIdleSequenceIndex = 0;
-        enemySeleneIdleFrameCounter = 0;
-        System.out.println("⏹️ Enemy Selene idle animation stopped");
-    }
-}
+
+
 
 private void startFlueIdleAnimation() {
     stopFlueIdleAnimation(); // Ensure no duplicate timers
@@ -5931,253 +5297,17 @@ private void stopEnemyFlueDamagedAnimation() {
     }
 }
 
-private void startSeleneAttackAnimation() {
-    stopSeleneIdleAnimation();
-    if (seleneAttackAnimationTimer != null && seleneAttackAnimationTimer.isRunning()) {
-        seleneAttackAnimationTimer.stop();
-    }
-    if (seleneAttackFrames[0] == null || seleneLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Selene attack - frames:" + (seleneAttackFrames[0]!=null) + " label:" + seleneLargePortraitLabel);
-        return;
-    }
-    currentSeleneAttackFrame = 0;
-    seleneAttackFrameCounter = 0;
-    final int tickMs = 16;
-    seleneAttackAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (seleneLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof Selene)) {
-                stopSeleneAttackAnimation();
-                return;
-            }
-            seleneAttackFrameCounter++;
-            int frameTicks = SELENE_ATTACK_FRAME_DURATIONS[currentSeleneAttackFrame];
-            if (seleneAttackFrameCounter >= frameTicks) {
-                seleneAttackFrameCounter = 0;
-                currentSeleneAttackFrame++;
-                if (currentSeleneAttackFrame >= seleneAttackFrames.length) {
-                    // Animation finished, return to idle
-                    stopSeleneAttackAnimation();
-                    seleneAttackAnimationPlaying = false;
-                    if (seleneIdleFrames[0] != null) {
-                        startSeleneIdleAnimation();
-                    }
-                    return;
-                }
-                ImageIcon frame = seleneAttackFrames[currentSeleneAttackFrame];
-                if (frame != null) {
-                    seleneLargePortraitLabel.setIcon(frame);
-                } else {
-                    seleneLargePortraitLabel.setIcon(seleneAttackFrames[0]);
-                }
-                seleneLargePortraitLabel.repaint();
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Selene attack timer error: " + ex.getMessage());
-            stopSeleneAttackAnimation();
-        }
-    });
-    seleneAttackAnimationTimer.start();
-    seleneLargePortraitLabel.setIcon(seleneAttackFrames[0]);
-    seleneAttackAnimationPlaying = true;
-    System.out.println("⚔️ Selene attack animation started");
-}
 
-private void stopSeleneAttackAnimation() {
-    if (seleneAttackAnimationTimer != null && seleneAttackAnimationTimer.isRunning()) {
-        seleneAttackAnimationTimer.stop();
-        currentSeleneAttackFrame = 0;
-        seleneAttackFrameCounter = 0;
-        System.out.println("⏹️ Selene attack animation stopped");
-    }
-}
 
-private void startEnemySeleneAttackAnimation() {
-    stopEnemySeleneIdleAnimation();
-    if (enemySeleneAttackAnimationTimer != null && enemySeleneAttackAnimationTimer.isRunning()) {
-        enemySeleneAttackAnimationTimer.stop();
-    }
-    if (enemySeleneAttackFrames[0] == null || enemySeleneLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy Selene attack - frames:" + (enemySeleneAttackFrames[0]!=null) + " label:" + enemySeleneLargePortraitLabel);
-        return;
-    }
-    currentEnemySeleneAttackFrame = 0;
-    enemySeleneAttackFrameCounter = 0;
-    final int tickMs = 16;
-    enemySeleneAttackAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemySeleneLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof Selene)) {
-                stopEnemySeleneAttackAnimation();
-                return;
-            }
-            enemySeleneAttackFrameCounter++;
-            int frameTicks = SELENE_ATTACK_FRAME_DURATIONS[currentEnemySeleneAttackFrame];
-            if (enemySeleneAttackFrameCounter >= frameTicks) {
-                enemySeleneAttackFrameCounter = 0;
-                currentEnemySeleneAttackFrame++;
-                if (currentEnemySeleneAttackFrame >= enemySeleneAttackFrames.length) {
-                    // Animation finished, return to idle
-                    stopEnemySeleneAttackAnimation();
-                    enemySeleneAttackAnimationPlaying = false;
-                    if (enemySeleneIdleFrames[0] != null) {
-                        startEnemySeleneIdleAnimation();
-                    }
-                    return;
-                }
-                ImageIcon frame = enemySeleneAttackFrames[currentEnemySeleneAttackFrame];
-                if (frame != null) {
-                    enemySeleneLargePortraitLabel.setIcon(frame);
-                } else {
-                    enemySeleneLargePortraitLabel.setIcon(enemySeleneAttackFrames[0]);
-                }
-                enemySeleneLargePortraitLabel.repaint();
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy Selene attack timer error: " + ex.getMessage());
-            stopEnemySeleneAttackAnimation();
-        }
-    });
-    enemySeleneAttackAnimationTimer.start();
-    enemySeleneLargePortraitLabel.setIcon(enemySeleneAttackFrames[0]);
-    enemySeleneAttackAnimationPlaying = true;
-    System.out.println("⚔️ Enemy Selene attack animation started");
-}
 
-private void stopEnemySeleneAttackAnimation() {
-    if (enemySeleneAttackAnimationTimer != null && enemySeleneAttackAnimationTimer.isRunning()) {
-        enemySeleneAttackAnimationTimer.stop();
-        currentEnemySeleneAttackFrame = 0;
-        enemySeleneAttackFrameCounter = 0;
-        System.out.println("⏹️ Enemy Selene attack animation stopped");
-    }
-}
 
-private void startSeleneDamagedAnimation() {
-    stopSeleneIdleAnimation();
-    if (seleneDamagedAnimationTimer != null && seleneDamagedAnimationTimer.isRunning()) {
-        seleneDamagedAnimationTimer.stop();
-    }
-    if (seleneDamagedFrames[0] == null || seleneLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start Selene damaged - frames:" + (seleneDamagedFrames[0]!=null) + " label:" + seleneLargePortraitLabel);
-        return;
-    }
-    currentSeleneDamagedFrame = 0;
-    seleneDamagedFrameCounter = 0;
-    final int tickMs = 16;
-    seleneDamagedAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (seleneLargePortraitLabel == null) return;
-            if (!(playerCharacter instanceof Selene)) {
-                stopSeleneDamagedAnimation();
-                return;
-            }
-            seleneDamagedFrameCounter++;
-            int frameTicks = SELENE_DAMAGED_FRAME_DURATIONS[currentSeleneDamagedFrame];
-            if (seleneDamagedFrameCounter >= frameTicks) {
-                seleneDamagedFrameCounter = 0;
-                currentSeleneDamagedFrame++;
-                if (currentSeleneDamagedFrame >= seleneDamagedFrames.length) {
-                    // Animation finished, return to idle
-                    stopSeleneDamagedAnimation();
-                    seleneDamagedAnimationPlaying = false;
-                    if (seleneIdleFrames[0] != null) {
-                        startSeleneIdleAnimation();
-                    }
-                    return;
-                }
-                ImageIcon frame = seleneDamagedFrames[currentSeleneDamagedFrame];
-                if (frame != null) {
-                    seleneLargePortraitLabel.setIcon(frame);
-                } else {
-                    seleneLargePortraitLabel.setIcon(seleneDamagedFrames[0]);
-                }
-                seleneLargePortraitLabel.repaint();
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Selene damaged timer error: " + ex.getMessage());
-            stopSeleneDamagedAnimation();
-        }
-    });
-    seleneDamagedAnimationTimer.start();
-    seleneLargePortraitLabel.setIcon(seleneDamagedFrames[0]);
-    seleneDamagedAnimationPlaying = true;
-    System.out.println("💢 Selene damaged animation started");
-}
 
-private void stopSeleneDamagedAnimation() {
-    if (seleneDamagedAnimationTimer != null && seleneDamagedAnimationTimer.isRunning()) {
-        seleneDamagedAnimationTimer.stop();
-        currentSeleneDamagedFrame = 0;
-        seleneDamagedFrameCounter = 0;
-        System.out.println("⏹️ Selene damaged animation stopped");
-    }
-}
 
-private void startEnemySeleneDamagedAnimation() {
-    stopEnemySeleneIdleAnimation();
-    if (enemySeleneDamagedAnimationTimer != null && enemySeleneDamagedAnimationTimer.isRunning()) {
-        enemySeleneDamagedAnimationTimer.stop();
-    }
-    if (enemySeleneDamagedFrames[0] == null || enemySeleneLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy Selene damaged - frames:" + (enemySeleneDamagedFrames[0]!=null) + " label:" + enemySeleneLargePortraitLabel);
-        return;
-    }
-    currentEnemySeleneDamagedFrame = 0;
-    enemySeleneDamagedFrameCounter = 0;
-    final int tickMs = 16;
-    enemySeleneDamagedAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemySeleneLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof Selene)) {
-                stopEnemySeleneDamagedAnimation();
-                return;
-            }
-            enemySeleneDamagedFrameCounter++;
-            int frameTicks = SELENE_DAMAGED_FRAME_DURATIONS[currentEnemySeleneDamagedFrame];
-            if (enemySeleneDamagedFrameCounter >= frameTicks) {
-                enemySeleneDamagedFrameCounter = 0;
-                currentEnemySeleneDamagedFrame++;
-                if (currentEnemySeleneDamagedFrame >= enemySeleneDamagedFrames.length) {
-                    // Animation finished, return to idle
-                    stopEnemySeleneDamagedAnimation();
-                    enemySeleneDamagedAnimationPlaying = false;
-                    if (enemySeleneIdleFrames[0] != null) {
-                        startEnemySeleneIdleAnimation();
-                    }
-                    return;
-                }
-                ImageIcon frame = enemySeleneDamagedFrames[currentEnemySeleneDamagedFrame];
-                if (frame != null) {
-                    enemySeleneLargePortraitLabel.setIcon(frame);
-                } else {
-                    enemySeleneLargePortraitLabel.setIcon(enemySeleneDamagedFrames[0]);
-                }
-                enemySeleneLargePortraitLabel.repaint();
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy Selene damaged timer error: " + ex.getMessage());
-            stopEnemySeleneDamagedAnimation();
-        }
-    });
-    enemySeleneDamagedAnimationTimer.start();
-    enemySeleneLargePortraitLabel.setIcon(enemySeleneDamagedFrames[0]);
-    enemySeleneDamagedAnimationPlaying = true;
-    System.out.println("💢 Enemy Selene damaged animation started");
-}
 
-private void stopEnemySeleneDamagedAnimation() {
-    if (enemySeleneDamagedAnimationTimer != null && enemySeleneDamagedAnimationTimer.isRunning()) {
-        enemySeleneDamagedAnimationTimer.stop();
-        currentEnemySeleneDamagedFrame = 0;
-        enemySeleneDamagedFrameCounter = 0;
-        System.out.println("⏹️ Enemy Selene damaged animation stopped");
-    }
-}
 
 private void startValeriusAttackAnimation() {
     // Stop all other Valerius animations
-    stopValeriusIdleAnimation();
+    if (valeriusAnimation != null) valeriusAnimation.stop();
     if (valeriusAttackAnimationTimer != null && valeriusAttackAnimationTimer.isRunning()) {
         valeriusAttackAnimationTimer.stop();
     }
@@ -6215,7 +5345,7 @@ private void startValeriusAttackAnimation() {
                     javax.swing.Timer returnTimer = new javax.swing.Timer(300, ev -> {
                         // Return to idle animation
                         if (valeriusIdleFrames[0] != null) {
-                            startValeriusIdleAnimation();
+                            if (valeriusAnimation != null) valeriusAnimation.start(CharacterAnimation.State.IDLE);
                         }
                     });
                     returnTimer.setRepeats(false);
@@ -6352,7 +5482,7 @@ private void stopEnemyKaelIdleAnimation() {
 
 private void startKaelAttackAnimation() {
     // Stop all other Kael animations
-    stopKaelIdleAnimation();
+    if (kaelAnimation != null) kaelAnimation.stop();
     if (kaelAttackAnimationTimer != null && kaelAttackAnimationTimer.isRunning()) {
         kaelAttackAnimationTimer.stop();
     }
@@ -6379,7 +5509,7 @@ private void startKaelAttackAnimation() {
                     kaelAttackAnimationPlaying = false;
                     // Return to idle
                     if (kaelIdleFrames[0] != null) {
-                        startKaelIdleAnimation();
+                        if (kaelAnimation != null) kaelAnimation.start(CharacterAnimation.State.IDLE);
                     }
                     return;
                 }
@@ -6473,7 +5603,7 @@ private void stopEnemyKaelAttackAnimation() {
 }
 
 private void startKaelDamagedAnimation() {
-    stopKaelIdleAnimation();
+    if (kaelAnimation != null) kaelAnimation.stop();
     if (kaelDamagedAnimationTimer != null && kaelDamagedAnimationTimer.isRunning()) {
         kaelDamagedAnimationTimer.stop();
     }
@@ -6502,7 +5632,7 @@ private void startKaelDamagedAnimation() {
                     stopKaelDamagedAnimation();
                     kaelDamagedAnimationPlaying = false;
                     if (kaelIdleFrames[0] != null) {
-                        startKaelIdleAnimation();
+                        if (kaelAnimation != null) kaelAnimation.start(CharacterAnimation.State.IDLE);
                     }
                     return;
                 }
@@ -6535,7 +5665,7 @@ private void stopKaelDamagedAnimation() {
 }
 
 private void startValeriusDamagedAnimation() {
-    stopValeriusIdleAnimation();
+    if (valeriusAnimation != null) valeriusAnimation.stop();
     if (valeriusDamagedAnimationTimer != null && valeriusDamagedAnimationTimer.isRunning()) {
         valeriusDamagedAnimationTimer.stop();
     }
@@ -6563,7 +5693,7 @@ private void startValeriusDamagedAnimation() {
                     stopValeriusDamagedAnimation();
                     valeriusDamagedAnimationPlaying = false;
                     if (valeriusIdleFrames[0] != null) {
-                        startValeriusIdleAnimation();
+                        if (valeriusAnimation != null) valeriusAnimation.start(CharacterAnimation.State.IDLE);
                     }
                     return;
                 }
@@ -6757,76 +5887,32 @@ private void showEnemyKaelAttackAnimation() {
 private void showSkyeAttackAnimation() {
     System.out.println("⚔️ showSkyeAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (skyeAttackAnimationPlaying) {
-        System.out.println("⏭️ Skye attack animation already playing, skipping...");
-        return;
-    }
-
-    if (playerCharacter instanceof characters.Skye && skyeLargePortraitLabel != null) {
-        if (skyeAttackFrames[0] != null) {
-            startSkyeAttackAnimation();
-        } else {
-            System.out.println("⚠️ Skye attack frames not loaded, skipping attack animation");
-            skyeAttackAnimationPlaying = false;
-        }
+    if (playerCharacter instanceof characters.Skye && skyeAnimation != null) {
+        skyeAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
 private void showEnemySkyeAttackAnimation() {
     System.out.println("⚔️ showEnemySkyeAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (enemySkyeAttackAnimationPlaying) {
-        System.out.println("⏭️ Enemy Skye attack animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof characters.Skye && enemySkyeLargePortraitLabel != null) {
-        if (enemySkyeAttackFrames[0] != null) {
-            startEnemySkyeAttackAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Skye attack frames not loaded, skipping attack animation");
-            enemySkyeAttackAnimationPlaying = false;
-        }
+    if (currentEnemy instanceof characters.Skye && enemySkyeAnimation != null) {
+        enemySkyeAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
 private void showMorganaAttackAnimation() {
     System.out.println("⚔️ showMorganaAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (morganaAttackAnimationPlaying) {
-        System.out.println("⏭️ Morgana attack animation already playing, skipping...");
-        return;
-    }
-
-    if (playerCharacter instanceof characters.Morgana && morganaLargePortraitLabel != null) {
-        if (morganaAttackFrames[0] != null) {
-            startMorganaAttackAnimation();
-        } else {
-            System.out.println("⚠️ Morgana attack frames not loaded, skipping attack animation");
-            morganaAttackAnimationPlaying = false;
-        }
+    if (playerCharacter instanceof characters.Morgana && morganaAnimation != null) {
+        morganaAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
 private void showEnemyMorganaAttackAnimation() {
     System.out.println("⚔️ showEnemyMorganaAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (enemyMorganaAttackAnimationPlaying) {
-        System.out.println("⏭️ Enemy Morgana attack animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof characters.Morgana && enemyMorganaLargePortraitLabel != null) {
-        if (enemyMorganaAttackFrames[0] != null) {
-            startEnemyMorganaAttackAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Morgana attack frames not loaded, skipping attack animation");
-            enemyMorganaAttackAnimationPlaying = false;
-        }
+    if (currentEnemy instanceof characters.Morgana && enemyMorganaAnimation != null) {
+        enemyMorganaAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
@@ -6871,19 +5957,8 @@ private void showFlueAttackAnimation() {
 private void showSeleneAttackAnimation() {
     System.out.println("⚔️ showSeleneAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (seleneAttackAnimationPlaying) {
-        System.out.println("⏭️ Selene attack animation already playing, skipping...");
-        return;
-    }
-
-    if (playerCharacter instanceof Selene && seleneLargePortraitLabel != null) {
-        if (seleneAttackFrames[0] != null) {
-            startSeleneAttackAnimation();
-        } else {
-            System.out.println("⚠️ Selene attack frames not loaded, skipping attack animation");
-            seleneAttackAnimationPlaying = false;
-        }
+    if (playerCharacter instanceof Selene && seleneAnimation != null && seleneAttackFrames[0] != null) {
+        seleneAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
@@ -6936,68 +6011,28 @@ private void showEnemyFlueAttackAnimation() {
 private void showEnemySeleneAttackAnimation() {
     System.out.println("⚔️ showEnemySeleneAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (enemySeleneAttackAnimationPlaying) {
-        System.out.println("⏭️ Enemy Selene attack animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof Selene && enemySeleneLargePortraitLabel != null) {
-        if (enemySeleneAttackFrames[0] != null) {
-            startEnemySeleneAttackAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Selene attack frames not loaded, skipping attack animation");
-            enemySeleneAttackAnimationPlaying = false;
-        }
+    if (currentEnemy instanceof Selene && enemySeleneAnimation != null && enemySeleneAttackFrames[0] != null) {
+        enemySeleneAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
 private void showSkyeDamagedAnimation() {
     System.out.println("💥 showSkyeDamagedAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (skyeDamagedAnimationPlaying) {
-        System.out.println("⏭️ Skye damaged animation already playing, skipping...");
-        return;
-    }
-
-    if (playerCharacter instanceof characters.Skye && skyeLargePortraitLabel != null) {
-        if (skyeDamagedFrames[0] != null) {
-            startSkyeDamagedAnimation();
-        } else {
-            System.out.println("⚠️ Skye damaged frames not loaded, skipping damaged animation");
-            skyeDamagedAnimationPlaying = false;
-        }
+    if (playerCharacter instanceof characters.Skye && skyeAnimation != null) {
+        skyeAnimation.start(CharacterAnimation.State.DAMAGED);
     }
 }
 
 private void showEnemySkyeDamagedAnimation() {
     System.out.println("💥 showEnemySkyeDamagedAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (enemySkyeDamagedAnimationPlaying) {
-        System.out.println("⏭️ Enemy Skye damaged animation already playing, skipping...");
-        return;
-    }
-
-    if (currentEnemy instanceof characters.Skye && enemySkyeLargePortraitLabel != null) {
-        if (enemySkyeDamagedFrames[0] != null) {
-            startEnemySkyeDamagedAnimation();
-        } else {
-            System.out.println("⚠️ Enemy Skye damaged frames not loaded, skipping damaged animation");
-            enemySkyeDamagedAnimationPlaying = false;
-        }
+    if (currentEnemy instanceof characters.Skye && enemySkyeAnimation != null) {
+        enemySkyeAnimation.start(CharacterAnimation.State.DAMAGED);
     }
 }
 
-private void stopAttackAnimation() {
-    if (attackAnimationTimer != null && attackAnimationTimer.isRunning()) {
-        attackAnimationTimer.stop();
-        currentAttackFrame = 0;
-        attackFrameCounter = 0;
-        System.out.println("⏹️ Jiji attack animation stopped");
-    }
-}
+
 
 private void initEnemyJijiIdleFrames() {
     // Load all 4 idle frames, flip horizontally, and scale them centered with smooth quality
@@ -7353,22 +6388,10 @@ private void showJijiAttackAnimation() {
 }
 
 private void showValeriusAttackAnimation() {
-    System.out.println("⚔️ showValeriusAttackAnimation called! Frames loaded: " + (valeriusAttackFrames[0] != null));
+    System.out.println("⚔️ showValeriusAttackAnimation called!");
 
-    // Only play once per turn and if not already playing
-    if (valeriusAttackAnimationPlaying) {
-        System.out.println("⏭️ Valerius attack animation already playing, skipping...");
-        return;
-    }
-
-    if (playerCharacter instanceof Valerius && valeriusLargePortraitLabel != null) {
-        if (valeriusAttackFrames[0] != null) {
-            valeriusAttackAnimationPlaying = true;
-            startValeriusAttackAnimation();
-        } else {
-            System.out.println("⚠️ Valerius attack frames not loaded, skipping attack animation");
-            valeriusAttackAnimationPlaying = false;
-        }
+    if (playerCharacter instanceof Valerius && valeriusAnimation != null && valeriusAttackFrames[0] != null) {
+        valeriusAnimation.start(CharacterAnimation.State.ATTACK);
     }
 }
 
@@ -8787,17 +7810,17 @@ private void enemyTurn() {
                 if (playerCharacter instanceof Valerius) {
                     startValeriusDamagedAnimation();
                 }
-                if (playerCharacter instanceof characters.Morgana) {
-                    startMorganaDamagedAnimation();
-                }
                 if (playerCharacter instanceof Aeris) {
                     startAerisDamagedAnimation();
                 }
-                if (playerCharacter instanceof Selene) {
-                    startSeleneDamagedAnimation();
+                if (playerCharacter instanceof Selene && seleneAnimation != null) {
+                    seleneAnimation.start(CharacterAnimation.State.DAMAGED);
                 }
                 if (playerCharacter instanceof Flue) {
                     startFlueDamagedAnimation();
+                }
+                if (playerCharacter instanceof characters.Morgana && morganaAnimation != null) {
+                    morganaAnimation.start(CharacterAnimation.State.DAMAGED);
                 }
                 break;
             case MISS:

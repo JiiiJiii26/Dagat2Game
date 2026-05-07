@@ -80,4 +80,8 @@ public Board getBoard() {
     public double getSpecialPercentage() {
         return (double) specialMeter / maxSpecialMeter;
     }
+
+    public boolean isDamaged() {
+        return currentHealth < maxHealth;
+    }
 }

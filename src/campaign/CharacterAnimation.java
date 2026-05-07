@@ -19,26 +19,10 @@ public class CharacterAnimation {
     private final int[][] frameMaps;    // [state][slotIndex] -> frameIndex, optional
     private final Runnable[] onFinishes; // [state] callback when animation finishes
     private Timer timer;
-    private int currentSlot, slotCounter;  // renamed from currentFrame/frameCounter to avoid confusion
+    private int currentSlot, slotCounter;
     private State currentState = State.IDLE;
     private boolean playing;
 
-    /**
-     * Creates a CharacterAnimation instance.
-     *
-     * @param label           The JLabel to display the animation on
-     * @param idle            Frames for idle animation
-     * @param attack          Frames for attack animation
-     * @param damaged         Frames for damaged animation
-     * @param idleDur         Durations for idle slots (number of steps). Must match frameMap length if provided, else frame count.
-     * @param attackDur       Durations for attack slots
-     * @param damagedDur      Durations for damaged slots
-     * @param idleFrameMap    Optional mapping from slot index to frame index (e.g. for irregular sequences)
-     * @param attackFrameMap  Optional mapping for attack
-     * @param damagedFrameMap Optional mapping for damaged
-     * @param attackOnFinish  Callback when attack finishes (e.g., return to idle)
-     * @param damagedOnFinish Callback when damaged finishes
-     */
     public CharacterAnimation(JLabel label, ImageIcon[] idle, ImageIcon[] attack, ImageIcon[] damaged,
                               int[] idleDur, int[] attackDur, int[] damagedDur,
                               int[] idleFrameMap, int[] attackFrameMap, int[] damagedFrameMap,
@@ -81,22 +65,18 @@ public class CharacterAnimation {
         this.onFinishes[2] = damagedOnFinish;
     }
 
-    /**
-     * Starts the animation for the specified state.
-     * @param newState The state to animate (IDLE loops, others play once)
-     */
     public void start(State newState) {
         stop();
         currentState = newState;
-        currentSlot = 0;
-        slotCounter = 0;
+        currentSlot = 0;      // fixed: was currentFrame
+        slotCounter = 0;      // fixed: was frameCounter
         playing = true;
+        System.out.println("Starting animation " + newState);
 
         int stateIndex = currentState.ordinal();
         if (frames[stateIndex] == null || frames[stateIndex].length == 0) {
-            return; // nothing to animate
+            return;
         }
-        // Show the first frame immediately
         updatePortrait();
         timer = new Timer(16, new ActionListener() {
             @Override
@@ -105,18 +85,18 @@ public class CharacterAnimation {
                 int idx = currentState.ordinal();
                 int[] dur = durations[idx];
                 if (dur == null || currentSlot >= dur.length) {
-                    // No durations or finished sequence
                     if (currentState == State.IDLE) {
                         currentSlot = 0;
                         slotCounter = 0;
                         updatePortrait();
                     } else {
                         stop();
+                        System.out.println("Animation " + currentState + " finished");
                         if (onFinishes[idx] != null) {
                             onFinishes[idx].run();
                         }
                     }
-                    return;
+                    return;   // <-- no extra brace here
                 }
 
                 slotCounter++;
@@ -124,7 +104,6 @@ public class CharacterAnimation {
                     slotCounter = 0;
                     currentSlot++;
                     if (currentSlot >= dur.length) {
-                        // Finished all slots
                         if (currentState == State.IDLE) {
                             currentSlot = 0;
                             updatePortrait();
@@ -143,9 +122,6 @@ public class CharacterAnimation {
         timer.start();
     }
 
-    /**
-     * Updates the portrait label to the current frame.
-     */
     private void updatePortrait() {
         int idx = currentState.ordinal();
         if (frames[idx] == null) return;
@@ -154,16 +130,15 @@ public class CharacterAnimation {
         if (map != null && currentSlot < map.length) {
             frameIndex = map[currentSlot];
         } else {
-            frameIndex = currentSlot; // direct indexing
+            frameIndex = currentSlot;
         }
         if (frameIndex >= 0 && frameIndex < frames[idx].length && frames[idx][frameIndex] != null) {
+            System.out.println("Setting icon for " + currentState + " frame " + frameIndex);
             portraitLabel.setIcon(frames[idx][frameIndex]);
+            portraitLabel.revalidate();
         }
     }
 
-    /**
-     * Stops the current animation.
-     */
     public void stop() {
         if (timer != null) {
             timer.stop();
@@ -172,18 +147,10 @@ public class CharacterAnimation {
         playing = false;
     }
 
-    /**
-     * Checks if an animation is currently playing.
-     * @return true if playing
-     */
     public boolean isPlaying() {
         return playing;
     }
 
-    /**
-     * Gets the current animation state.
-     * @return the current state
-     */
     public State getCurrentState() {
         return currentState;
     }
