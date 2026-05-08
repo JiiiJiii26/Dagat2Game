@@ -23,6 +23,7 @@ public class MultiplayerBattlePanel extends JPanel {
     private BoardPanel player2BoardPanel;
     private SkillPanel currentSkillPanel;
     private int currentPlayer = 1;
+    private boolean actionTakenThisTurn = false;
 
     // ---------- Skill targeting (preserved from original) ----------
     private boolean waitingForSkillTarget = false;
@@ -176,6 +177,10 @@ public class MultiplayerBattlePanel extends JPanel {
 
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 24, 18));
             right.setOpaque(false);
+            NavalButton endTurnButton = new NavalButton("END TURN \u25B6", CYAN_ACCENT);
+            endTurnButton.setPreferredSize(new Dimension(140, 48));
+            endTurnButton.addActionListener(e -> endTurnManually());
+            right.add(endTurnButton);
             timerGauge = new TimerGauge(30);
             right.add(timerGauge);
             add(right, BorderLayout.EAST);
@@ -350,7 +355,7 @@ public class MultiplayerBattlePanel extends JPanel {
             this.title = initialTitle;
             setOpaque(false);
             setLayout(new BorderLayout());
-            setBorder(BorderFactory.createEmptyBorder(40, 16, 16, 16));
+            setBorder(BorderFactory.createEmptyBorder(28, 8, 8, 8));
 
             boardHost = new JPanel(new GridBagLayout()) {
                 @Override protected void paintComponent(Graphics g) {
@@ -388,9 +393,6 @@ public class MultiplayerBattlePanel extends JPanel {
             this.boardPanel = bp;
             boardHost.removeAll();
 
-            bp.setCellSize(44, 44);
-            bp.setPreferredSize(new Dimension(44 * 10, 44 * 10));
-
             GridBagConstraints g = new GridBagConstraints();
             g.gridx = 0; g.gridy = 0;
             boardHost.add(bp, g);
@@ -427,6 +429,13 @@ public class MultiplayerBattlePanel extends JPanel {
 
         public void setActive(boolean a)  { this.isActive = a; repaint(); }
         public void setTitle(String t)    { this.title = t; repaint(); }
+
+        private boolean sizingInProgress = false;
+
+        @Override
+        public void doLayout() {
+            super.doLayout();
+        }
 
         @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -977,42 +986,40 @@ public class MultiplayerBattlePanel extends JPanel {
     // ===================================================================
     // GAME LOGIC (preserved from original)
     // ===================================================================
-    private void updateBoardViews() {
-        if (fxOverlay != null) fxOverlay.clearHover();
-
-        if (game.isPlayer1Turn()) {
-            currentPlayer = 1;
-            BoardPanel ownView   = new BoardPanel(true,  game.getPlayer1Board(), true);
-            BoardPanel enemyView = new BoardPanel(false, game.getPlayer2Board(), false);
-            player1BoardPanel = ownView;
-            player2BoardPanel = enemyView;
-
-            leftBoardFrame.setTitle("YOUR FLEET");
-            rightBoardFrame.setTitle("ENEMY WATERS");
-            leftBoardFrame.setBoardPanel(ownView, true);
-            rightBoardFrame.setBoardPanel(enemyView, false);
-
-            ownView.setPlayerClickHandler((row, col) -> handleOwnBoardClick(1, row, col));
-            enemyView.setEnemyClickHandler((row, col) -> handleEnemyBoardClick(1, row, col));
-
-            showPlayerSkills(1);
-        } else {
-            currentPlayer = 2;
-            BoardPanel ownView   = new BoardPanel(true,  game.getPlayer2Board(), true);
-            BoardPanel enemyView = new BoardPanel(false, game.getPlayer1Board(), false);
-            player2BoardPanel = ownView;
-            player1BoardPanel = enemyView;
-
-            leftBoardFrame.setTitle("YOUR FLEET");
-            rightBoardFrame.setTitle("ENEMY WATERS");
-            leftBoardFrame.setBoardPanel(ownView, true);
-            rightBoardFrame.setBoardPanel(enemyView, false);
-
-            ownView.setPlayerClickHandler((row, col) -> handleOwnBoardClick(2, row, col));
-            enemyView.setEnemyClickHandler((row, col) -> handleEnemyBoardClick(2, row, col));
-
-            showPlayerSkills(2);
-        }
+   private void updateBoardViews() {      actionTakenThisTurn = false;
+            if (fxOverlay != null) fxOverlay.clearHover();
+// Match campaign mode board cell sizes exactly (92x61)
+    final int CELL_W = 92;
+final int CELL_H = 70;
+      if (game.isPlayer1Turn()) {
+             currentPlayer = 1;
+                 BoardPanel ownView   = new BoardPanel(true,  game.getPlayer1Board(), true);
+                  BoardPanel enemyView = new BoardPanel(false, game.getPlayer2Board(), false);
+                 ownView.setCellSize(CELL_W, CELL_H);           enemyView.setCellSize(CELL_W, CELL_H);
+player1BoardPanel = ownView;           
+player2BoardPanel = enemyView;
+leftBoardFrame.setTitle("YOUR FLEET");
+rightBoardFrame.setTitle("ENEMY WATERS");
+leftBoardFrame.setBoardPanel(ownView, true);
+rightBoardFrame.setBoardPanel(enemyView, false);
+ownView.setPlayerClickHandler((row, col) -> handleOwnBoardClick(1, row, col));
+enemyView.setEnemyClickHandler((row, col) -> handleEnemyBoardClick(1, row, col));
+showPlayerSkills(1);
+} else {
+currentPlayer = 2;
+ BoardPanel ownView   = new BoardPanel(true,  game.getPlayer2Board(), true);
+BoardPanel enemyView = new BoardPanel(false, game.getPlayer1Board(), false);
+ownView.setCellSize(CELL_W, CELL_H);
+enemyView.setCellSize(CELL_W, CELL_H);            player2BoardPanel = ownView;
+player1BoardPanel = enemyView;
+leftBoardFrame.setTitle("YOUR FLEET");
+rightBoardFrame.setTitle("ENEMY WATERS");
+leftBoardFrame.setBoardPanel(ownView, true);
+rightBoardFrame.setBoardPanel(enemyView, false);
+ownView.setPlayerClickHandler((row, col) -> handleOwnBoardClick(2, row, col));
+ enemyView.setEnemyClickHandler((row, col) -> handleEnemyBoardClick(2, row, col));
+showPlayerSkills(2);
+     }
 
         updateActiveBoardForSkillState();
 
@@ -1065,6 +1072,11 @@ public class MultiplayerBattlePanel extends JPanel {
             return;
         }
 
+        if (actionTakenThisTurn) {
+            updateStatusMessage("Press END TURN to continue", TARGET_RED);
+            return;
+        }
+
         if (skillName.equals("Shadow Step") && requiresTarget && targetsOwnBoard) {
             waitingForShadowStepSource = true;
             currentSkillPlayer = playerNumber;
@@ -1109,11 +1121,10 @@ public class MultiplayerBattlePanel extends JPanel {
             }
             updateActiveBoardForSkillState();
         } else {
-            boolean wasPlayer1Turn = game.isPlayer1Turn();
             boolean success = game.useCharacterSkill(playerNumber, skillNumber, 0, 0, false);
             if (success) {
                 updateStatusMessage(skillName + " used!", new Color(0x6B, 0xD0, 0x8C));
-                postSkillActionUpdate(wasPlayer1Turn, playerNumber);
+                postSkillActionUpdate(playerNumber);
             } else {
                 updateStatusMessage("Failed! Mana/cooldown.", TARGET_RED);
             }
@@ -1121,6 +1132,10 @@ public class MultiplayerBattlePanel extends JPanel {
     }
 
     private void handleEnemyBoardClick(int playerNumber, int row, int col) {
+        if (actionTakenThisTurn) {
+            updateStatusMessage("Press END TURN to continue", TARGET_RED);
+            return;
+        }
         if (waitingForSkillTarget && currentSkillPlayer == playerNumber && !skillTargetsOwnBoard) {
             handleSkillTarget(row, col);
             return;
@@ -1133,6 +1148,10 @@ public class MultiplayerBattlePanel extends JPanel {
     }
 
     private void handleOwnBoardClick(int playerNumber, int row, int col) {
+        if (actionTakenThisTurn) {
+            updateStatusMessage("Press END TURN to continue", TARGET_RED);
+            return;
+        }
         if (waitingForShadowStepSource && currentSkillPlayer == playerNumber && shadowStepSourceX == -1) {
             shadowStepSourceX = row;
             shadowStepSourceY = col;
@@ -1141,11 +1160,10 @@ public class MultiplayerBattlePanel extends JPanel {
             return;
         }
         if (waitingForShadowStepSource && currentSkillPlayer == playerNumber && shadowStepSourceX != -1) {
-            boolean wasPlayer1Turn = game.isPlayer1Turn();
             boolean success = game.useShadowStep(playerNumber, shadowStepSourceX, shadowStepSourceY, row, col);
             if (success) {
                 updateStatusMessage("Shadow Step!", new Color(0x6B, 0xD0, 0x8C));
-                postSkillActionUpdate(wasPlayer1Turn, playerNumber);
+                postSkillActionUpdate(playerNumber);
             } else {
                 updateStatusMessage("Failed Shadow Step!", TARGET_RED);
             }
@@ -1169,11 +1187,10 @@ public class MultiplayerBattlePanel extends JPanel {
 
     private void handleSkillTarget(int row, int col) {
         if (!waitingForSkillTarget) return;
-        boolean wasPlayer1Turn = game.isPlayer1Turn();
         boolean success = game.useCharacterSkill(currentSkillPlayer, currentSkillNumber, row, col, skillDirectionHorizontal);
         if (success) {
             updateStatusMessage(currentSkillName + " used!", new Color(0x6B, 0xD0, 0x8C));
-            postSkillActionUpdate(wasPlayer1Turn, currentSkillPlayer);
+            postSkillActionUpdate(currentSkillPlayer);
         } else {
             updateStatusMessage("Failed " + currentSkillName + "!", TARGET_RED);
         }
@@ -1185,22 +1202,18 @@ public class MultiplayerBattlePanel extends JPanel {
         updateActiveBoardForSkillState();
     }
 
-    private void postSkillActionUpdate(boolean wasPlayer1Turn, int currentPlayerNumber) {
+    private void postSkillActionUpdate(int currentPlayerNumber) {
         audio.MusicManager.getInstance().playSound("skill");
 
         refreshBoards();
         timerGauge.resetTimer();
         timerGauge.startTimer();
 
-        if (wasPlayer1Turn != game.isPlayer1Turn()) {
-            fxOverlay.clearMarkersFor(leftBoardFrame);
-            fxOverlay.clearMarkersFor(rightBoardFrame);
-            updateBoardViews();
-        } else {
-            turnBanner.repaint();
-            showPlayerSkills(currentPlayerNumber);
-            if (currentSkillPanel != null) currentSkillPanel.updateUI();
-        }
+        actionTakenThisTurn = true;
+
+        turnBanner.repaint();
+        showPlayerSkills(currentPlayerNumber);
+        if (currentSkillPanel != null) currentSkillPanel.updateUI();
 
         if (game.isGameOver()) {
             String winner = game.getWinner();
@@ -1218,7 +1231,6 @@ public class MultiplayerBattlePanel extends JPanel {
     }
 
     private void handleShot(int playerNumber, int row, int col) {
-        boolean wasPlayer1Turn = game.isPlayer1Turn();
         ShotResult result = game.fire(playerNumber, row, col);
 
         BoardFrame targetFrame = rightBoardFrame; // enemy board is always on the right per layout
@@ -1240,20 +1252,16 @@ public class MultiplayerBattlePanel extends JPanel {
                 audio.MusicManager.getInstance().playSound("miss");
                 break;
             default: break;
-}
+        }
 
         refreshBoards();
         timerGauge.resetTimer();
         timerGauge.startTimer();
 
-        if (wasPlayer1Turn != game.isPlayer1Turn()) {
-            fxOverlay.clearMarkersFor(leftBoardFrame);
-            fxOverlay.clearMarkersFor(rightBoardFrame);
-            updateBoardViews();
-        } else {
-            turnBanner.repaint();
-            if (currentSkillPanel != null) currentSkillPanel.updateUI();
-        }
+        actionTakenThisTurn = true;
+
+        turnBanner.repaint();
+        if (currentSkillPanel != null) currentSkillPanel.updateUI();
 
         if (game.isGameOver()) {
             String winner = game.getWinner();
@@ -1294,17 +1302,52 @@ public class MultiplayerBattlePanel extends JPanel {
 
     private void endTurnTimer() {
         timerGauge.stopTimer();
-        if (waitingForSkillTarget) {
+        if (waitingForSkillTarget || waitingForShadowStepSource) {
             waitingForSkillTarget = false;
+            waitingForShadowStepSource = false;
+            currentSkillPlayer = 0;
             currentSkillNumber = 0;
             currentSkillName = "";
+            skillTargetsOwnBoard = false;
+            shadowStepSourceX = -1;
+            shadowStepSourceY = -1;
+            updateActiveBoardForSkillState();
+            GameCharacter current = game.isPlayer1Turn() ? game.getPlayer1Character() : game.getPlayer2Character();
+            if (current != null) current.updateTurnCounter();
+            actionTakenThisTurn = false;
             updateBoardViews();
             return;
         }
         boolean isPlayer1Turn = game.isPlayer1Turn();
+        GameCharacter current = isPlayer1Turn ? game.getPlayer1Character() : game.getPlayer2Character();
+        if (current != null) current.updateTurnCounter();
         game.setPlayer1Turn(!isPlayer1Turn);
         fxOverlay.clearMarkersFor(leftBoardFrame);
         fxOverlay.clearMarkersFor(rightBoardFrame);
+        actionTakenThisTurn = false;
+        updateBoardViews();
+    }
+
+    private void endTurnManually() {
+        timerGauge.stopTimer();
+        if (waitingForSkillTarget || waitingForShadowStepSource) {
+            waitingForSkillTarget = false;
+            waitingForShadowStepSource = false;
+            currentSkillPlayer = 0;
+            currentSkillNumber = 0;
+            currentSkillName = "";
+            skillTargetsOwnBoard = false;
+            shadowStepSourceX = -1;
+            shadowStepSourceY = -1;
+            updateActiveBoardForSkillState();
+        }
+        boolean isPlayer1Turn = game.isPlayer1Turn();
+        GameCharacter current = isPlayer1Turn ? game.getPlayer1Character() : game.getPlayer2Character();
+        if (current != null) current.updateTurnCounter();
+        game.setPlayer1Turn(!isPlayer1Turn);
+        fxOverlay.clearMarkersFor(leftBoardFrame);
+        fxOverlay.clearMarkersFor(rightBoardFrame);
+        actionTakenThisTurn = false;
         updateBoardViews();
     }
 

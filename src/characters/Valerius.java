@@ -358,6 +358,20 @@ public void setDamaged(boolean damaged) {
     }
     
     @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Radar Overload
+                return useRadarOverload();
+            case 2: // Precision Strike
+                return usePrecisionStrike();
+            case 3: // Fortress Mode
+                return useFortressMode();
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Valerius's abilities are used through skill buttons!");
     }

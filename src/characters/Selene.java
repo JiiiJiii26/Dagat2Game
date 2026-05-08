@@ -658,6 +658,20 @@ public class Selene extends GameCharacter {
     }
     
     @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Lunar Reveal
+                return useLunarReveal(enemyBoard, x, y);
+            case 2: // Crescent Strike
+                return useCrescentStrike(enemyBoard, x, y) > 0;
+            case 3: // Starfall Link
+                return useStarfallLink(enemyBoard);
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Selene's abilities are used through skill buttons!");
     }

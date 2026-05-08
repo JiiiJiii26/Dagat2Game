@@ -474,6 +474,20 @@ public class Morgana extends GameCharacter {
     }
     
     @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Enchanting Melody
+                return useEnchantingMelody();
+            case 2: // Whirlpool Trap
+                return useWhirlpoolTrap(enemyBoard, x, y);
+            case 3: // Tidal Wave
+                return useTidalWave(enemyBoard) > 0;
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Morgana's abilities are used through skill buttons!");
     }

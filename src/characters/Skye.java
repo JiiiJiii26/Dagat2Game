@@ -333,6 +333,20 @@ private void reviveFullShip(Board playerBoard, Ship ship) {
     }
     
     @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Catnip Explosion
+                return useCatnipExplosion(enemyBoard, x, y) > 0;
+            case 2: // Laser Pointer
+                return useLaserPointer();
+            case 3: // Nine Lives
+                return useNineLives(playerBoard, x, y);
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Skye's abilities are used through skill buttons!");
         System.out.println(getRandomCatSound());

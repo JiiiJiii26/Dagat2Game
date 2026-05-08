@@ -519,6 +519,20 @@ private Board getEnemyBoard() {
     }
     
     @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Corruption.Exe
+                return useCorruption(enemyBoard, x, y);
+            case 2: // Fortification.Grid
+                return useFortification(playerBoard, x, y);
+            case 3: // Kernel.Decimation.Req
+                return useKernelDecimation(enemyBoard, x, y);
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Flue's abilities are used through skill buttons!");
     }

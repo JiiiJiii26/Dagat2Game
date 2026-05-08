@@ -449,6 +449,20 @@ return triggered > 0;
     public boolean isNextShotEnhanced() { return false; } 
     
     @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Data Leech
+                return useDataLeech(enemyBoard);
+            case 2: // Overclock
+                return useOverclock();
+            case 3: // System Overload
+                return useSystemOverload(enemyBoard, x, y);
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Jiji's abilities are used through skill buttons!");
     }

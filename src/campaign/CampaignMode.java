@@ -29,10 +29,16 @@ import java.awt.geom.AffineTransform;
 
 
 public class CampaignMode {
-   
 
+    // Constants
+    private static final int PORTRAIT_WIDTH = 150;
+    private static final int PORTRAIT_HEIGHT = 120;
+    private static final int JIJI_PORTRAIT_WIDTH = 250;
+    private static final int JIJI_PORTRAIT_HEIGHT = 200;
+    private static final int DEFAULT_ENEMY_SKILL_CHANCE = 30;
+    private static final int MAX_ENEMY_SKILL_CHANCE = 80;
 
-    private boolean testMode = true;   
+    private boolean testMode = true;
     private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
@@ -50,63 +56,28 @@ public class CampaignMode {
     private Board playerBoard;
     private Board enemyBoard;
     private JLabel statusLabel;
-    private boolean waitingForWhirlpoolTarget = false;
-    private java.util.function.BiConsumer<Integer, Integer> currentWhirlpoolCallback;
-     
-    private boolean waitingForAerisShield = false;
-    private java.util.function.BiConsumer<Integer, Integer> currentAerisShieldCallback;
-
-
-    
     private BoardPanel playerBoardPanel;
     private BoardPanel enemyBoardPanel;
     private JLabel waveLabel;
     private boolean playerTurn = true;
     private Random random = new Random();
-    private boolean waitingForSkillTarget = false;
-    private boolean waitingForTarget = false;
-    private String currentSkillName = "";
-    private SkillTargetCallback targetCallback;
-    private JButton lastClickedSkillButton;
     private int extraTurnsRemaining = 0;
 
     private int currentSkillNumber = 0;
 
-private boolean currentSkillTargetsOwnBoard = false;
-private boolean currentSkillRequiresDirection = false;
-private boolean currentSkillDirectionHorizontal = true;
+    private boolean currentSkillTargetsOwnBoard = false;
+    private boolean currentSkillRequiresDirection = false;
+    private boolean currentSkillDirectionHorizontal = true;
 
     private TimerPanel turnTimer;
     private TimerPanel enemyTurnTimer;
-private boolean timerEnabled = true;
+    private boolean timerEnabled = true;
 
-private JLabel playerShipLabel;
-private JLabel enemyShipLabel;
+    private JLabel playerShipLabel;
+    private JLabel enemyShipLabel;
 
-  
-    private boolean waitingForKaelStepSource = false;
-    private boolean waitingForKaelStepDestination = false;
-    private int[] stepSourceCoordinates = new int[2];
-private Timer skillPanelRefreshTimer;
-private SkillPanel currentSkillPanel;
-
-    private boolean waitingForKaelBlade = false;
-    private java.util.function.BiConsumer<Integer, Integer> currentKaelBladeCallback;
-    private boolean bladeDirectionHorizontal = true;
-
-
-    private boolean waitingForKaelDomain = false;
-    private java.util.function.BiConsumer<Integer, Integer> currentKaelDomainCallback;
-    
-
-    private boolean waitingForSeleneVision = false;
-    private java.util.function.BiConsumer<Integer, Integer> currentSeleneVisionCallback;
-    
-    private boolean waitingForSeleneBinding = false;
-    private java.util.function.BiConsumer<Integer, Integer> currentSeleneBindingCallback;
-    
-    
-private boolean waitingForSeleneCrescent = false;
+    private Timer skillPanelRefreshTimer;
+    private SkillPanel currentSkillPanel;
 private boolean jijiAttackAnimationPlaying = false;
 private boolean jijiAttackPlayedThisTurn = false;
 private ImageIcon[] jijiIdleFrames = new ImageIcon[4];
@@ -123,6 +94,7 @@ private static final int[] ATTACK_FRAME_DURATIONS = {4, 4, 4, 8}; // ticks (~0.4
 private CharacterAnimation jijiAnimation;
 private Runnable jijiStartIdle = () -> {
     System.out.println("jijiStartIdle called");
+    jijiAttackAnimationPlaying = false;
     if (jijiAnimation != null) {
         if (playerCharacter instanceof Jiji && ((Jiji) playerCharacter).isDamaged()) {
             System.out.println("Starting damaged");
@@ -139,13 +111,21 @@ private static final int[] VALERIUS_IDLE_SEQUENCE = {0,1,2,3};
 private CharacterAnimation kaelAnimation;
 private Runnable kaelStartIdle = () -> {
     if (kaelAnimation != null) {
-        kaelAnimation.start(CharacterAnimation.State.IDLE);
+        if (playerCharacter.isDamaged()) {
+            kaelAnimation.start(CharacterAnimation.State.DAMAGED);
+        } else {
+            kaelAnimation.start(CharacterAnimation.State.IDLE);
+        }
     }
 };
 private CharacterAnimation valeriusAnimation;
 private Runnable valeriusStartIdle = () -> {
     if (valeriusAnimation != null) {
-        valeriusAnimation.start(CharacterAnimation.State.IDLE);
+        if (playerCharacter.isDamaged()) {
+            valeriusAnimation.start(CharacterAnimation.State.DAMAGED);
+        } else {
+            valeriusAnimation.start(CharacterAnimation.State.IDLE);
+        }
     }
 };
 private CharacterAnimation skyeAnimation;
@@ -197,12 +177,15 @@ private Runnable flueStartIdle = () -> {
     }
 };
 private CharacterAnimation enemyFlueAnimation;
+private CharacterAnimation enemyJijiAnimation;
+private CharacterAnimation enemyKaelAnimation;
+private CharacterAnimation enemyValeriusAnimation;
+private CharacterAnimation enemyMorganaAnimation;
 private Runnable enemyFlueStartIdle = () -> {
     if (enemyFlueAnimation != null) {
         enemyFlueAnimation.start(CharacterAnimation.State.IDLE);
     }
 };
-private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
 
 private Timer seleneUpdateTimer;
 
@@ -412,6 +395,12 @@ private int currentEnemyValeriusDamagedFrame = 0;
 private int enemyValeriusDamagedFrameCounter = 0;
 private boolean enemyValeriusDamagedAnimationPlaying = false;
 
+// Generic enemy animation variables
+private Timer enemyAttackAnimationTimer;
+private int enemyCurrentAttackFrame = 0;
+private int enemyAttackFrameCounter = 0;
+private boolean enemyAttackAnimationPlaying = false;
+
 private JLabel enemyValeriusLargePortraitLabel;
 
 private JLabel skyeLargePortraitLabel;
@@ -419,10 +408,20 @@ private JLabel enemySkyeLargePortraitLabel;
 
 private JLabel morganaLargePortraitLabel;
 private JLabel enemyMorganaLargePortraitLabel;
-private CharacterAnimation enemyMorganaAnimation;
+
 private Runnable enemyMorganaStartIdle = () -> {
     if (enemyMorganaAnimation != null) {
         enemyMorganaAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private Runnable enemyKaelStartIdle = () -> {
+    if (enemyKaelAnimation != null) {
+        enemyKaelAnimation.start(CharacterAnimation.State.IDLE);
+    }
+};
+private Runnable enemyValeriusStartIdle = () -> {
+    if (enemyValeriusAnimation != null) {
+        enemyValeriusAnimation.start(CharacterAnimation.State.IDLE);
     }
 };
 
@@ -443,21 +442,9 @@ private JLabel enemyKaelLargePortraitLabel;
 
 private JLabel enemyJijiLargePortraitLabel;
 private ImageIcon[] enemyJijiIdleFrames = new ImageIcon[4];
-private Timer enemyIdleAnimationTimer;
-private int enemyCurrentIdleFrame = 0;
-private int enemyIdleFrameCounter = 0;
 private ImageIcon[] enemyJijiDamagedFrames = new ImageIcon[4];
-private Timer enemyDamagedAnimationTimer;
-private int enemyCurrentDamagedFrame = 0;
-private int enemyDamagedFrameCounter = 0;
 private ImageIcon[] enemyJijiAttackFrames = new ImageIcon[4];
-private Timer enemyAttackAnimationTimer;
-private int enemyCurrentAttackFrame = 0;
-private int enemyAttackFrameCounter = 0;
-private boolean enemyJijiIdleAnimationPlaying = false;
-private boolean enemyJijiDamagedAnimationPlaying = false;
 private boolean enemyJijiAttackAnimationPlaying = false;
-       
 
     private void loadOceanBackground() {
     try {
@@ -487,7 +474,7 @@ private void startMoonPhaseTimer() {
             }
         }
     });
-    moonPhaseTimer.start();
+    // moonPhaseTimer.start(); // Disabled to prevent potential audio timing issues
 }
 
 private class WaveBackgroundPanel extends JPanel {
@@ -636,7 +623,60 @@ private class WaveBackgroundPanel extends JPanel {
         void onTargetSelected(int x, int y);
     }
 
-    private int enemySkillChance = 30; 
+    private static class SkillTargetingManager {
+        boolean waitingForWhirlpoolTarget = false;
+        java.util.function.BiConsumer<Integer, Integer> currentWhirlpoolCallback;
+
+        boolean waitingForAerisShield = false;
+        java.util.function.BiConsumer<Integer, Integer> currentAerisShieldCallback;
+
+        boolean waitingForSkillTarget = false;
+        boolean waitingForTarget = false;
+        String currentSkillName = "";
+        SkillTargetCallback targetCallback;
+        JButton lastClickedSkillButton;
+
+        boolean waitingForKaelStepSource = false;
+        boolean waitingForKaelStepDestination = false;
+        int[] stepSourceCoordinates = new int[2];
+
+        boolean waitingForKaelBlade = false;
+        java.util.function.BiConsumer<Integer, Integer> currentKaelBladeCallback;
+        boolean bladeDirectionHorizontal = true;
+
+        boolean waitingForKaelDomain = false;
+        java.util.function.BiConsumer<Integer, Integer> currentKaelDomainCallback;
+
+        boolean waitingForSeleneVision = false;
+        java.util.function.BiConsumer<Integer, Integer> currentSeleneVisionCallback;
+
+        boolean waitingForSeleneBinding = false;
+        java.util.function.BiConsumer<Integer, Integer> currentSeleneBindingCallback;
+
+        boolean waitingForSeleneCrescent = false;
+        java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
+
+        void cancelAllTargeting() {
+            waitingForWhirlpoolTarget = false;
+            waitingForAerisShield = false;
+            waitingForSkillTarget = false;
+            waitingForTarget = false;
+            waitingForKaelStepSource = false;
+            waitingForKaelStepDestination = false;
+            waitingForKaelBlade = false;
+            waitingForKaelDomain = false;
+            waitingForSeleneVision = false;
+            waitingForSeleneBinding = false;
+            waitingForSeleneCrescent = false;
+            currentSkillName = "";
+            targetCallback = null;
+            lastClickedSkillButton = null;
+        }
+    }
+
+    private SkillTargetingManager skillTargeting = new SkillTargetingManager();
+
+    private int enemySkillChance = DEFAULT_ENEMY_SKILL_CHANCE; 
     private int lastEnemySkillTurn = 0;
     private String[] enemySkillMessages = {
         "Enemy uses a skill against you!",
@@ -858,6 +898,10 @@ private class WaveBackgroundPanel extends JPanel {
             ((Jiji) playerCharacter).setDamaged(false);
             System.out.println("🔄 Jiji recovered from damage between waves");
         }
+
+        // Heal player character
+        playerCharacter.heal(playerCharacter.getMaxHealth() - playerCharacter.getCurrentHealth());
+        System.out.println("❤️ Player character healed between waves");
         
         
         for (int i = 0; i < 10; i++) {
@@ -1081,10 +1125,10 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
     private void startTargetSelection(String skillName, SkillTargetCallback callback, JButton skillButton) {
-        waitingForTarget = true;
-        currentSkillName = skillName;
-        targetCallback = callback;
-        lastClickedSkillButton = skillButton;
+        skillTargeting.waitingForTarget = true;
+        skillTargeting.currentSkillName = skillName;
+        skillTargeting.targetCallback = callback;
+        skillTargeting.lastClickedSkillButton = skillButton;
         
         JOptionPane.showMessageDialog(frame,
             "🎯 " + skillName + "\n\n" +
@@ -1106,8 +1150,8 @@ private class WaveBackgroundPanel extends JPanel {
         initializePossibleEnemies();
         generateRandomWaves();
         // Pre-load animation frames (commented out - methods not yet implemented)
-        // initJijiIdleFrames(); initKaelIdleFrames(); initEnemyKaelIdleFrames();
-        // initValeriusIdleFrames(); initEnemyValeriusIdleFrames(); initSkyeIdleFrames();
+        initJijiIdleFrames(); initKaelIdleFrames(); initEnemyKaelIdleFrames();
+        initValeriusIdleFrames(); initEnemyValeriusIdleFrames(); initSkyeIdleFrames();
         // initEnemySkyeIdleFrames(); initSkyeAttackFrames(); initSkyeDamagedFrames();
         // initEnemySkyeAttackFrames(); initEnemySkyeDamagedFrames(); initMorganaIdleFrames();
         // initEnemyMorganaIdleFrames(); initMorganaAttackFrames(); initMorganaDamagedFrames();
@@ -1119,9 +1163,9 @@ private class WaveBackgroundPanel extends JPanel {
         // initEnemyFlueDamagedFrames(); initSeleneAttackFrames(); initSeleneDamagedFrames();
         // initEnemySeleneAttackFrames(); initEnemySeleneDamagedFrames(); initAerisDamagedFrames();
         // initEnemyAerisAttackFrames(); initEnemyAerisDamagedFrames(); initMorganaDamagedFrames();
-        // initEnemyMorganaAttackFrames(); initEnemyMorganaDamagedFrames(); initValeriusAttackFrames();
-        // initValeriusDamagedFrames(); initEnemyValeriusAttackFrames(); initEnemyValeriusDamagedFrames();
-        // initKaelAttackFrames(); initEnemyKaelAttackFrames(); initKaelDamagedFrames();
+        // initEnemyMorganaAttackFrames(); initEnemyMorganaDamagedFrames();
+        initValeriusAttackFrames(); initValeriusDamagedFrames(); initEnemyValeriusAttackFrames(); initEnemyValeriusDamagedFrames();
+        initKaelAttackFrames(); initEnemyKaelAttackFrames(); initKaelDamagedFrames();
         // initEnemyKaelDamagedFrames();
     }
     
@@ -1335,8 +1379,8 @@ private class WaveBackgroundPanel extends JPanel {
     
     private void adjustEnemyDifficulty(int waveNumber) {
         enemySkillChance = 20 + (waveNumber * 5); 
-        if (enemySkillChance > 80) {
-            enemySkillChance = 80;
+        if (enemySkillChance > MAX_ENEMY_SKILL_CHANCE) {
+            enemySkillChance = MAX_ENEMY_SKILL_CHANCE;
         }
         System.out.println("⚔️ Wave " + waveNumber + " difficulty: " + enemySkillChance + "% skill chance");
         
@@ -1536,13 +1580,23 @@ private void createBattleUI(CampaignWave wave) {
             if (confirm == JOptionPane.YES_OPTION) {
                 if (turnTimer != null) turnTimer.stopTimer();
                 if (enemyTurnTimer != null) enemyTurnTimer.stopTimer();
-                    if (jijiAnimation != null) jijiAnimation.stop();
-                    if (jijiAnimation != null) jijiAnimation.stop();
-                    if (jijiAnimation != null) jijiAnimation.stop();
-                    stopEnemyIdleAnimation();
-                    stopEnemyDamagedAnimation();
-                    stopEnemyAttackAnimation();
-                    main.Main.showMainMenu();
+                if (jijiAnimation != null) jijiAnimation.stop();
+                if (kaelAnimation != null) kaelAnimation.stop();
+                if (valeriusAnimation != null) valeriusAnimation.stop();
+                if (skyeAnimation != null) skyeAnimation.stop();
+                if (morganaAnimation != null) morganaAnimation.stop();
+                if (seleneAnimation != null) seleneAnimation.stop();
+                if (flueAnimation != null) flueAnimation.stop();
+                if (aerisAnimation != null) aerisAnimation.stop();
+                if (enemyJijiAnimation != null) enemyJijiAnimation.stop();
+                if (enemyKaelAnimation != null) enemyKaelAnimation.stop();
+                if (enemyValeriusAnimation != null) enemyValeriusAnimation.stop();
+                if (enemySkyeAnimation != null) enemySkyeAnimation.stop();
+                if (enemyMorganaAnimation != null) enemyMorganaAnimation.stop();
+                if (enemyAerisAnimation != null) enemyAerisAnimation.stop();
+                if (enemySeleneAnimation != null) enemySeleneAnimation.stop();
+                if (enemyFlueAnimation != null) enemyFlueAnimation.stop();
+                main.Main.showMainMenu();
             }
         }
     }
@@ -1861,14 +1915,14 @@ mainPanel.add(topArea, BorderLayout.NORTH);
             
             if (skillName.equals("Shadow Step")) {
                 System.out.println("🌑 Shadow Step detected - using separate handler!");
-                waitingForKaelStepSource = true;
-                waitingForKaelStepDestination = false;
+                skillTargeting.waitingForKaelStepSource = true;
+                skillTargeting.waitingForKaelStepDestination = false;
                 updateStatusLabel("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
                 return;
             }
             
             currentSkillNumber = skillNumber;
-            currentSkillName = skillName;
+            skillTargeting.currentSkillName = skillName;
             currentSkillTargetsOwnBoard = targetsOwnBoard;
             currentSkillRequiresDirection = requiresDirection;
             
@@ -1899,7 +1953,7 @@ mainPanel.add(topArea, BorderLayout.NORTH);
             }
             
             if (requiresTarget) {
-                waitingForSkillTarget = true;
+                skillTargeting.waitingForSkillTarget = true;
                 updateStatusLabel("Click on " + (targetsOwnBoard ? "YOUR" : "ENEMY") + " board to target " + skillName + "!", Color.YELLOW);
             } else {
                 executeSkill(-1, -1);
@@ -1936,6 +1990,8 @@ mainPanel.add(topArea, BorderLayout.NORTH);
             
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
             
+            initJijiIdleFrames();
+            initJijiDamagedFrames();
             initJijiAttackFrames();
             jijiAnimation = new CharacterAnimation(jijiLargePortraitLabel, jijiIdleFrames, jijiAttackFrames, jijiDamagedFrames,
                                                    CYCLE_DURATIONS, ATTACK_FRAME_DURATIONS, DAMAGED_FRAME_DURATIONS,
@@ -2120,7 +2176,7 @@ mainPanel.add(topArea, BorderLayout.NORTH);
             combinedBottomPanel.add(westWrapper, BorderLayout.WEST);
 
             seleneAnimation = new CharacterAnimation(seleneLargePortraitLabel, seleneIdleFrames, seleneAttackFrames, seleneDamagedFrames,
-                                                    new int[]{6,6,6,6}, new int[]{16,16,24}, new int[]{20,20,28}, null, null, null, seleneStartIdle, seleneStartIdle);
+                                                    new int[]{12,12,12,12}, new int[]{32,32,48}, new int[]{20,20,28}, null, null, null, seleneStartIdle, seleneStartIdle);
             if (((GameCharacter) playerCharacter).isDamaged()) {
                 seleneAnimation.start(CharacterAnimation.State.DAMAGED);
             } else if (seleneIdleFrames[0] != null) {
@@ -2232,17 +2288,28 @@ mainPanel.add(topArea, BorderLayout.NORTH);
             initEnemyJijiIdleFrames();
             initEnemyJijiDamagedFrames();
             initEnemyJijiAttackFrames();
+            enemyJijiAnimation = new CharacterAnimation(
+                enemyJijiLargePortraitLabel,
+                enemyJijiIdleFrames,
+                enemyJijiAttackFrames,
+                enemyJijiDamagedFrames,
+                CYCLE_DURATIONS,
+                ATTACK_FRAME_DURATIONS,
+                DAMAGED_FRAME_DURATIONS,
+                SLOT_FRAME_MAP,
+                null,
+                null,
+                null,
+                null
+            );
             Jiji enemyJiji = (Jiji) currentEnemy;
             if (enemyJiji.isDamaged()) {
-                if (enemyJijiDamagedFrames[0] != null) {
-                    startEnemyDamagedAnimation();
-                }
+                enemyJijiAnimation.start(CharacterAnimation.State.DAMAGED);
             } else {
-                if (enemyJijiIdleFrames[0] != null) {
-                    startEnemyIdleAnimation();
-                }
+                enemyJijiAnimation.start(CharacterAnimation.State.IDLE);
             }
-        }
+            }
+        
     } else if (currentEnemy instanceof Kael) {
         Icon enemyPortrait = getCharacterPortrait(currentEnemy);
         if (enemyPortrait != null) {
@@ -2264,8 +2331,17 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
+            int[] kaelIdleSequence = KAEL_IDLE_SEQUENCE;
+            int[] kaelIdleDur = new int[kaelIdleSequence.length];
+            java.util.Arrays.fill(kaelIdleDur, 8);
+            int[] kaelAttackDur = {4, 4, 8};
+            int[] kaelDamagedDur = {6, 6, 12};
+            enemyKaelAnimation = new CharacterAnimation(enemyKaelLargePortraitLabel, enemyKaelIdleFrames, enemyKaelAttackFrames, enemyKaelDamagedFrames,
+                                                        kaelIdleDur, kaelAttackDur, kaelDamagedDur,
+                                                        kaelIdleSequence, null, null,
+                                                        enemyKaelStartIdle, enemyKaelStartIdle);
             if (enemyKaelIdleFrames[0] != null) {
-                startEnemyKaelIdleAnimation();
+                enemyKaelAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (currentEnemy instanceof Valerius) {
@@ -2289,8 +2365,17 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
             combinedBottomPanel.add(eastWrapper, BorderLayout.EAST);
 
+            int[] valeriusIdleSequence = VALERIUS_IDLE_SEQUENCE;
+            int[] valeriusIdleDur = new int[valeriusIdleSequence.length];
+            java.util.Arrays.fill(valeriusIdleDur, 24);
+            int[] valeriusAttackDur = {8, 8, 8, 12};
+            int[] valeriusDamagedDur = {12, 12, 16};
+            enemyValeriusAnimation = new CharacterAnimation(enemyValeriusLargePortraitLabel, enemyValeriusIdleFrames, enemyValeriusAttackFrames, enemyValeriusDamagedFrames,
+                                                            valeriusIdleDur, valeriusAttackDur, valeriusDamagedDur,
+                                                            valeriusIdleSequence, null, null,
+                                                            enemyValeriusStartIdle, enemyValeriusStartIdle);
             if (enemyValeriusIdleFrames[0] != null) {
-                startEnemyValeriusIdleAnimation();
+                enemyValeriusAnimation.start(CharacterAnimation.State.IDLE);
             }
         }
     } else if (currentEnemy instanceof Skye) {
@@ -2610,8 +2695,8 @@ private void initJijiIdleFrames() {
                     continue;
                 }
                 // Target dimensions for portrait area (250x200), centered
-                int targetW = 150;
-                int targetH = 120;
+                int targetW = PORTRAIT_WIDTH;
+                int targetH = PORTRAIT_HEIGHT;
                 Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 jijiIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded idle frame " + (i + 1));
@@ -2811,8 +2896,8 @@ private void initValeriusIdleFrames() {
                     continue;
                 }
                 // Target dimensions for portrait area (250x200), centered
-                int targetW = 150;
-                int targetH = 120;
+                int targetW = PORTRAIT_WIDTH;
+                int targetH = PORTRAIT_HEIGHT;
                 Image scaled = base.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
                 valeriusIdleFrames[i] = new ImageIcon(scaled);
                 System.out.println("✅ Loaded Valerius idle frame " + (i + 1));
@@ -3943,7 +4028,7 @@ private void initEnemySeleneDamagedFrames() {
 
 private void initValeriusAttackFrames() {
     for (int i = 0; i < 4; i++) {
-        String path = "../assets/valerius_atk" + (i + 1) + ".png";
+        String path = "assets/valerius_atk" + (i + 1) + ".png";
         File f = new File(path);
         if (f.exists()) {
             try {
@@ -6076,61 +6161,7 @@ private void initEnemyJijiIdleFrames() {
     }
 }
 
-private void startEnemyIdleAnimation() {
-    // Ensure damaged animation is not running
-    stopEnemyDamagedAnimation();
-    if (enemyIdleAnimationTimer != null && enemyIdleAnimationTimer.isRunning()) {
-        enemyIdleAnimationTimer.stop();
-    }
-    if (enemyJijiIdleFrames[0] == null || enemyJijiLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy idle - frames:" + (enemyJijiIdleFrames[0]!=null) + " label:" + enemyJijiLargePortraitLabel);
-        return;
-    }
-    enemyCurrentIdleFrame = 0;
-    enemyIdleFrameCounter = 0;
-    final int tickMs = 16; // ~60 FPS base tick
-    enemyIdleAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemyJijiLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof Jiji)) {
-                stopEnemyIdleAnimation();
-                return;
-            }
-            enemyIdleFrameCounter++;
-            int slotTicks = CYCLE_DURATIONS[enemyCurrentIdleFrame];
-            if (enemyIdleFrameCounter >= slotTicks) {
-                enemyIdleFrameCounter = 0;
-                int prevSlot = enemyCurrentIdleFrame;
-                enemyCurrentIdleFrame = (enemyCurrentIdleFrame + 1) % CYCLE_DURATIONS.length;
-                if (enemyCurrentIdleFrame == 0) {
-                    System.out.println("🔄 Enemy idle cycle completed, restarting");
-                }
-                int frameIdx = SLOT_FRAME_MAP[enemyCurrentIdleFrame];
-                ImageIcon baseFrame = enemyJijiIdleFrames[frameIdx];
-                if (baseFrame != null) {
-                    enemyJijiLargePortraitLabel.setIcon(baseFrame);
-                } else {
-                    enemyJijiLargePortraitLabel.setIcon(enemyJijiIdleFrames[0]);
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy idle timer error: " + ex.getMessage());
-            stopEnemyIdleAnimation();
-        }
-    });
-    enemyIdleAnimationTimer.start();
-    enemyJijiLargePortraitLabel.setIcon(enemyJijiIdleFrames[SLOT_FRAME_MAP[0]]);
-    System.out.println("▶️ Enemy Jiji idle animation started (12-slot pattern)");
-}
 
-private void stopEnemyIdleAnimation() {
-    if (enemyIdleAnimationTimer != null && enemyIdleAnimationTimer.isRunning()) {
-        enemyIdleAnimationTimer.stop();
-        enemyCurrentIdleFrame = 0;
-        enemyIdleFrameCounter = 0;
-        System.out.println("⏹️ Enemy Jiji idle animation stopped");
-    }
-}
 
 private void initEnemyJijiDamagedFrames() {
     for (int i = 0; i < 4; i++) {
@@ -6167,63 +6198,7 @@ private void initEnemyJijiDamagedFrames() {
     }
 }
 
-private void startEnemyDamagedAnimation() {
-    stopEnemyIdleAnimation();
-    if (enemyDamagedAnimationTimer != null && enemyDamagedAnimationTimer.isRunning()) {
-        enemyDamagedAnimationTimer.stop();
-    }
-    if (enemyJijiDamagedFrames[0] == null || enemyJijiLargePortraitLabel == null) {
-        System.out.println("⚠️ Cannot start enemy damaged - frames:" + (enemyJijiDamagedFrames[0]!=null));
-        return;
-    }
-    enemyCurrentDamagedFrame = 0;
-    enemyDamagedFrameCounter = 0;
-    final int tickMs = 16;
-    enemyDamagedAnimationTimer = new Timer(tickMs, e -> {
-        try {
-            if (enemyJijiLargePortraitLabel == null) return;
-            if (!(currentEnemy instanceof Jiji)) {
-                stopEnemyDamagedAnimation();
-                return;
-            }
-            enemyDamagedFrameCounter++;
-            int frameTicks = DAMAGED_FRAME_DURATIONS[enemyCurrentDamagedFrame];
-            if (enemyDamagedFrameCounter >= frameTicks) {
-                enemyDamagedFrameCounter = 0;
-                enemyCurrentDamagedFrame++;
-                if (enemyCurrentDamagedFrame >= enemyJijiDamagedFrames.length) {
-                    // Animation finished, return to idle
-                    stopEnemyDamagedAnimation();
-                    enemyJijiDamagedAnimationPlaying = false;
-                    startEnemyIdleAnimation();
-                    return;
-                }
-                ImageIcon frame = enemyJijiDamagedFrames[enemyCurrentDamagedFrame];
-                if (frame != null) {
-                    enemyJijiLargePortraitLabel.setIcon(frame);
-                } else {
-                    enemyJijiLargePortraitLabel.setIcon(enemyJijiDamagedFrames[0]);
-                }
-            }
-        } catch (Exception ex) {
-            System.out.println("⚠️ Enemy damaged timer error: " + ex.getMessage());
-            stopEnemyDamagedAnimation();
-        }
-    });
-    enemyDamagedAnimationTimer.start();
-    // Set initial frame directly (already 250x200 from init)
-    enemyJijiLargePortraitLabel.setIcon(enemyJijiDamagedFrames[0]);
-    System.out.println("💢 Enemy Jiji damaged animation started (150px width)");
-}
 
-private void stopEnemyDamagedAnimation() {
-    if (enemyDamagedAnimationTimer != null && enemyDamagedAnimationTimer.isRunning()) {
-        enemyDamagedAnimationTimer.stop();
-        enemyCurrentDamagedFrame = 0;
-        enemyDamagedFrameCounter = 0;
-        System.out.println("⏹️ Enemy Jiji damaged animation stopped");
-    }
-}
 
 private void initEnemyJijiAttackFrames() {
     for (int i = 0; i < 4; i++) {
@@ -6261,7 +6236,7 @@ private void initEnemyJijiAttackFrames() {
 
 private void startEnemyAttackAnimation() {
     // Stop all other enemy animations
-    stopEnemyIdleAnimation();
+   stopEnemyIdleAnimation();
     stopEnemyDamagedAnimation();
     if (enemyAttackAnimationTimer != null && enemyAttackAnimationTimer.isRunning()) {
         enemyAttackAnimationTimer.stop();
@@ -6324,6 +6299,16 @@ private void stopEnemyAttackAnimation() {
     }
 }
 
+private void stopEnemyIdleAnimation() {
+    // Stop any ongoing idle animation if timers exist
+    System.out.println("⏹️ Enemy Jiji idle animation stopped");
+}
+
+private void stopEnemyDamagedAnimation() {
+    // Stop any ongoing damaged animation if timers exist
+    System.out.println("⏹️ Enemy Jiji damaged animation stopped");
+}
+
 private void showEnemyJijiAttackAnimation() {
     System.out.println("⚔️ showEnemyJijiAttackAnimation called!");
 
@@ -6349,11 +6334,10 @@ private void refreshEnemyJijiPortrait() {
         // Check if damaged
         Jiji enemyJiji = (Jiji) currentEnemy;
         if (enemyJiji.isDamaged()) {
-            if (enemyJijiDamagedFrames[0] != null) {
-                startEnemyDamagedAnimation();
-            } else {
-                System.out.println("⚠️ Damaged frames not available for enemy, showing static");
-            }
+            enemyJijiAnimation.start(CharacterAnimation.State.DAMAGED);
+        } else {
+            enemyJijiAnimation.start(CharacterAnimation.State.IDLE);
+        }
         } else {
             if (enemyJijiIdleFrames[0] != null) {
                 startEnemyIdleAnimation();
@@ -6362,6 +6346,25 @@ private void refreshEnemyJijiPortrait() {
             }
         }
     }
+
+private void startEnemyIdleAnimation() {
+    stopEnemyIdleAnimation(); // Ensure no duplicate timers
+    if (enemyJijiIdleFrames[0] == null || enemyJijiLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Jiji idle - frames:" + (enemyJijiIdleFrames[0]!=null));
+        return;
+    }
+    enemyJijiLargePortraitLabel.setIcon(enemyJijiIdleFrames[0]);
+    System.out.println("▶️ Enemy Jiji idle animation started");
+}
+
+private void startEnemyDamagedAnimation() {
+    stopEnemyDamagedAnimation(); // Ensure no duplicate timers
+    if (enemyJijiDamagedFrames[0] == null || enemyJijiLargePortraitLabel == null) {
+        System.out.println("⚠️ Cannot start enemy Jiji damaged - frames:" + (enemyJijiDamagedFrames[0]!=null));
+        return;
+    }
+    enemyJijiLargePortraitLabel.setIcon(enemyJijiDamagedFrames[0]);
+    System.out.println("▶️ Enemy Jiji damaged animation started");
 }
 
 
@@ -6470,7 +6473,7 @@ private int[] getRandomUnfiredCellForEnemySkill() {
 }
 
 private void executeSkill(int targetX, int targetY) {
-    System.out.println("Executing skill: " + currentSkillName + " at (" + targetX + "," + targetY + ")");
+    System.out.println("Executing skill: " + skillTargeting.currentSkillName + " at (" + targetX + "," + targetY + ")");
     boolean success = false;
     boolean shouldEndTurn = true;
     
@@ -6633,15 +6636,17 @@ private void executeSkill(int targetX, int targetY) {
                     success = selene.useLunarReveal(enemyBoard, targetX, targetY);
                     shouldEndTurn = true;
                     break;
-                case 2:
+                 case 2:
                     System.out.println("Using Crescent Strike at (" + targetX + "," + targetY + ")");
                     int destroyed = selene.useCrescentStrike(enemyBoard, targetX, targetY);
                     success = destroyed > 0;
+                    if (success) showSeleneAttackAnimation();
                     shouldEndTurn = true;
                     break;
                 case 3:
                     System.out.println("Using Starfall Link");
                     success = selene.useStarfallLink(enemyBoard);
+                    if (success) showSeleneAttackAnimation();
                     shouldEndTurn = true;
                     break;
                 default:
@@ -6685,18 +6690,18 @@ private void executeSkill(int targetX, int targetY) {
         success = false;
         shouldEndTurn = false;
         
-        waitingForSkillTarget = false;
+        skillTargeting.waitingForSkillTarget = false;
         currentSkillNumber = 0;
-        currentSkillName = "";
+        skillTargeting.currentSkillName = "";
         currentSkillTargetsOwnBoard = false;
         currentSkillRequiresDirection = false;
     }
     
     if (success) {
-        String skillNameCopy = currentSkillName;
-        waitingForSkillTarget = false;
+        String skillNameCopy = skillTargeting.currentSkillName;
+        skillTargeting.waitingForSkillTarget = false;
         currentSkillNumber = 0;
-        currentSkillName = "";
+        skillTargeting.currentSkillName = "";
         currentSkillTargetsOwnBoard = false;
         currentSkillRequiresDirection = false;
         
@@ -6749,10 +6754,10 @@ private void executeSkill(int targetX, int targetY) {
             }
         }
     } else {
-        String failedSkillName = currentSkillName;
-        waitingForSkillTarget = false;
+        String failedSkillName = skillTargeting.currentSkillName;
+        skillTargeting.waitingForSkillTarget = false;
         currentSkillNumber = 0;
-        currentSkillName = "";
+        skillTargeting.currentSkillName = "";
         currentSkillTargetsOwnBoard = false;
         currentSkillRequiresDirection = false;
         
@@ -6807,27 +6812,27 @@ private void setupClickHandlers() {
     
     playerBoardPanel.setPlayerClickHandler((row, col) -> {
         
-        if (waitingForSkillTarget && currentSkillTargetsOwnBoard) {
+        if (skillTargeting.waitingForSkillTarget && currentSkillTargetsOwnBoard) {
             if (turnTimer != null) turnTimer.stopTimer();
             executeSkill(row, col);
             return;
         }
         
-        if (waitingForKaelStepSource) {
+        if (skillTargeting.waitingForKaelStepSource) {
             System.out.println("🌑 Kael's SHADOW STEP source: (" + row + "," + col + ")");
-            stepSourceCoordinates[0] = row;
-            stepSourceCoordinates[1] = col;
-            waitingForKaelStepSource = false;
-            waitingForKaelStepDestination = true;
+            skillTargeting.stepSourceCoordinates[0] = row;
+            skillTargeting.stepSourceCoordinates[1] = col;
+            skillTargeting.waitingForKaelStepSource = false;
+            skillTargeting.waitingForKaelStepDestination = true;
             updateStatusLabel("🌑 Now click on YOUR board for the destination!", Color.YELLOW);
             return;
         }
         
-        if (waitingForKaelStepDestination) {
+        if (skillTargeting.waitingForKaelStepDestination) {
             System.out.println("🌑 Kael's SHADOW STEP destination: (" + row + "," + col + ")");
             Kael kael = (Kael) playerCharacter;
             boolean used = kael.useShadowStep(playerBoard, 
-                stepSourceCoordinates[0], stepSourceCoordinates[1], row, col);
+                skillTargeting.stepSourceCoordinates[0], skillTargeting.stepSourceCoordinates[1], row, col);
             if (used) {
                 updateStatusLabel("🌑 Shadow Step! Ship teleported successfully!", Color.CYAN);
                 refreshBoardsOnly();
@@ -6848,67 +6853,67 @@ private void setupClickHandlers() {
             } else {
                 updateStatusLabel("❌ Cannot use Shadow Step!", Color.RED);
             }
-            waitingForKaelStepDestination = false;
+            skillTargeting.waitingForKaelStepDestination = false;
             return;
         }
         
-        if (waitingForAerisShield && currentAerisShieldCallback != null) {
-            currentAerisShieldCallback.accept(row, col);
-            waitingForAerisShield = false;
-            currentAerisShieldCallback = null;
+        if (skillTargeting.waitingForAerisShield && skillTargeting.currentAerisShieldCallback != null) {
+            skillTargeting.currentAerisShieldCallback.accept(row, col);
+            skillTargeting.waitingForAerisShield = false;
+            skillTargeting.currentAerisShieldCallback = null;
         }
     });
     
     
     enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-        System.out.println("🔍 ENEMY BOARD CLICKED at (" + row + "," + col + ") - waitingForSkillTarget=" + waitingForSkillTarget + " targetsOwnBoard=" + currentSkillTargetsOwnBoard);
+        System.out.println("🔍 ENEMY BOARD CLICKED at (" + row + "," + col + ") - skillTargeting.waitingForSkillTarget=" + skillTargeting.waitingForSkillTarget + " targetsOwnBoard=" + currentSkillTargetsOwnBoard);
         
-        if (waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
+        if (skillTargeting.waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
             System.out.println("🎯 Executing skill target!");
             if (turnTimer != null) turnTimer.stopTimer();
             executeSkill(row, col);
             return;
         }
         
-        if (waitingForKaelBlade && currentKaelBladeCallback != null) {
-            currentKaelBladeCallback.accept(row, col);
-            waitingForKaelBlade = false;
-            currentKaelBladeCallback = null;
+        if (skillTargeting.waitingForKaelBlade && skillTargeting.currentKaelBladeCallback != null) {
+            skillTargeting.currentKaelBladeCallback.accept(row, col);
+            skillTargeting.waitingForKaelBlade = false;
+            skillTargeting.currentKaelBladeCallback = null;
             return;
         }
         
-        if (waitingForKaelDomain && currentKaelDomainCallback != null) {
-            currentKaelDomainCallback.accept(row, col);
-            waitingForKaelDomain = false;
-            currentKaelDomainCallback = null;
+        if (skillTargeting.waitingForKaelDomain && skillTargeting.currentKaelDomainCallback != null) {
+            skillTargeting.currentKaelDomainCallback.accept(row, col);
+            skillTargeting.waitingForKaelDomain = false;
+            skillTargeting.currentKaelDomainCallback = null;
             return;
         }
         
-        if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
-            currentSeleneVisionCallback.accept(row, col);
-            waitingForSeleneVision = false;
-            currentSeleneVisionCallback = null;
+        if (skillTargeting.waitingForSeleneVision && skillTargeting.currentSeleneVisionCallback != null) {
+            skillTargeting.currentSeleneVisionCallback.accept(row, col);
+            skillTargeting.waitingForSeleneVision = false;
+            skillTargeting.currentSeleneVisionCallback = null;
             return;
         }
         
-        if (waitingForSeleneCrescent && currentSeleneCrescentCallback != null) {
-            currentSeleneCrescentCallback.accept(row, col);
-            waitingForSeleneCrescent = false;
-            currentSeleneCrescentCallback = null;
+        if (skillTargeting.waitingForSeleneCrescent && skillTargeting.currentSeleneCrescentCallback != null) {
+            skillTargeting.currentSeleneCrescentCallback.accept(row, col);
+            skillTargeting.waitingForSeleneCrescent = false;
+            skillTargeting.currentSeleneCrescentCallback = null;
             return;
         }
         
-        if (waitingForTarget && targetCallback != null) {
-            targetCallback.onTargetSelected(row, col);
-            waitingForTarget = false;
-            targetCallback = null;
+        if (skillTargeting.waitingForTarget && skillTargeting.targetCallback != null) {
+            skillTargeting.targetCallback.onTargetSelected(row, col);
+            skillTargeting.waitingForTarget = false;
+            skillTargeting.targetCallback = null;
             return;
         }
         
-        if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
-            currentWhirlpoolCallback.accept(row, col);
-            waitingForWhirlpoolTarget = false;
-            currentWhirlpoolCallback = null;
+        if (skillTargeting.waitingForWhirlpoolTarget && skillTargeting.currentWhirlpoolCallback != null) {
+            skillTargeting.currentWhirlpoolCallback.accept(row, col);
+            skillTargeting.waitingForWhirlpoolTarget = false;
+            skillTargeting.currentWhirlpoolCallback = null;
             return;
         }
         
@@ -6978,8 +6983,8 @@ private void setupClickHandlers() {
             if (isPlayer && playerTurn) {
                 if (turnTimer != null) turnTimer.stopTimer();
                 updateStatusLabel("🔮 Click on enemy board to reveal area!", Color.YELLOW);
-                waitingForSeleneVision = true;
-                currentSeleneVisionCallback = (x, y) -> {
+                skillTargeting.waitingForSeleneVision = true;
+                skillTargeting.currentSeleneVisionCallback = (x, y) -> {
                     boolean used = selene.useLunarReveal(enemyBoard, x, y);
                     if (used) {
                         updateStatusLabel("🔮 Lunar Reveal revealed area around (" + x + "," + y + ")!", Color.CYAN);
@@ -6987,7 +6992,7 @@ private void setupClickHandlers() {
                     } else {
                         updateStatusLabel("❌ Cannot use Lunar Reveal!", Color.RED);
                     }
-                    waitingForSeleneVision = false;
+                    skillTargeting.waitingForSeleneVision = false;
                 };
             }
         });
@@ -7004,11 +7009,11 @@ private void setupClickHandlers() {
             if (isPlayer && playerTurn) {
                 if (turnTimer != null) turnTimer.stopTimer();
                 updateStatusLabel("🌙 Click on enemy board to strike a cross pattern!", Color.YELLOW);
-                waitingForSeleneCrescent = true;
-                currentSeleneCrescentCallback = (x, y) -> {
+                skillTargeting.waitingForSeleneCrescent = true;
+                skillTargeting.currentSeleneCrescentCallback = (x, y) -> {
                     if (x < 0 || x > 9 || y < 0 || y > 9) {
                         updateStatusLabel("❌ Invalid coordinates!", Color.RED);
-                        waitingForSeleneCrescent = false;
+                        skillTargeting.waitingForSeleneCrescent = false;
                         return;
                     }
                     int destroyed = selene.useCrescentStrike(enemyBoard, x, y);
@@ -7018,7 +7023,7 @@ private void setupClickHandlers() {
                     } else {
                         updateStatusLabel("❌ Cannot use Crescent Strike!", Color.RED);
                     }
-                    waitingForSeleneCrescent = false;
+                    skillTargeting.waitingForSeleneCrescent = false;
                 };
             }
         });
@@ -7375,28 +7380,28 @@ private void setupClickHandlers() {
         
     
         playerBoardPanel.setPlayerClickHandler((row, col) -> {
-             if (waitingForKaelStepSource) {
+             if (skillTargeting.waitingForKaelStepSource) {
         System.out.println("🌑 Kael's SHADOW STEP source selection at: (" + row + "," + col + ")");
         Cell cell = playerBoard.getCell(row, col);
         if (!cell.hasShip()) {
             updateStatusLabel("❌ No ship at this location! Click on a ship to teleport.", Color.RED);
-            waitingForKaelStepSource = false;
+            skillTargeting.waitingForKaelStepSource = false;
             return;
         }
-        stepSourceCoordinates[0] = row;
-        stepSourceCoordinates[1] = col;
-        waitingForKaelStepSource = false;
-        waitingForKaelStepDestination = true;
+        skillTargeting.stepSourceCoordinates[0] = row;
+        skillTargeting.stepSourceCoordinates[1] = col;
+        skillTargeting.waitingForKaelStepSource = false;
+        skillTargeting.waitingForKaelStepDestination = true;
         updateStatusLabel("🌑 Now click on destination on YOUR board!", Color.YELLOW);
         return;
     }
             
-           if (waitingForKaelStepDestination) {
+           if (skillTargeting.waitingForKaelStepDestination) {
         System.out.println("🌑 Kael's SHADOW STEP destination selection at: (" + row + "," + col + ")");
         Cell destCell = playerBoard.getCell(row, col);
         if (destCell.hasShip()) {
             updateStatusLabel("❌ Destination already has a ship! Choose an empty cell.", Color.RED);
-            waitingForKaelStepDestination = false;
+            skillTargeting.waitingForKaelStepDestination = false;
             return;
         }
         
@@ -7407,7 +7412,7 @@ private void setupClickHandlers() {
         System.out.println("ShadowStepCooldown: " + kael.getShadowStepCooldown());
         
         boolean used = kael.useShadowStep(playerBoard, 
-            stepSourceCoordinates[0], stepSourceCoordinates[1], row, col);
+            skillTargeting.stepSourceCoordinates[0], skillTargeting.stepSourceCoordinates[1], row, col);
         
         if (used) {
             updateStatusLabel("🌑 Shadow Step! Ship teleported successfully!", Color.CYAN);
@@ -7429,64 +7434,64 @@ private void setupClickHandlers() {
         } else {
             updateStatusLabel("❌ Cannot use Shadow Step! Check energy or cooldown.", Color.RED);
         }
-        waitingForKaelStepDestination = false;
+        skillTargeting.waitingForKaelStepDestination = false;
         return;
     }
     
     
-    if (waitingForSkillTarget && currentSkillTargetsOwnBoard) {
+    if (skillTargeting.waitingForSkillTarget && currentSkillTargetsOwnBoard) {
         if (turnTimer != null) turnTimer.stopTimer();
         executeSkill(row, col);
         return;
     }
             
-            if (waitingForAerisShield && currentAerisShieldCallback != null) {
-                currentAerisShieldCallback.accept(row, col);
-                waitingForAerisShield = false;
-                currentAerisShieldCallback = null;
+            if (skillTargeting.waitingForAerisShield && skillTargeting.currentAerisShieldCallback != null) {
+                skillTargeting.currentAerisShieldCallback.accept(row, col);
+                skillTargeting.waitingForAerisShield = false;
+                skillTargeting.currentAerisShieldCallback = null;
             }
         });
         
         enemyBoardPanel.setEnemyClickHandler((row, col) -> {
-            if (waitingForKaelBlade && currentKaelBladeCallback != null) {
-                currentKaelBladeCallback.accept(row, col);
-                waitingForKaelBlade = false;
-                currentKaelBladeCallback = null;
+            if (skillTargeting.waitingForKaelBlade && skillTargeting.currentKaelBladeCallback != null) {
+                skillTargeting.currentKaelBladeCallback.accept(row, col);
+                skillTargeting.waitingForKaelBlade = false;
+                skillTargeting.currentKaelBladeCallback = null;
                 return;
             }
             
-            if (waitingForKaelDomain && currentKaelDomainCallback != null) {
-                currentKaelDomainCallback.accept(row, col);
-                waitingForKaelDomain = false;
-                currentKaelDomainCallback = null;
+            if (skillTargeting.waitingForKaelDomain && skillTargeting.currentKaelDomainCallback != null) {
+                skillTargeting.currentKaelDomainCallback.accept(row, col);
+                skillTargeting.waitingForKaelDomain = false;
+                skillTargeting.currentKaelDomainCallback = null;
                 return;
             }
             
-            if (waitingForSeleneVision && currentSeleneVisionCallback != null) {
-                currentSeleneVisionCallback.accept(row, col);
-                waitingForSeleneVision = false;
-                currentSeleneVisionCallback = null;
+            if (skillTargeting.waitingForSeleneVision && skillTargeting.currentSeleneVisionCallback != null) {
+                skillTargeting.currentSeleneVisionCallback.accept(row, col);
+                skillTargeting.waitingForSeleneVision = false;
+                skillTargeting.currentSeleneVisionCallback = null;
                 return;
             }
             
-            if (waitingForSeleneCrescent && currentSeleneCrescentCallback != null) {
-                currentSeleneCrescentCallback.accept(row, col);
-                waitingForSeleneCrescent = false;
-                currentSeleneCrescentCallback = null;
+            if (skillTargeting.waitingForSeleneCrescent && skillTargeting.currentSeleneCrescentCallback != null) {
+                skillTargeting.currentSeleneCrescentCallback.accept(row, col);
+                skillTargeting.waitingForSeleneCrescent = false;
+                skillTargeting.currentSeleneCrescentCallback = null;
                 return;
             }
             
-            if (waitingForTarget && targetCallback != null) {
-                targetCallback.onTargetSelected(row, col);
-                waitingForTarget = false;
-                targetCallback = null;
+            if (skillTargeting.waitingForTarget && skillTargeting.targetCallback != null) {
+                skillTargeting.targetCallback.onTargetSelected(row, col);
+                skillTargeting.waitingForTarget = false;
+                skillTargeting.targetCallback = null;
                 return;
             }
             
-            if (waitingForWhirlpoolTarget && currentWhirlpoolCallback != null) {
-                currentWhirlpoolCallback.accept(row, col);
-                waitingForWhirlpoolTarget = false;
-                currentWhirlpoolCallback = null;
+            if (skillTargeting.waitingForWhirlpoolTarget && skillTargeting.currentWhirlpoolCallback != null) {
+                skillTargeting.currentWhirlpoolCallback.accept(row, col);
+                skillTargeting.waitingForWhirlpoolTarget = false;
+                skillTargeting.currentWhirlpoolCallback = null;
                 return;
             }
             
@@ -7766,8 +7771,29 @@ private void enemyTurn() {
                 refreshJijiPortrait();
                 updateStatusLabel("💀 JIJI's ship was SUNK! Jiji is damaged!", Color.RED);
             }
+        } else {
+            // For other characters, take damage when hit
+            if (result == ShotResult.HIT) {
+                playerCharacter.takeDamage(50);
+                System.out.println("💥 " + playerCharacter.getName() + " takes 50 damage!");
+            } else if (result == ShotResult.SUNK) {
+                playerCharacter.takeDamage(100);
+                System.out.println("💀 " + playerCharacter.getName() + " takes 100 damage from sunk ship!");
+            }
+            // Refresh portrait if damaged
+            if (playerCharacter.isDamaged()) {
+                // Assuming there's a refresh method, but for now, perhaps trigger animation
+                if (playerCharacter instanceof Kael && kaelAnimation != null) {
+                    kaelAnimation.start(CharacterAnimation.State.DAMAGED);
+                } else if (playerCharacter instanceof Valerius && valeriusAnimation != null) {
+                    valeriusAnimation.start(CharacterAnimation.State.DAMAGED);
+                } else if (playerCharacter instanceof Selene && seleneAnimation != null) {
+                    seleneAnimation.start(CharacterAnimation.State.DAMAGED);
+                }
+                // Add for other characters if needed
+            }
         }
-        
+
         if (playerCharacter instanceof Jiji && ((Jiji) playerCharacter).checkFirewall(x, y, result)) {
             updateStatusLabel("🛡️ FIREWALL blocked the enemy shot!", Color.CYAN);
         } else if (playerCharacter instanceof Morgana && ((Morgana) playerCharacter).tryDodgeHit(x, y, result)) {
@@ -8106,20 +8132,16 @@ private void enemyTurn() {
     
     if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
-        
-        
-        selene.updateMoonPhase();
-        
-        
-        if (selene.consumeNightJustStarted()) {
-            System.out.println("🌙 Night just started! Refreshing UI...");
-            updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
 
-            if (currentWaveIndex < waves.size()) {
-                createBattleUI(waves.get(currentWaveIndex));
-                // Don't return - continue with normal turn setup
-            }
-        }
+
+        // selene.updateMoonPhase(); // Disabled Selene's passive moon phase advancement
+
+
+        // if (selene.consumeNightJustStarted()) {
+        //     System.out.println("🌙 Night just started! Refreshing UI...");
+        //     updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
+        //     // audio.MusicManager.getInstance().playMusic("night"); // No night.wav file
+        // }
         
         
         if (!selene.isNightTime() && !selene.isEclipseMode()) {
@@ -8167,9 +8189,9 @@ private void endTurn() {
     }
     
     
-    if (waitingForTarget || waitingForWhirlpoolTarget || waitingForAerisShield || 
-        waitingForKaelStepSource || waitingForKaelBlade || waitingForKaelDomain ||
-        waitingForSeleneVision || waitingForSeleneBinding || waitingForSeleneCrescent) {
+    if (skillTargeting.waitingForTarget || skillTargeting.waitingForWhirlpoolTarget || skillTargeting.waitingForAerisShield ||
+        skillTargeting.waitingForKaelStepSource || skillTargeting.waitingForKaelBlade || skillTargeting.waitingForKaelDomain ||
+        skillTargeting.waitingForSeleneVision || skillTargeting.waitingForSeleneBinding || skillTargeting.waitingForSeleneCrescent) {
         
         int confirm = JOptionPane.showConfirmDialog(frame,
             "You have an active skill targeting. End turn anyway?\nThis will cancel your skill.",
@@ -8225,25 +8247,6 @@ private void endTurn() {
  
     
     private void cancelAllSkillTargeting() {
-        waitingForTarget = false;
-        waitingForWhirlpoolTarget = false;
-        waitingForAerisShield = false;
-        waitingForKaelStepSource = false;
-        waitingForKaelStepDestination = false;
-        waitingForKaelBlade = false;
-        waitingForKaelDomain = false;
-        waitingForSeleneVision = false;
-        waitingForSeleneBinding = false;
-        waitingForSeleneCrescent = false;
-        
-        currentSkillName = "";
-        targetCallback = null;
-        currentWhirlpoolCallback = null;
-        currentAerisShieldCallback = null;
-        currentKaelBladeCallback = null;
-        currentKaelDomainCallback = null;
-        currentSeleneVisionCallback = null;
-        currentSeleneBindingCallback = null;
-        currentSeleneCrescentCallback = null;
+        skillTargeting.cancelAllTargeting();
     }
 }

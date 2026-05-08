@@ -136,6 +136,7 @@ public class CharacterAnimation {
             System.out.println("Setting icon for " + currentState + " frame " + frameIndex);
             portraitLabel.setIcon(frames[idx][frameIndex]);
             portraitLabel.revalidate();
+            portraitLabel.repaint();
         }
     }
 

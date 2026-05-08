@@ -1,8 +1,14 @@
 package models;
 
 public class GameSettings {
-
     private static GameSettings instance;
+    private float musicVolume = 1.0f;
+    private float sfxVolume = 1.0f;
+    private boolean musicEnabled = true;
+    private boolean soundEffectsEnabled = true;
+    private boolean fullscreen = false;
+
+    private GameSettings() {}
 
     public static GameSettings getInstance() {
         if (instance == null) {
@@ -11,63 +17,43 @@ public class GameSettings {
         return instance;
     }
 
-    private boolean soundEffectsEnabled = true;
-    private boolean musicEnabled        = true;
-    private int     masterVolume        = 80;   
-    private int     sfxVolume           = 80;   
-    private boolean fullscreen          = true;
-
-    private GameSettings() {}
-
-    public boolean isSoundEffectsEnabled(){ 
-        return soundEffectsEnabled; 
+    public float getMusicVolume() {
+        return musicVolume;
     }
 
-    public void setSoundEffectsEnabled(boolean v){ 
-        soundEffectsEnabled = v;    
+    public void setMusicVolume(float volume) {
+        this.musicVolume = volume;
     }
 
-    public boolean isMusicEnabled(){ 
-        return musicEnabled;        
-    }
-    public void setMusicEnabled(boolean v){ 
-        musicEnabled = v;           
+    public float getSfxVolume() {
+        return sfxVolume;
     }
 
-    public int  getMasterVolume(){ 
-        return masterVolume;       
+    public void setSfxVolume(float volume) {
+        this.sfxVolume = volume;
     }
 
-    public void setMasterVolume(int v){ 
-        masterVolume = clamp(v);    
+    public boolean isMusicEnabled() {
+        return musicEnabled;
     }
 
-    public int  getSfxVolume(){ 
-        return sfxVolume;           
+    public void setMusicEnabled(boolean enabled) {
+        this.musicEnabled = enabled;
     }
 
-    public void setSfxVolume(int v){ 
-        sfxVolume = clamp(v);      
+    public boolean isSoundEffectsEnabled() {
+        return soundEffectsEnabled;
     }
 
-    public boolean isFullscreen(){ 
-        return fullscreen;          
-    }
-    public void setFullscreen(boolean v){ 
-        fullscreen = v;             
+    public void setSoundEffectsEnabled(boolean enabled) {
+        this.soundEffectsEnabled = enabled;
     }
 
-    private int clamp(int v) {
-        return Math.max(0, Math.min(100, v));
+    public boolean isFullscreen() {
+        return fullscreen;
     }
 
-    @Override
-    public String toString() {
-        return "GameSettings{" +
-               "sfx=" + soundEffectsEnabled +
-               ", music=" + musicEnabled +
-               ", masterVol=" + masterVolume +
-               ", sfxVol=" + sfxVolume +
-               ", fullscreen=" + fullscreen + "}";
+    public void setFullscreen(boolean fullscreen) {
+        this.fullscreen = fullscreen;
     }
 }

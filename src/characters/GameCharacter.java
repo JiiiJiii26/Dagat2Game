@@ -27,6 +27,10 @@ public abstract class GameCharacter {
     }
     
     public abstract void useSpecialAbility(Board playerBoard, Board enemyBoard);
+
+    public abstract boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction);
+
+    public abstract void updateTurnCounter();
     
     public void chargeSpecial() {
         if (specialMeter < maxSpecialMeter) {

@@ -421,4 +421,18 @@ public int getShadowBladeCooldown() {
 public int getShadowDomainCooldown() {
     return shadowDomainCooldown;
 }
+
+    @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Shadow Step - handled specially by panel
+                return false;
+            case 2: // Shadow Blade
+                return useShadowBlade(enemyBoard, x, y, direction) > 0;
+            case 3: // Shadow Domain
+                return useShadowDomain(enemyBoard, x, y) > 0;
+            default:
+                return false;
+        }
+    }
 }

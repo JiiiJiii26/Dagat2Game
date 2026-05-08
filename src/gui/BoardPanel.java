@@ -516,13 +516,13 @@ public class BoardPanel extends JPanel {
     }
     
     private void initializeLayout() {
-    setLayout(null);
-    int panelWidth = SIZE * cellWidth;
-    int panelHeight = SIZE * cellHeight + 20; 
-    setPreferredSize(new Dimension(panelWidth, panelHeight));
-    setMinimumSize(new Dimension(panelWidth, panelHeight));
-    setMaximumSize(new Dimension(panelWidth, panelHeight));
-    setBounds(0, 0, panelWidth, panelHeight);
+        setLayout(null);
+        int panelWidth = SIZE * cellWidth;
+        int panelHeight = SIZE * cellHeight + 20;
+        setPreferredSize(new Dimension(panelWidth, panelHeight));
+        setMinimumSize(new Dimension(panelWidth, panelHeight));
+        setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
+        setBounds(0, 0, panelWidth, panelHeight);
     
     gridButtons = new JButton[SIZE][SIZE];
     

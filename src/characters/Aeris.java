@@ -228,8 +228,10 @@ public class Aeris extends GameCharacter {
     
     public void updateTurnCounter() {
         System.out.println("💪 Aeris updateTurnCounter called! Current mana: " + currentMana);
-        
-        
+
+
+        regenerateMana(15);
+
         if (adaptiveInstinctCooldown > 0) adaptiveInstinctCooldown--;
         if (multitaskOverdriveCooldown > 0) multitaskOverdriveCooldown--;
         if (relentlessAscentCooldown > 0) relentlessAscentCooldown--;
@@ -352,6 +354,20 @@ public class Aeris extends GameCharacter {
         return shieldedShips.size();
     }
     
+    @Override
+    public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        switch (skillNumber) {
+            case 1: // Adaptive Instinct
+                return useAdaptiveInstinct(playerBoard, x, y);
+            case 2: // Multitask Overdrive
+                return useMultitaskOverdrive();
+            case 3: // Relentless Ascent
+                return useRelentlessAscent(enemyBoard, y) > 0; // y is column
+            default:
+                return false;
+        }
+    }
+
     @Override
     public void useSpecialAbility(Board playerBoard, Board enemyBoard) {
         System.out.println("Aeris's abilities are used through skill buttons!");
