@@ -89,53 +89,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Build the component tree once (no sizes yet – relayout() sets them)
-    // ─────────────────────────────────────────────────────────────────────────
-    private void initializeUI() {
-        setLayout(null);
-
-        // Back button
-        backButton = new JButton("← Back");
-        backButton.setFont(new Font("Arial", Font.PLAIN, 12));
-        backButton.addActionListener(e -> { if (listener != null) listener.onBackToMenu(); });
-        add(backButton);
-
-        // Player banners
-        p1Banner = createPlayerBanner("PLAYER 1", new Color(0, 180, 220, 180));
-        add(p1Banner);
-
-        p2Banner = createPlayerBanner("PLAYER 2", new Color(220, 100, 0, 180));
-        add(p2Banner);
-
-        // Selected-character labels
-        player1SelectedLabel = createSelectedLabel();
-        add(player1SelectedLabel);
-
-        player2SelectedLabel = createSelectedLabel();
-        add(player2SelectedLabel);
-
-        // Confirm button
-        confirmButton = new JButton("START BATTLE");
-        confirmButton.setEnabled(false);
-        confirmButton.setFont(new Font("Arial", Font.BOLD, 14));
-        confirmButton.addActionListener(e -> {
-            if (player1Character != null && player2Character != null)
-                listener.onCharactersSelected(player1Character, player2Character);
-        });
-        add(confirmButton);
-
-        // Character cards (created once; bounds set in relayout)
-        for (GameCharacter ch : characters) {
-            JPanel c1 = createCharacterCard(ch, 1);
-            JPanel c2 = createCharacterCard(ch, 2);
-            p1Cards.add(c1);
-            p2Cards.add(c2);
-            add(c1);
-            add(c2);
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     //  Recalculate every component's bounds from current panel dimensions
     // ─────────────────────────────────────────────────────────────────────────
     private void relayout() {
@@ -256,11 +209,9 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
     }
 
-<<<<<<< HEAD
     // ─────────────────────────────────────────────────────────────────────────
     //  Component factories
     // ─────────────────────────────────────────────────────────────────────────
-=======
     private void initializeUI() {
         setLayout(null);
 
@@ -330,7 +281,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
 
 
     // Semi-transparent colored banner with player label
->>>>>>> f9fe4479d3c4c775b5555bc7edee688edff6aa0a
     private JPanel createPlayerBanner(String text, Color color) {
         JPanel banner = new JPanel(new BorderLayout()) {
             @Override
