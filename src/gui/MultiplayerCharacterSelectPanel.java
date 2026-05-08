@@ -17,19 +17,26 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     private GameCharacter player2Character;
     private CharacterSelectListener listener;
 
+    // ── UI components kept as fields so relayout() can reposition them ──
     private JButton confirmButton;
+    private JButton backButton;
     private JLabel player1SelectedLabel;
     private JLabel player2SelectedLabel;
+    private JPanel p1Banner;
+    private JPanel p2Banner;
+
+    // Parallel lists: p1Cards[i] / p2Cards[i] match characters.get(i)
+    private final ArrayList<JPanel> p1Cards = new ArrayList<>();
+    private final ArrayList<JPanel> p2Cards = new ArrayList<>();
+
     private ImageIcon gifIcon;
     private ImageIcon boxIcon;
 
     private ImageIcon p1PortraitIcon = null;
     private ImageIcon p2PortraitIcon = null;
 
-    private static final int INSET_TOP    = 30;
-    private static final int INSET_BOTTOM = 40;
-    private static final int INSET_LEFT   = 18;
-    private static final int INSET_RIGHT  = 18;
+    // Insets are expressed as fractions of card size; computed each layout pass
+    private int dynInsetTop, dynInsetBottom, dynInsetLeft, dynInsetRight;
 
     private static final float BLUR_STRENGTH = 1f / 25f;
     private static final float[] BLUR_KERNEL = new float[25];
@@ -43,11 +50,15 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     );
     private BufferedImage blurredFrame;
 
+    // ── Current dynamic layout values (reused in paintComponent) ──
+    private int currentPortraitW = 400;
+
     public interface CharacterSelectListener {
         void onCharactersSelected(GameCharacter player1, GameCharacter player2);
         void onBackToMenu();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     public MultiplayerCharacterSelectPanel(CharacterSelectListener listener) {
         this.listener = listener;
         this.characters = new ArrayList<>();
@@ -67,27 +78,98 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         boxIcon = new ImageIcon(base + "pvpBox.png");
 
         initializeUI();
+
+        // ── Reflow everything whenever the panel is resized ──
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                relayout();
+            }
+        });
     }
 
-    private ImageIcon loadPortrait(GameCharacter character) {
-        String base = System.getProperty("user.dir") + File.separator + "assets" + File.separator;
-        String filename = null;
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Recalculate every component's bounds from current panel dimensions
+    // ─────────────────────────────────────────────────────────────────────────
+    private void relayout() {
+        int W = getWidth();
+        int H = getHeight();
+        if (W <= 0 || H <= 0) return;
 
-        if (character instanceof Flue)          filename = "char1.png";
-        else if (character instanceof Jiji)     filename = "char2 1.png";
-        else if (character instanceof Skye)     filename = "char3.png";
-        else if (character instanceof Kael)     filename = "char4.png";
-        else if (character instanceof Aeris)    filename = "char5.png";
-        else if (character instanceof Selene)   filename = "char6.png";
-        else if (character instanceof Morgana)  filename = "char7.png";
-        else if (character instanceof Valerius) filename = "char8.png";
+        // ── Grid math ──────────────────────────────────────────────────────
+        // Side margin: leave room for portraits on both edges
+        int sideMargin = (int)(W * 0.14);   // ~14 % each side
+        int availW     = W - sideMargin * 2;
 
-        if (filename == null) return null;
-        File f = new File(base + filename);
-        if (!f.exists()) return null;
-        return new ImageIcon(f.getAbsolutePath());
+        int NUM_CARDS = characters.size();   // 8
+        int GAP_X     = Math.max(3, (int)(availW * 0.005));
+        int BOX_W     = (availW - (NUM_CARDS - 1) * GAP_X) / NUM_CARDS;
+        int BOX_H     = (int)(BOX_W * 1.11);  // keep ~200/180 aspect ratio
+
+        // Insets scale with card size
+        dynInsetTop    = (int)(BOX_H * 0.15);
+        dynInsetBottom = (int)(BOX_H * 0.20);
+        dynInsetLeft   = (int)(BOX_W * 0.10);
+        dynInsetRight  = (int)(BOX_W * 0.10);
+
+        // Row positions: p1 at ~55 % height, p2 below with a gap
+        int rowGap   = (int)(H * 0.035);
+        int bannerH  = Math.max(24, (int)(H * 0.038));
+        int p1RowY   = (int)(H * 0.55);
+        int p2RowY   = p1RowY + BOX_H + rowGap;
+
+        // Portrait width for paintComponent
+        currentPortraitW = sideMargin + (int)(sideMargin * 0.5);
+
+        // Font sizes scale with height
+        int bannerFontSize = Math.max(10, (int)(H * 0.018));
+        int labelFontSize  = Math.max(9,  (int)(H * 0.015));
+        int btnFontSize    = Math.max(10, (int)(H * 0.018));
+
+        // ── Back button ────────────────────────────────────────────────────
+        backButton.setBounds(10, 10, (int)(W * 0.07), (int)(H * 0.038));
+
+        // ── P1 banner + label ──────────────────────────────────────────────
+        int bannerW = (int)(availW * 0.28);
+        int labelW  = availW - bannerW - (int)(availW * 0.02);
+
+        p1Banner.setBounds(sideMargin, p1RowY - bannerH - 4, bannerW, bannerH);
+        ((JLabel) p1Banner.getComponent(0)).setFont(new Font("Arial", Font.BOLD, bannerFontSize));
+
+        player1SelectedLabel.setBounds(sideMargin + bannerW + (int)(availW * 0.02),
+                                        p1RowY - bannerH - 4, labelW, bannerH);
+        player1SelectedLabel.setFont(new Font("Arial", Font.ITALIC, labelFontSize));
+
+        // ── P2 banner + label ──────────────────────────────────────────────
+        p2Banner.setBounds(sideMargin, p2RowY - bannerH - 4, bannerW, bannerH);
+        ((JLabel) p2Banner.getComponent(0)).setFont(new Font("Arial", Font.BOLD, bannerFontSize));
+
+        player2SelectedLabel.setBounds(sideMargin + bannerW + (int)(availW * 0.02),
+                                        p2RowY - bannerH - 4, labelW, bannerH);
+        player2SelectedLabel.setFont(new Font("Arial", Font.ITALIC, labelFontSize));
+
+        // ── Cards ──────────────────────────────────────────────────────────
+        for (int i = 0; i < characters.size(); i++) {
+            int x = sideMargin + i * (BOX_W + GAP_X);
+            p1Cards.get(i).setBounds(x, p1RowY, BOX_W, BOX_H);
+            p2Cards.get(i).setBounds(x, p2RowY, BOX_W, BOX_H);
+        }
+
+        // ── Confirm button — centred below p2 row ──────────────────────────
+        int btnW = (int)(availW * 0.16);
+        int btnH = (int)(H * 0.050);
+        int btnX = sideMargin + availW / 2 - btnW / 2;
+        int btnY = Math.min(p2RowY + BOX_H + (int)(H * 0.018), H - btnH - 5);
+        confirmButton.setBounds(btnX, btnY, btnW, btnH);
+        confirmButton.setFont(new Font("Arial", Font.BOLD, btnFontSize));
+
+        revalidate();
+        repaint();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Background + portraits
+    // ─────────────────────────────────────────────────────────────────────────
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -105,20 +187,20 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         g.drawImage(blurredFrame, 0, 0, this);
 
         Graphics2D g2 = (Graphics2D) g;
-
         g2.setColor(new Color(0, 0, 0, 90));
         g2.fillRect(0, 0, w, h);
 
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                            RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
+        // Portraits scale with panel size
         int portraitH = h;
-        int portraitW = 800;
+        int portraitW = currentPortraitW;   // set by relayout()
 
         if (p1PortraitIcon != null) {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g2.drawImage(p1PortraitIcon.getImage(), 0, 0, portraitW, portraitH, this);
         }
-
         if (p2PortraitIcon != null) {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g2.drawImage(p2PortraitIcon.getImage(), w - portraitW, 0, portraitW, portraitH, this);
@@ -127,6 +209,9 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Component factories
+    // ─────────────────────────────────────────────────────────────────────────
     private void initializeUI() {
         setLayout(null);
 
@@ -201,7 +286,8 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                    RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(color);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
@@ -213,11 +299,9 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         label.setForeground(Color.WHITE);
         label.setFont(new Font("Arial", Font.BOLD, 15));
         banner.add(label, BorderLayout.CENTER);
-
         return banner;
     }
 
-    // Semi-transparent dark label for selected character name
     private JLabel createSelectedLabel() {
         JLabel label = new JLabel("— choose a character", SwingConstants.LEFT) {
             @Override
@@ -236,25 +320,6 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         return label;
     }
 
-    private ImageIcon loadCharacterImage(GameCharacter character) {
-        String base = System.getProperty("user.dir") + File.separator + "assets" + File.separator;
-        String filename = null;
-
-        if (character instanceof Jiji)          filename = "jiji.jpg";
-        else if (character instanceof Kael)     filename = "kael.jpg";
-        else if (character instanceof Valerius) filename = "valerius.jpg";
-        else if (character instanceof Skye)     filename = "skye.png";
-        else if (character instanceof Morgana)  filename = "morgana.jpg";
-        else if (character instanceof Aeris)    filename = "aeris.jpg";
-        else if (character instanceof Selene)   filename = "selene.jpg";
-        else if (character instanceof Flue)     filename = "flue.jpg";
-
-        if (filename == null) return null;
-        File f = new File(base + filename);
-        if (!f.exists()) return null;
-        return new ImageIcon(f.getAbsolutePath());
-    }
-
     private JPanel createCharacterCard(GameCharacter character, int playerNumber) {
         ImageIcon charIcon = loadCharacterImage(character);
 
@@ -262,20 +327,21 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
                 int w = getWidth();
                 int h = getHeight();
 
-                if (boxIcon != null && boxIcon.getImage() != null) {
+                if (boxIcon != null && boxIcon.getImage() != null)
                     g2.drawImage(boxIcon.getImage(), 0, 0, w, h, this);
-                }
 
                 if (charIcon != null && charIcon.getImage() != null) {
-                    int imgX = INSET_LEFT;
-                    int imgY = INSET_TOP;
-                    int imgW = w - INSET_LEFT - INSET_RIGHT;
-                    int imgH = h - INSET_TOP - INSET_BOTTOM;
+                    // Use dynamic insets updated by relayout()
+                    int imgX = dynInsetLeft;
+                    int imgY = dynInsetTop;
+                    int imgW = w - dynInsetLeft - dynInsetRight;
+                    int imgH = h - dynInsetTop  - dynInsetBottom;
 
                     Shape oldClip = g2.getClip();
                     g2.setClip(imgX, imgY, imgW, imgH);
@@ -283,9 +349,9 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
                     g2.setClip(oldClip);
                 }
 
-                if (boxIcon != null && boxIcon.getImage() != null) {
+                // Draw box frame on top again (keeps the border overlay)
+                if (boxIcon != null && boxIcon.getImage() != null)
                     g2.drawImage(boxIcon.getImage(), 0, 0, w, h, this);
-                }
 
                 g2.dispose();
             }
@@ -296,42 +362,80 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 selectCharacter(character, playerNumber);
-                for (Component comp : card.getParent().getComponents()) {
-                    if (comp instanceof JPanel) {
-                        ((JPanel) comp).setBorder(null);
-                    }
-                }
+                // Clear highlights from same-row cards only
+                ArrayList<JPanel> sameRow = (playerNumber == 1) ? p1Cards : p2Cards;
+                for (JPanel c : sameRow) c.setBorder(null);
                 card.setBorder(BorderFactory.createLineBorder(
                     playerNumber == 1 ? new Color(0, 200, 255) : new Color(255, 120, 0), 3));
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                if (!isCharacterSelected(character, playerNumber)) {
+                if (!isCharacterSelected(character, playerNumber))
                     card.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
-                }
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                if (!isCharacterSelected(character, playerNumber)) {
+                if (!isCharacterSelected(character, playerNumber))
                     card.setBorder(null);
-                }
             }
         });
 
         return card;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Asset loaders
+    // ─────────────────────────────────────────────────────────────────────────
+    private ImageIcon loadPortrait(GameCharacter character) {
+        String base = System.getProperty("user.dir") + File.separator + "assets" + File.separator;
+        String filename = null;
+
+        if      (character instanceof Flue)     filename = "char1.png";
+        else if (character instanceof Jiji)     filename = "char2 1.png";
+        else if (character instanceof Skye)     filename = "char3.png";
+        else if (character instanceof Kael)     filename = "char4.png";
+        else if (character instanceof Aeris)    filename = "char5.png";
+        else if (character instanceof Selene)   filename = "char6.png";
+        else if (character instanceof Morgana)  filename = "char7.png";
+        else if (character instanceof Valerius) filename = "char8.png";
+
+        if (filename == null) return null;
+        File f = new File(base + filename);
+        return f.exists() ? new ImageIcon(f.getAbsolutePath()) : null;
+    }
+
+    private ImageIcon loadCharacterImage(GameCharacter character) {
+        String base = System.getProperty("user.dir") + File.separator + "assets" + File.separator;
+        String filename = null;
+
+        if      (character instanceof Jiji)     filename = "jiji.jpg";
+        else if (character instanceof Kael)     filename = "kael.jpg";
+        else if (character instanceof Valerius) filename = "valerius.jpg";
+        else if (character instanceof Skye)     filename = "skye.png";
+        else if (character instanceof Morgana)  filename = "morgana.jpg";
+        else if (character instanceof Aeris)    filename = "aeris.jpg";
+        else if (character instanceof Selene)   filename = "selene.jpg";
+        else if (character instanceof Flue)     filename = "flue.jpg";
+
+        if (filename == null) return null;
+        File f = new File(base + filename);
+        return f.exists() ? new ImageIcon(f.getAbsolutePath()) : null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Selection helpers
+    // ─────────────────────────────────────────────────────────────────────────
     private void selectCharacter(GameCharacter character, int playerNumber) {
         if (playerNumber == 1) {
             player1Character = character;
-            p1PortraitIcon = loadPortrait(character);
+            p1PortraitIcon   = loadPortrait(character);
             if (player1SelectedLabel != null)
                 player1SelectedLabel.setText("  " + character.getName());
         } else {
             player2Character = character;
-            p2PortraitIcon = loadPortrait(character);
+            p2PortraitIcon   = loadPortrait(character);
             if (player2SelectedLabel != null)
                 player2SelectedLabel.setText("  " + character.getName());
         }
@@ -340,20 +444,7 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
     }
 
     private boolean isCharacterSelected(GameCharacter character, int playerNumber) {
-        return playerNumber == 1
-            ? player1Character == character
-            : player2Character == character;
-    }
-
-    private String getCharacterEmoji(GameCharacter character) {
-        if (character instanceof Jiji)     return "💻";
-        if (character instanceof Kael)     return "🌑";
-        if (character instanceof Valerius) return "🛡️";
-        if (character instanceof Skye)     return "🐱";
-        if (character instanceof Morgana)  return "🧜‍♀️";
-        if (character instanceof Aeris)    return "💪";
-        if (character instanceof Selene)   return "🔮";
-        if (character instanceof Flue)     return "💻";
-        return "🎮";
+        return playerNumber == 1 ? player1Character == character
+                                 : player2Character == character;
     }
 }
