@@ -69,6 +69,10 @@ public class Aeris extends GameCharacter {
     public boolean hasEnoughMana(int cost) {
         return currentMana >= cost;
     }
+
+    public boolean isDamaged() {
+        return currentHealth < maxHealth;
+    }
     
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {

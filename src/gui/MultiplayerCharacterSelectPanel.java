@@ -256,9 +256,81 @@ public class MultiplayerCharacterSelectPanel extends JPanel {
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
     }
 
+<<<<<<< HEAD
     // ─────────────────────────────────────────────────────────────────────────
     //  Component factories
     // ─────────────────────────────────────────────────────────────────────────
+=======
+    private void initializeUI() {
+        setLayout(null);
+
+        // Back button — top left, small and unobtrusive
+        JButton backButton = new JButton("← Back");
+        backButton.setBounds(10, 10, 90, 28);
+        backButton.setFont(new Font("Arial", Font.PLAIN, 12));
+        backButton.addActionListener(e -> {
+            if (listener != null) listener.onBackToMenu();
+        });
+        add(backButton);
+
+        int BOX_W  = 180;
+        int BOX_H  = 200;
+        int GAP_X  = 6;
+        int startX = 200;
+        int p1RowY = 500;
+        int p2RowY = p1RowY + BOX_H + 30;
+
+        // P1 header banner — sits directly above P1 row
+        JPanel p1Banner = createPlayerBanner("PLAYER 1", new Color(0, 180, 220, 180));
+        p1Banner.setBounds(startX, p1RowY - 38, 300, 32);
+        add(p1Banner);
+
+        // P1 selected name — right of the P1 banner
+        player1SelectedLabel = createSelectedLabel();
+        player1SelectedLabel.setBounds(startX + 310, p1RowY - 38, 400, 32);
+        add(player1SelectedLabel);
+
+        // P2 header banner — sits directly above P2 row
+        JPanel p2Banner = createPlayerBanner("PLAYER 2", new Color(220, 100, 0, 180));
+        p2Banner.setBounds(startX, p2RowY - 38, 300, 32);
+        add(p2Banner);
+
+        // P2 selected name — right of the P2 banner
+        player2SelectedLabel = createSelectedLabel();
+        player2SelectedLabel.setBounds(startX + 310, p2RowY - 38, 400, 32);
+        add(player2SelectedLabel);
+
+        // Confirm button — bottom center, styled
+        int totalW = 8 * BOX_W + 7 * GAP_X;
+        confirmButton = new JButton("START BATTLE");
+        confirmButton.setEnabled(false);
+        confirmButton.setFont(new Font("Arial", Font.BOLD, 14));
+        confirmButton.setBounds(startX + totalW / 2 - 90, p2RowY + BOX_H + 14, 180, 38);
+        confirmButton.addActionListener(e -> {
+            if (player1Character != null && player2Character != null) {
+                listener.onCharactersSelected(player1Character, player2Character);
+            }
+        });
+        add(confirmButton);
+
+        // Cards
+        for (int i = 0; i < characters.size(); i++) {
+            int x = startX + i * (BOX_W + GAP_X);
+
+            JPanel card1 = createCharacterCard(characters.get(i), 1);
+            card1.setBounds(x, p1RowY, BOX_W, BOX_H);
+            add(card1);
+
+            JPanel card2 = createCharacterCard(characters.get(i), 2);
+            card2.setBounds(x, p2RowY, BOX_W, BOX_H);
+            add(card2);
+        }
+    }
+
+
+
+    // Semi-transparent colored banner with player label
+>>>>>>> f9fe4479d3c4c775b5555bc7edee688edff6aa0a
     private JPanel createPlayerBanner(String text, Color color) {
         JPanel banner = new JPanel(new BorderLayout()) {
             @Override

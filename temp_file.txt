@@ -1,0 +1,1201 @@
+package campaign;
+
+import javax.swing.*;
+import javax.swing.border.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
+import characters.*;
+import gui.BoardPanel;
+import audio.MusicManager;
+import gui.PlacementPanel;
+import gui.SkillPanel;
+import gui.TimerPanel;
+import models.Board;
+import models.Cell;
+import models.Ship;
+import game.ShotResult;
+import main.Main;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.awt.geom.AffineTransform;
+
+public class CampaignMode {
+
+    // Managers
+    private CharacterManager characterManager;
+    private ResourceManager resourceManager;
+    private Map<String, SkillStrategy> skillStrategies;
+
+    private boolean testMode = true;
+    private String testEnemyName = "Selene";
+
+    // Core game state
+    private JFrame frame;
+    private List<GameCharacter> possibleEnemies;
+    private List<CampaignWave> waves;
+    private int currentWaveIndex = 0;
+    private GameCharacter playerCharacter;
+    private GameCharacter currentEnemy;
+    private Board playerBoard;
+    private Board enemyBoard;
+    private boolean playerTurn = true;
+
+    // UI components
+    private BoardPanel playerBoardPanel;
+    private BoardPanel enemyBoardPanel;
+
+    private Image oceanBackground;
+    private Image scaledOceanBackground;
+    private Timer moonPhaseTimer;
+    private JFrame frame;
+    private List<GameCharacter> possibleEnemies;  
+    private List<CampaignWave> waves;
+    private int currentWaveIndex = 0;
+    private GameCharacter playerCharacter;
+    private GameCharacter currentEnemy;
+    private Board playerBoard;
+    private Board enemyBoard;
+    private JLabel statusLabel;
+    private boolean waitingForWhirlpoolTarget = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentWhirlpoolCallback;
+     
+    private boolean waitingForAerisShield = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentAerisShieldCallback;
+
+
+    
+    private BoardPanel playerBoardPanel;
+    private BoardPanel enemyBoardPanel;
+    private JLabel waveLabel;
+    private boolean playerTurn = true;
+    private Random random = new Random();
+    private boolean waitingForSkillTarget = false;
+    private boolean waitingForTarget = false;
+    private String currentSkillName = "";
+    private SkillTargetCallback targetCallback;
+    private JButton lastClickedSkillButton;
+    private int extraTurnsRemaining = 0;
+
+    private int currentSkillNumber = 0;
+
+private boolean currentSkillTargetsOwnBoard = false;
+private boolean currentSkillRequiresDirection = false;
+private boolean currentSkillDirectionHorizontal = true;
+
+    private TimerPanel turnTimer;
+    private TimerPanel enemyTurnTimer;
+private boolean timerEnabled = true;
+
+private JLabel playerShipLabel;
+private JLabel enemyShipLabel;
+
+  
+    private boolean waitingForKaelStepSource = false;
+    private boolean waitingForKaelStepDestination = false;
+    private int[] stepSourceCoordinates = new int[2];
+private Timer skillPanelRefreshTimer;
+private SkillPanel currentSkillPanel;
+
+    private boolean waitingForKaelBlade = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentKaelBladeCallback;
+    private boolean bladeDirectionHorizontal = true;
+
+
+    private boolean waitingForKaelDomain = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentKaelDomainCallback;
+    
+
+    private boolean waitingForSeleneVision = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentSeleneVisionCallback;
+    
+    private boolean waitingForSeleneBinding = false;
+    private java.util.function.BiConsumer<Integer, Integer> currentSeleneBindingCallback;
+    
+    
+private boolean waitingForSeleneCrescent = false;
+private boolean jijiAttackAnimationPlaying = false;
+private boolean jijiAttackPlayedThisTurn = false;
+private boolean jijiDamagedAnimationPlaying = false;
+private ImageIcon[] jijiIdleFrames = new ImageIcon[4];
+private Timer idleAnimationTimer;
+private int currentCycleSlot = 0;
+private int slotCounter = 0;
+private static final int[] CYCLE_DURATIONS = {18,36,18,36,18,36,18,36,18,36,54,72};
+private static final int[] SLOT_FRAME_MAP = {0,1,0,1,0,1,0,1,0,1,2,3};
+// Subtle sway offsets per slot (px) - gentle side-to-side motion
+private static final int[] SLOT_OFFSET_X = {0, 1, -1, 1, -1, 1, 0, 1, -1, 1, 0, 0};
+
+// Damaged animation frames (4 PNGs)
+private ImageIcon[] jijiDamagedFrames = new ImageIcon[4];
+private Timer damagedAnimationTimer;
+private int currentDamagedFrame = 0;
+private int damagedFrameCounter = 0;
+private static final int[] DAMAGED_FRAME_DURATIONS = {6, 6, 6, 12}; // ticks (~0.5s cycle)
+
+// Attack animation frames (4 PNGs)
+private ImageIcon[] jijiAttackFrames = new ImageIcon[4];
+private Timer attackAnimationTimer;
+private int currentAttackFrame = 0;
+private int attackFrameCounter = 0;
+private static final int[] ATTACK_FRAME_DURATIONS = {4, 4, 4, 8}; // ticks (~0.4s total)
+private java.util.function.BiConsumer<Integer, Integer> currentSeleneCrescentCallback;
+
+private Timer seleneUpdateTimer;
+
+private ImageIcon[] kaelIdleFrames = new ImageIcon[5];
+private Timer kaelIdleAnimationTimer;
+private int kaelIdleSequenceIndex = 0;
+private int kaelIdleFrameCounter = 0;
+private boolean kaelIdleAnimationPlaying = false;
+private static final int[] KAEL_IDLE_SEQUENCE = {0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,1,3,4};
+
+private ImageIcon[] enemyKaelIdleFrames = new ImageIcon[5];
+private Timer enemyKaelIdleAnimationTimer;
+private int enemyKaelIdleSequenceIndex = 0;
+private int enemyKaelIdleFrameCounter = 0;
+private boolean enemyKaelIdleAnimationPlaying = false;
+
+private ImageIcon[] kaelAttackFrames = new ImageIcon[3];
+private Timer kaelAttackAnimationTimer;
+private int currentKaelAttackFrame = 0;
+private int kaelAttackFrameCounter = 0;
+private boolean kaelAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyKaelAttackFrames = new ImageIcon[3];
+private Timer enemyKaelAttackAnimationTimer;
+private int currentEnemyKaelAttackFrame = 0;
+private int enemyKaelAttackFrameCounter = 0;
+private boolean enemyKaelAttackAnimationPlaying = false;
+
+private ImageIcon[] kaelDamagedFrames = new ImageIcon[3];
+private Timer kaelDamagedAnimationTimer;
+private int currentKaelDamagedFrame = 0;
+private int kaelDamagedFrameCounter = 0;
+private boolean kaelDamagedAnimationPlaying = false;
+
+private ImageIcon[] enemyKaelDamagedFrames = new ImageIcon[3];
+private Timer enemyKaelDamagedAnimationTimer;
+private int currentEnemyKaelDamagedFrame = 0;
+private int enemyKaelDamagedFrameCounter = 0;
+private boolean enemyKaelDamagedAnimationPlaying = false;
+
+private ImageIcon[] valeriusIdleFrames = new ImageIcon[4];
+private Timer valeriusIdleAnimationTimer;
+private int valeriusIdleSequenceIndex = 0;
+private int valeriusIdleFrameCounter = 0;
+private boolean valeriusIdleAnimationPlaying = false;
+private static final int[] VALERIUS_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private JLabel valeriusLargePortraitLabel;
+private ImageIcon[] enemyValeriusIdleFrames = new ImageIcon[4];
+private Timer enemyValeriusIdleAnimationTimer;
+private int enemyValeriusIdleSequenceIndex = 0;
+private int enemyValeriusIdleFrameCounter = 0;
+private boolean enemyValeriusIdleAnimationPlaying = false;
+
+private ImageIcon[] skyeIdleFrames = new ImageIcon[4];
+private Timer skyeIdleAnimationTimer;
+private int skyeIdleSequenceIndex = 0;
+private int skyeIdleFrameCounter = 0;
+private boolean skyeIdleAnimationPlaying = false;
+private static final int[] SKYE_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private ImageIcon[] enemySkyeIdleFrames = new ImageIcon[4];
+private Timer enemySkyeIdleAnimationTimer;
+private int enemySkyeIdleSequenceIndex = 0;
+private int enemySkyeIdleFrameCounter = 0;
+private boolean enemySkyeIdleAnimationPlaying = false;
+
+private ImageIcon[] skyeAttackFrames = new ImageIcon[3];
+private Timer skyeAttackAnimationTimer;
+private int currentSkyeAttackFrame = 0;
+private int skyeAttackFrameCounter = 0;
+private boolean skyeAttackAnimationPlaying = false;
+private static final int[] SKYE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemySkyeAttackFrames = new ImageIcon[3];
+private Timer enemySkyeAttackAnimationTimer;
+private int currentEnemySkyeAttackFrame = 0;
+private int enemySkyeAttackFrameCounter = 0;
+private boolean enemySkyeAttackAnimationPlaying = false;
+
+private ImageIcon[] skyeDamagedFrames = new ImageIcon[4];
+private Timer skyeDamagedAnimationTimer;
+private int currentSkyeDamagedFrame = 0;
+private int skyeDamagedFrameCounter = 0;
+private boolean skyeDamagedAnimationPlaying = false;
+private static final int[] SKYE_DAMAGED_FRAME_DURATIONS = {10, 10, 10, 20}; // ticks (~0.5s total)
+
+private ImageIcon[] enemySkyeDamagedFrames = new ImageIcon[4];
+private Timer enemySkyeDamagedAnimationTimer;
+private int currentEnemySkyeDamagedFrame = 0;
+private int enemySkyeDamagedFrameCounter = 0;
+private boolean enemySkyeDamagedAnimationPlaying = false;
+
+private ImageIcon[] morganaIdleFrames = new ImageIcon[4];
+private Timer morganaIdleAnimationTimer;
+private int morganaIdleSequenceIndex = 0;
+private int morganaIdleFrameCounter = 0;
+private boolean morganaIdleAnimationPlaying = false;
+private static final int[] MORGANA_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private ImageIcon[] morganaAttackFrames = new ImageIcon[3];
+private Timer morganaAttackAnimationTimer;
+private int currentMorganaAttackFrame = 0;
+private int morganaAttackFrameCounter = 0;
+private boolean morganaAttackAnimationPlaying = false;
+private static final int[] MORGANA_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] morganaDamagedFrames = new ImageIcon[3];
+private Timer morganaDamagedAnimationTimer;
+private int currentMorganaDamagedFrame = 0;
+private int morganaDamagedFrameCounter = 0;
+private boolean morganaDamagedAnimationPlaying = false;
+private static final int[] MORGANA_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemyMorganaIdleFrames = new ImageIcon[4];
+private Timer enemyMorganaIdleAnimationTimer;
+private int enemyMorganaIdleSequenceIndex = 0;
+private int enemyMorganaIdleFrameCounter = 0;
+private boolean enemyMorganaIdleAnimationPlaying = false;
+
+private ImageIcon[] enemyMorganaAttackFrames = new ImageIcon[3];
+private Timer enemyMorganaAttackAnimationTimer;
+private int currentEnemyMorganaAttackFrame = 0;
+private int enemyMorganaAttackFrameCounter = 0;
+private boolean enemyMorganaAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyMorganaDamagedFrames = new ImageIcon[3];
+private Timer enemyMorganaDamagedAnimationTimer;
+private int currentEnemyMorganaDamagedFrame = 0;
+private int enemyMorganaDamagedFrameCounter = 0;
+private boolean enemyMorganaDamagedAnimationPlaying = false;
+
+private ImageIcon[] aerisIdleFrames = new ImageIcon[3];
+private Timer aerisIdleAnimationTimer;
+private int aerisIdleSequenceIndex = 0;
+private int aerisIdleFrameCounter = 0;
+private boolean aerisIdleAnimationPlaying = false;
+private static final int[] AERIS_IDLE_SEQUENCE = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
+
+private ImageIcon[] enemyAerisIdleFrames = new ImageIcon[3];
+private Timer enemyAerisIdleAnimationTimer;
+private int enemyAerisIdleSequenceIndex = 0;
+private int enemyAerisIdleFrameCounter = 0;
+private boolean enemyAerisIdleAnimationPlaying = false;
+
+private ImageIcon[] aerisAttackFrames = new ImageIcon[3];
+private Timer aerisAttackAnimationTimer;
+private int currentAerisAttackFrame = 0;
+private int aerisAttackFrameCounter = 0;
+private boolean aerisAttackAnimationPlaying = false;
+private static final int[] AERIS_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemyAerisAttackFrames = new ImageIcon[3];
+private Timer enemyAerisAttackAnimationTimer;
+private int currentEnemyAerisAttackFrame = 0;
+private int enemyAerisAttackFrameCounter = 0;
+private boolean enemyAerisAttackAnimationPlaying = false;
+
+private ImageIcon[] aerisDamagedFrames = new ImageIcon[3];
+private Timer aerisDamagedAnimationTimer;
+private int currentAerisDamagedFrame = 0;
+private int aerisDamagedFrameCounter = 0;
+private boolean aerisDamagedAnimationPlaying = false;
+private static final int[] AERIS_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemyAerisDamagedFrames = new ImageIcon[3];
+private Timer enemyAerisDamagedAnimationTimer;
+private int currentEnemyAerisDamagedFrame = 0;
+private int enemyAerisDamagedFrameCounter = 0;
+private boolean enemyAerisDamagedAnimationPlaying = false;
+
+private ImageIcon[] seleneIdleFrames = new ImageIcon[4];
+private Timer seleneIdleAnimationTimer;
+private int seleneIdleSequenceIndex = 0;
+private int seleneIdleFrameCounter = 0;
+private boolean seleneIdleAnimationPlaying = false;
+private static final int[] SELENE_IDLE_SEQUENCE = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+
+private ImageIcon[] enemySeleneIdleFrames = new ImageIcon[4];
+private Timer enemySeleneIdleAnimationTimer;
+private int enemySeleneIdleSequenceIndex = 0;
+private int enemySeleneIdleFrameCounter = 0;
+private boolean enemySeleneIdleAnimationPlaying = false;
+
+private ImageIcon[] flueIdleFrames = new ImageIcon[3];
+private Timer flueIdleAnimationTimer;
+private int flueIdleSequenceIndex = 0;
+private int flueIdleFrameCounter = 0;
+private boolean flueIdleAnimationPlaying = false;
+private static final int[] FLUE_IDLE_SEQUENCE = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
+
+private ImageIcon[] enemyFlueIdleFrames = new ImageIcon[3];
+private Timer enemyFlueIdleAnimationTimer;
+private int enemyFlueIdleSequenceIndex = 0;
+private int enemyFlueIdleFrameCounter = 0;
+private boolean enemyFlueIdleAnimationPlaying = false;
+
+private ImageIcon[] flueAttackFrames = new ImageIcon[3];
+private Timer flueAttackAnimationTimer;
+private int currentFlueAttackFrame = 0;
+private int flueAttackFrameCounter = 0;
+private boolean flueAttackAnimationPlaying = false;
+private static final int[] FLUE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemyFlueAttackFrames = new ImageIcon[3];
+private Timer enemyFlueAttackAnimationTimer;
+private int currentEnemyFlueAttackFrame = 0;
+private int enemyFlueAttackFrameCounter = 0;
+private boolean enemyFlueAttackAnimationPlaying = false;
+
+private ImageIcon[] flueDamagedFrames = new ImageIcon[3];
+private Timer flueDamagedAnimationTimer;
+private int currentFlueDamagedFrame = 0;
+private int flueDamagedFrameCounter = 0;
+private boolean flueDamagedAnimationPlaying = false;
+private static final int[] FLUE_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemyFlueDamagedFrames = new ImageIcon[3];
+private Timer enemyFlueDamagedAnimationTimer;
+private int currentEnemyFlueDamagedFrame = 0;
+private int enemyFlueDamagedFrameCounter = 0;
+private boolean enemyFlueDamagedAnimationPlaying = false;
+
+private ImageIcon[] seleneAttackFrames = new ImageIcon[3];
+private Timer seleneAttackAnimationTimer;
+private int currentSeleneAttackFrame = 0;
+private int seleneAttackFrameCounter = 0;
+private boolean seleneAttackAnimationPlaying = false;
+private static final int[] SELENE_ATTACK_FRAME_DURATIONS = {8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] enemySeleneAttackFrames = new ImageIcon[3];
+private Timer enemySeleneAttackAnimationTimer;
+private int currentEnemySeleneAttackFrame = 0;
+private int enemySeleneAttackFrameCounter = 0;
+private boolean enemySeleneAttackAnimationPlaying = false;
+
+private ImageIcon[] seleneDamagedFrames = new ImageIcon[3];
+private Timer seleneDamagedAnimationTimer;
+private int currentSeleneDamagedFrame = 0;
+private int seleneDamagedFrameCounter = 0;
+private boolean seleneDamagedAnimationPlaying = false;
+private static final int[] SELENE_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemySeleneDamagedFrames = new ImageIcon[3];
+private Timer enemySeleneDamagedAnimationTimer;
+private int currentEnemySeleneDamagedFrame = 0;
+private int enemySeleneDamagedFrameCounter = 0;
+private boolean enemySeleneDamagedAnimationPlaying = false;
+
+private ImageIcon[] valeriusAttackFrames = new ImageIcon[4];
+private Timer valeriusAttackAnimationTimer;
+private int currentValeriusAttackFrame = 0;
+private int valeriusAttackFrameCounter = 0;
+private boolean valeriusAttackAnimationPlaying = false;
+private static final int[] VALERIUS_ATTACK_FRAME_DURATIONS = {8, 8, 8, 12}; // ticks (~0.6s total)
+
+private ImageIcon[] valeriusDamagedFrames = new ImageIcon[3];
+private Timer valeriusDamagedAnimationTimer;
+private int currentValeriusDamagedFrame = 0;
+private int valeriusDamagedFrameCounter = 0;
+private boolean valeriusDamagedAnimationPlaying = false;
+private static final int[] VALERIUS_DAMAGED_FRAME_DURATIONS = {12, 12, 16}; // ticks (~0.4s total)
+
+private ImageIcon[] enemyValeriusAttackFrames = new ImageIcon[4];
+private Timer enemyValeriusAttackAnimationTimer;
+private int currentEnemyValeriusAttackFrame = 0;
+private int enemyValeriusAttackFrameCounter = 0;
+private boolean enemyValeriusAttackAnimationPlaying = false;
+
+private ImageIcon[] enemyValeriusDamagedFrames = new ImageIcon[3];
+private Timer enemyValeriusDamagedAnimationTimer;
+private int currentEnemyValeriusDamagedFrame = 0;
+private int enemyValeriusDamagedFrameCounter = 0;
+private boolean enemyValeriusDamagedAnimationPlaying = false;
+
+private JLabel enemyValeriusLargePortraitLabel;
+
+private JLabel skyeLargePortraitLabel;
+private JLabel enemySkyeLargePortraitLabel;
+
+private JLabel morganaLargePortraitLabel;
+private JLabel enemyMorganaLargePortraitLabel;
+
+private JLabel aerisLargePortraitLabel;
+private JLabel enemyAerisLargePortraitLabel;
+
+private JLabel seleneLargePortraitLabel;
+private JLabel enemySeleneLargePortraitLabel;
+
+private JLabel flueLargePortraitLabel;
+private JLabel enemyFlueLargePortraitLabel;
+
+private JLabel jijiLargePortraitLabel;
+
+
+private JLabel kaelLargePortraitLabel;
+private JLabel enemyKaelLargePortraitLabel;
+
+private JLabel enemyJijiLargePortraitLabel;
+private ImageIcon[] enemyJijiIdleFrames = new ImageIcon[4];
+private Timer enemyIdleAnimationTimer;
+private int enemyCurrentIdleFrame = 0;
+private int enemyIdleFrameCounter = 0;
+private ImageIcon[] enemyJijiDamagedFrames = new ImageIcon[4];
+private Timer enemyDamagedAnimationTimer;
+private int enemyCurrentDamagedFrame = 0;
+private int enemyDamagedFrameCounter = 0;
+private ImageIcon[] enemyJijiAttackFrames = new ImageIcon[4];
+private Timer enemyAttackAnimationTimer;
+private int enemyCurrentAttackFrame = 0;
+private int enemyAttackFrameCounter = 0;
+private boolean enemyJijiIdleAnimationPlaying = false;
+private boolean enemyJijiDamagedAnimationPlaying = false;
+private boolean enemyJijiAttackAnimationPlaying = false;
+       
+
+    private void loadOceanBackground() {
+    try {
+       
+        ImageIcon oceanIcon = new ImageIcon("assets/oceanfloor.png");
+        oceanBackground = oceanIcon.getImage();
+        System.out.println("✅ Ocean background loaded!");
+    } catch (Exception e) {
+        System.out.println("⚠️ Could not load ocean.png, using gradient background instead");
+        oceanBackground = null;
+    }
+}
+
+private void startMoonPhaseTimer() {
+    if (moonPhaseTimer != null) {
+        moonPhaseTimer.stop();
+    }
+    
+    moonPhaseTimer = new Timer(1000, e -> {
+        if (playerCharacter instanceof Selene && !playerTurn) {
+            // Moon phase now advances properly during player turns only
+            // This timer no longer advances moon phase to prevent double advancement
+            Selene selene = (Selene) playerCharacter;
+
+            if (!selene.isNightTime() && selene.getTurnsUntilNight() > 0) {
+                System.out.println("🌅 Day time. Night in " + selene.getTurnsUntilNight() + " turns");
+            }
+        }
+    });
+    moonPhaseTimer.start();
+}
+
+private class WaveBackgroundPanel extends JPanel {
+    private Image backgroundImage;
+    private Image[] oceanFrames;
+    private int currentOceanFrame = 0;
+    private float waveOffset = 0;
+   private int shakeX = 0;
+        private int shakeY = 0;
+        private int shakeIntensity = 0;
+        private Color flashColor = null;
+        private Timer animTimer;
+        private Timer oceanAnimTimer;
+        private boolean animationEnabled = true;
+    
+    public WaveBackgroundPanel() {
+        setLayout(new BorderLayout());
+        setOpaque(false);
+
+
+        try {
+            ImageIcon icon = new ImageIcon("assets/battle_background.png");
+            backgroundImage = icon.getImage();
+            System.out.println("✅ Battle background loaded!");
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not load background image");
+        }
+
+        // Load ocean animation frames
+        oceanFrames = new Image[3];
+        boolean oceanLoaded = false;
+        for (int i = 0; i < 3; i++) {
+            try {
+                ImageIcon oceanIcon = new ImageIcon("assets/oceanfloor" + (i + 1) + ".jpg");
+                oceanFrames[i] = oceanIcon.getImage();
+                System.out.println("✅ Ocean frame " + (i + 1) + " loaded!");
+                oceanLoaded = true;
+            } catch (Exception e) {
+                System.out.println("⚠️ Could not load oceanfloor" + (i + 1) + ".jpg");
+                oceanFrames[i] = null;
+            }
+        }
+
+        if (!oceanLoaded) {
+            System.out.println("⚠️ No ocean frames loaded, using static background");
+        }
+
+        animTimer = new Timer(30, e -> {
+            if (!animationEnabled) return;
+
+            waveOffset += 0.05f;
+
+            if (shakeIntensity > 0) {
+                shakeX = (int)((Math.random() - 0.5) * shakeIntensity);
+                shakeY = (int)((Math.random() - 0.5) * shakeIntensity);
+                shakeIntensity -= 2;
+            } else {
+                shakeX = 0;
+                shakeY = 0;
+            }
+            repaint();
+        });
+        animTimer.start();
+
+        // Ocean animation timer - cycle through frames every 500ms
+        if (oceanLoaded) {
+            oceanAnimTimer = new Timer(500, e -> {
+                if (!animationEnabled) return;
+                currentOceanFrame = (currentOceanFrame + 1) % oceanFrames.length;
+            });
+            oceanAnimTimer.start();
+            System.out.println("🌊 Ocean animation started!");
+        }
+    }
+
+    public void triggerShake(int intensity) {
+        this.shakeIntensity = intensity;
+    }
+
+    public void triggerFlash(Color color) {
+        this.flashColor = color;
+        Timer t = new Timer(100, e -> {
+            flashColor = null;
+            repaint();
+        });
+        t.setRepeats(false);
+        t.start();
+    }
+    
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g.create();
+        
+        
+        g2d.translate(shakeX, shakeY);
+        
+        int width = getWidth();
+        int height = getHeight();
+        
+        
+        // Draw ocean animation frames if available
+        boolean oceanDrawn = false;
+        if (oceanFrames != null && oceanFrames[currentOceanFrame] != null) {
+            g2d.drawImage(oceanFrames[currentOceanFrame], 0, 0, width, height, this);
+            oceanDrawn = true;
+        } else if (backgroundImage != null) {
+            g2d.drawImage(backgroundImage, 0, 0, width, height, this);
+        } else {
+
+            GradientPaint gp = new GradientPaint(0, 0, new Color(20, 40, 80),
+                                                   0, height, new Color(10, 20, 50));
+            g2d.setPaint(gp);
+            g2d.fillRect(0, 0, width, height);
+        }
+        
+        
+        g2d.setColor(new Color(100, 180, 220, 60));
+        for (int i = 0; i < 3; i++) {
+            int yBase = height - 40 + i * 15;
+            for (int x = 0; x < width + 50; x += 60) {
+                int y = yBase + (int)(Math.sin(x * 0.04 + waveOffset + i) * 8);
+                g2d.fillOval(x - 30, y, 60, 12);
+            }
+        }
+        
+        
+        if (flashColor != null) {
+            g2d.setColor(new Color(flashColor.getRed(), flashColor.getGreen(), flashColor.getBlue(), 100));
+            g2d.fillRect(-50, -50, width + 100, height + 100);
+        }
+        
+        g2d.dispose();
+    }
+    
+    public void stopAnimation() {
+        if (animTimer != null) {
+                animTimer.stop();
+        }
+        if (oceanAnimTimer != null) {
+            oceanAnimTimer.stop();
+        }
+    }
+}
+    private interface SkillTargetCallback {
+        void onTargetSelected(int x, int y);
+    }
+
+    private int enemySkillChance = 30; 
+    private int lastEnemySkillTurn = 0;
+    private String[] enemySkillMessages = {
+        "Enemy uses a skill against you!",
+        "The enemy activates their ability!",
+        "Watch out! Enemy special attack!",
+        "Enemy commander is using their power!",
+        "Incoming enemy skill!"
+    };
+    private Random enemyRandom = new Random();
+
+    
+    
+    private void startSeleneUpdateTimer(JPanel skillsPanel, Selene selene) {
+        if (seleneUpdateTimer != null) {
+            seleneUpdateTimer.stop();
+        }
+        
+        seleneUpdateTimer = new Timer(500, e -> {
+            if (playerTurn && playerCharacter instanceof Selene && skillsPanel != null) {
+                updateSeleneSkillButtons(skillsPanel, selene);
+            }
+        });
+        seleneUpdateTimer.start();
+    }
+    
+    private void updateSeleneSkillButtons(JPanel skillsPanel, Selene selene) {
+        Component[] components = skillsPanel.getComponents();
+        for (Component comp : components) {
+            if (comp instanceof JButton) {
+                JButton btn = (JButton) comp;
+                String text = btn.getText();
+                
+                if (text.contains("Lunar Reveal")) {
+                    String status = selene.getSkillStatus(1);
+                    boolean enabled = status.contains("Ready") || status.contains("ENHANCED");
+                    btn.setEnabled(enabled);
+                    if (!enabled) {
+                        btn.setText("🔮 Lunar Reveal (" + status + ")");
+                    } else {
+                        int cost = selene.isNightTime() ? 30 : 60;
+                        btn.setText("🔮 Lunar Reveal (" + cost + ")" + (selene.isNightTime() ? " 🌙" : ""));
+                    }
+                } else if (text.contains("Crescent Strike")) {
+                    String status = selene.getSkillStatus(2);
+                    boolean enabled = status.contains("Ready") || status.contains("ENHANCED");
+                    btn.setEnabled(enabled);
+                    if (!enabled) {
+                        btn.setText("🌙 Crescent Strike (" + status + ")");
+                    } else {
+                        int cost = selene.isNightTime() ? 60 : 120;
+                        btn.setText("🌙 Crescent Strike (" + cost + ")" + (selene.isNightTime() ? " 🌙" : ""));
+                    }
+                } else if (text.contains("Starfall Link")) {
+                    String status = selene.getSkillStatus(3);
+                    boolean enabled = status.contains("READY") || status.contains("Ready");
+                    btn.setEnabled(enabled);
+                    if (!enabled) {
+                        btn.setText("⭐ Starfall Link (" + status + ")");
+                    } else {
+                        int cost = selene.isNightTime() ? 150 : 300;
+                        btn.setText("⭐ Starfall Link (" + cost + ")" + (selene.isNightTime() ? " 🌙" : ""));
+                    }
+                }
+            }
+        }
+        
+        
+        for (Component comp : components) {
+            if (comp instanceof JLabel && ((JLabel) comp).getText().contains("Mana:")) {
+                ((JLabel) comp).setText(selene.getManaBar());
+            }
+        }
+    }
+
+    
+    
+    private void useEnemySkill() {
+        if (currentEnemy == null) return;
+        
+        System.out.println("🤖 Enemy AI considering skill use...");
+        
+        
+        if (playerCharacter instanceof Valerius) {
+            Valerius valerius = (Valerius) playerCharacter;
+            if (valerius.areEnemySkillsDisabled()) {
+                System.out.println("🚫 Enemy skills are disabled by Radar Overload!");
+                return;
+            }
+        }
+        
+        
+        if (enemyRandom.nextInt(100) < enemySkillChance) {
+            
+            if (currentEnemy instanceof Jiji) {
+                useJijiEnemySkill();
+            } else if (currentEnemy instanceof Kael) {
+                useKaelEnemySkill();
+            } else if (currentEnemy instanceof Valerius) {
+                useValeriusEnemySkill();
+            } else if (currentEnemy instanceof Skye) {
+                useSkyeEnemySkill();
+            } else if (currentEnemy instanceof Morgana) {
+                useMorganaEnemySkill();
+            } else if (currentEnemy instanceof Selene) {
+                useSeleneEnemySkill();
+            } else if (currentEnemy instanceof Aeris) {
+                useAerisEnemySkill();
+            } else if (currentEnemy instanceof Flue) {
+                useFlueEnemySkill();
+            }
+        } else {
+            System.out.println("🤖 Enemy decides to just attack normally.");
+        }
+    }
+
+    private void useAerisEnemySkill() {
+        Aeris aeris = (Aeris) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: 
+                if (aeris.hasEnoughMana(120)) {
+                    
+                    for (Ship s : enemyBoard.getShips()) {
+                        if (!s.isSunk() && !s.isShielded()) {
+                            Ship.Coordinate pos = s.getPositions().get(0);
+                            aeris.useAdaptiveInstinct(enemyBoard, pos.getX(), pos.getY());
+                            showEnemySkillMessage("Aeris shields one of his ships!");
+                            break;
+                        }
+                    }
+                }
+                break;
+            case 1: 
+                aeris.useMultitaskOverdrive();
+                showEnemySkillMessage("Aeris uses Overdrive to restore mana!");
+                break;
+            case 2: 
+                if (aeris.hasEnoughMana(500)) {
+                    int targetCol = enemyRandom.nextInt(10);
+                    aeris.useRelentlessAscent(playerBoard, targetCol);
+                    showEnemySkillMessage("Aeris strikes a full column with Relentless Ascent!");
+                }
+                break;
+        }
+    }
+
+    private void useFlueEnemySkill() {
+        Flue flue = (Flue) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: 
+                if (flue.hasEnoughMana(100)) {
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    flue.useCorruption(playerBoard, x, y);
+                    showEnemySkillMessage("Flue initiates a virus in your fleet!");
+                }
+                break;
+            case 1: 
+                if (flue.hasEnoughMana(80)) {
+                    
+                    flue.useFortification(enemyBoard, enemyRandom.nextInt(10), enemyRandom.nextInt(10));
+                    showEnemySkillMessage("Flue is repairing system integrity!");
+                }
+                break;
+            case 2: 
+                if (flue.hasEnoughMana(300)) {
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    flue.useKernelDecimation(playerBoard, x, y);
+                    showEnemySkillMessage("Flue executes Kernel Decimation!");
+                }
+                break;
+        }
+    }
+
+    private void useMorganaEnemySkill() {
+        Morgana morgana = (Morgana) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0:
+                if (morgana.hasEnoughMana(40)) {
+                    morgana.useEnchantingMelody();
+                    showEnemySkillMessage("Morgana's song confuses you!");
+                }
+                break;
+            case 1:
+                if (morgana.hasEnoughMana(80)) {
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    morgana.useWhirlpoolTrap(playerBoard, x, y);
+                    showEnemySkillMessage("Morgana creates a whirlpool trap!");
+                }
+                break;
+            case 2:
+                if (morgana.hasEnoughMana(300)) {
+                     morgana.useTidalWave(playerBoard);
+                    showEnemySkillMessage("Morgana summons a storm!");
+                }
+                break;
+        }
+    }
+
+    private void healPlayerShips() {
+        System.out.println("🏥 Healing player ships between waves...");
+        
+        
+        for (Ship ship : playerBoard.getShips()) {
+            ship.heal();
+            ship.setShielded(false, 0);
+        System.out.println("🛡️ Removed shield from " + ship.getName());
+        }
+
+        // Reset Jiji's damage state between waves
+        if (playerCharacter instanceof Jiji) {
+            ((Jiji) playerCharacter).setDamaged(false);
+            System.out.println("🔄 Jiji recovered from damage between waves");
+        }
+        
+        
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                Cell cell = playerBoard.getCell(i, j);
+                cell.resetFiredUpon();
+                cell.setRevealed(false);
+            }
+        }
+        if (playerBoardPanel != null) {
+        playerBoardPanel.refreshColors();
+    }
+        
+        refreshBoardsOnly();
+         updateShipCounters();
+
+        System.out.println("✅ Player ships healed and shields removed!");
+    }
+
+    private void useSeleneEnemySkill() {
+        Selene enemySelene = (Selene) currentEnemy;
+
+        // Reset enemy Selene's moon phase to prevent conflicts with player Selene
+        // Enemy Selene should never be in night time or eclipse mode
+        enemySelene.resetMoonPhase();
+
+        int skillChoice = enemyRandom.nextInt(3);
+
+        switch(skillChoice) {
+            case 0:
+                // Enemy Selene always uses normal mana costs (no night bonuses)
+                if (enemySelene.hasEnoughMana(60)) {
+                    System.out.println("🔮 Enemy Selene uses LUNAR REVEAL!");
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    enemySelene.useLunarReveal(playerBoard, x, y);
+                    showEnemySkillMessage("Selene reveals a 3x3 area of your board!");
+                }
+                break;
+            case 1:
+                // Enemy Selene always uses normal mana costs (no night bonuses)
+                if (enemySelene.hasEnoughMana(120)) {
+                    System.out.println("🌙 Enemy Selene uses CRESCENT STRIKE!");
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    int destroyed = enemySelene.useCrescentStrike(playerBoard, x, y);
+                    if (destroyed > 0) {
+                        showEnemySkillMessage("Selene's Crescent Strike destroyed " + destroyed + " cells!");
+                    }
+                }
+                break;
+            case 2:
+                // Enemy Selene always uses normal mana costs (no night bonuses)
+                if (enemySelene.hasEnoughMana(300)) {
+                    System.out.println("⭐ Enemy Selene uses STARFALL LINK!");
+                    enemySelene.useStarfallLink(playerBoard);
+                    showEnemySkillMessage("Selene's Starfall Link destroys random cells and links your ships!");
+                }
+                break;
+        }
+    }
+    
+    private void useJijiEnemySkill() {
+        Jiji enemyJiji = (Jiji) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: 
+                if (enemyJiji.hasEnoughMana(50)) {
+                    enemyJiji.useDataLeech(playerBoard);
+                    showEnemySkillMessage("Jiji uses Data Leech on your fleet!");
+                }
+                break;
+            case 1: 
+                if (enemyJiji.hasEnoughMana(120)) {
+                    enemyJiji.useOverclock();
+                    showEnemySkillMessage("Jiji overclocks! Their next shot will fire twice!");
+                }
+                break;
+            case 2: 
+                if (enemyJiji.hasEnoughMana(400)) {
+                    enemyJiji.useSystemOverload(playerBoard);
+                    showEnemySkillMessage("Jiji overloads your systems!");
+                }
+                break;
+        }
+    }
+
+    private void useKaelEnemySkill() {
+        Kael enemyKael = (Kael) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: 
+                if (enemyKael.hasEnoughEnergy(100)) {
+                    showEnemySkillMessage("Kael teleports one of their ships!");
+                }
+                break;
+            case 1: 
+                if (enemyKael.hasEnoughEnergy(150)) {
+                    int[] target = getRandomUnfiredCellForEnemySkill();
+                    int x = target[0];
+                    int y = target[1];
+                    boolean horizontal = enemyRandom.nextBoolean();
+                    int destroyed = enemyKael.useShadowBlade(playerBoard, x, y, horizontal);
+                    if (destroyed > 0) {
+                        showEnemySkillMessage("Kael's shadow blade destroyed " + destroyed + " cells!");
+                    }
+                }
+                break;
+            case 2: 
+                if (enemyKael.hasEnoughEnergy(200)) {
+                    // Get a random cell that hasn't been fired upon
+                    int[] target = getRandomUnfiredCellForEnemySkill();
+                    int x = Math.min(target[0], 8);
+                    int y = Math.min(target[1], 8);
+                    int destroyed = enemyKael.useShadowDomain(playerBoard, x, y);
+                    if (destroyed > 0) {
+                        showEnemySkillMessage("Kael's shadow domain destroyed " + destroyed + " cells!");
+                    }
+                }
+                break;
+        }
+    }
+
+    private void useValeriusEnemySkill() {
+        Valerius enemyValerius = (Valerius) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);
+        
+        switch(skillChoice) {
+            case 0: 
+                if (enemyValerius.hasEnoughMana(50)) {
+                    enemyValerius.useRadarOverload();
+                    showEnemySkillMessage("Valerius jams your radar!");
+                }
+                break;
+            case 1: 
+                if (enemyValerius.hasEnoughMana(120)) {
+                    boolean horizontal = enemyRandom.nextBoolean();
+                    int x = enemyRandom.nextInt(10);
+                    int y = enemyRandom.nextInt(10);
+                    int destroyed = enemyValerius.applyPrecisionStrike(playerBoard, x, y, horizontal);
+                    if (destroyed > 0) {
+                        showEnemySkillMessage("Valerius's precision strike destroyed " + destroyed + " cells!");
+                    }
+                }
+                break;
+            case 2: 
+                if (enemyValerius.hasEnoughMana(300)) {
+                    enemyValerius.useFortressMode();  
+                    showEnemySkillMessage("Valerius shields ALL his ships for 2 turns!");
+                }
+                break;
+        }
+    }
+
+    private void useSkyeEnemySkill() {
+        Skye enemySkye = (Skye) currentEnemy;
+        int skillChoice = enemyRandom.nextInt(3);  
+        
+        switch(skillChoice) {
+            case 0: 
+                if (enemySkye.hasEnoughMana(70)) {
+                    int x = enemyRandom.nextInt(8);
+                    int y = enemyRandom.nextInt(8);
+                    enemySkye.useCatnipExplosion(playerBoard, x, y);
+                    showEnemySkillMessage("Skye detonates a catnip bomb near your fleet!");
+                }
+                break;
+            case 1: 
+                if (enemySkye.hasEnoughMana(50)) {
+                    enemySkye.useLaserPointer();
+                    showEnemySkillMessage("Skye distracts you with a laser pointer!");
+                }
+                break;
+            case 2: 
+                if (enemySkye.hasEnoughMana(200)) {
+                    Ship sunkShip = findSunkShip(enemyBoard);
+                    if (sunkShip != null) {
+                        Ship.Coordinate pos = sunkShip.getPositions().get(0);
+                        enemySkye.useNineLives(enemyBoard, pos.getX(), pos.getY());
+                        showEnemySkillMessage("Skye revives one of her ships! Nine Lives!");
+                        // Refresh enemy board to show revived cells as attackable again
+                        if (enemyBoardPanel != null) {
+                            enemyBoardPanel.refreshColors();
+                            enemyBoardPanel.repaint();
+                        }
+                    }
+                }
+                break;
+        }
+    }
+
+    private Ship findSunkShip(Board board) {
+        for (Ship ship : board.getShips()) {
+            if (ship.isSunk()) {
+                return ship;
+            }
+        }
+        return null;
+    }
+
+    private void showEnemySkillMessage(String message) {
+        updateStatusLabel("🤖 " + message, Color.ORANGE);
+        
+        Timer resetTimer = new Timer(2000, e -> resetStatusLabel());
+        resetTimer.setRepeats(false);
+        resetTimer.start();
+    }
+
+    private void onPlayerSkillUse(String skillName, boolean success) {
+        if (success) {
+            updateStatusLabel("✨ " + skillName + " activated!", Color.GREEN);
+        } else {
+            updateStatusLabel("❌ " + skillName + " not ready!", Color.RED);
+        }
+        
+        Timer resetTimer = new Timer(1500, e -> resetStatusLabel());
+        resetTimer.setRepeats(false);
+        resetTimer.start();
+    }
+    
+    private void startTargetSelection(String skillName, SkillTargetCallback callback, JButton skillButton) {
+        waitingForTarget = true;
+        currentSkillName = skillName;
+        targetCallback = callback;
+        lastClickedSkillButton = skillButton;
+        
+        JOptionPane.showMessageDialog(frame,
+            "🎯 " + skillName + "\n\n" +
+            "Click on the ENEMY board to select target.\n" +
+            "Click CANCEL to abort.",
+            "Select Target",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    public CampaignMode(JFrame frame, GameCharacter playerCharacter) {
+        this.frame = frame;
+        this.playerCharacter = playerCharacter;
+        this.playerBoard = new Board();
+        this.enemyBoard = new Board();
+        this.waves = new ArrayList<>();
+        this.possibleEnemies = new ArrayList<>();
+
+        // Initialize managers
+        this.characterManager = new CharacterManager();
+        this.resourceManager = new ResourceManager();
+        this.skillStrategies = new HashMap<>();
+
+        initializeSkillStrategies();
+        initializePossibleEnemies();
+        generateRandomWaves();
+    }
+
+    private void initializeSkillStrategies() {
+        skillStrategies.put("Jiji", new JijiSkillStrategy());
+        skillStrategies.put("Kael", new KaelSkillStrategy());
+        // TODO: Add other character skill strategies
+    }
+
+    // Essential methods called by createBattleUI
+    private void loadOceanBackground() {
+        try {
+            ImageIcon oceanIcon = new ImageIcon("assets/oceanfloor.png");
+            // oceanBackground = oceanIcon.getImage(); // Commented out for now
+            System.out.println("✅ Ocean background loaded!");
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not load ocean.png, using gradient background instead");
+        }
+    }
+
+    private void setupClickHandlers() {
+        // Basic click handling - to be implemented
+        System.out.println("Click handlers setup");
+    }
+
+    private void initializePossibleEnemies() {
+        // Add enemy characters - simplified for now
+        if (!playerCharacter.getName().equals("Jiji")) {
+            possibleEnemies.add(CharacterManager.createCharacter("Jiji"));
+        }
+        if (!playerCharacter.getName().equals("Kael")) {
+            possibleEnemies.add(CharacterManager.createCharacter("Kael"));
+        }
+        // Add more as needed
+        Collections.shuffle(possibleEnemies);
+    }
+
+    private void generateRandomWaves() {
+        waves.clear();
+        int numWaves = random.nextInt(3) + 3;
+        System.out.println("🎲 Generating " + numWaves + " random waves...");
+
+        List<GameCharacter> enemyPool = new ArrayList<>(possibleEnemies);
+
+        for (int i = 0; i < numWaves; i++) {
+            if (enemyPool.isEmpty()) {
+                enemyPool = new ArrayList<>(possibleEnemies);
+                Collections.shuffle(enemyPool);
+            }
+
+            GameCharacter randomEnemy = enemyPool.remove(0);
+            String waveTitle = "Wave " + (i + 1);
+            Color waveColor = Color.BLUE; // Simplified
+
+            waves.add(new CampaignWave(waveTitle, "Enemy: " + randomEnemy.getName(), randomEnemy, waveColor));
+            System.out.println("   Wave " + (i + 1) + ": " + randomEnemy.getName());
+        }
+    }
+
+    private void loadWave(int index) {
+        if (index >= waves.size()) {
+            System.out.println("🏆 CAMPAIGN COMPLETE!");
+            return;
+        }
+
+        CampaignWave wave = waves.get(index);
+        currentEnemy = wave.enemy;
+        currentWaveIndex = index;
+
+        System.out.println("🌊 Starting " + wave.title + " vs " + currentEnemy.getName());
+        createBattleUI(wave);
+    }
+
+    public void start() {
+        System.out.println("🎮 Campaign started with: " + playerCharacter.getName());
+        loadWave(0);
+    }
+    
+    // Getters for managers
+    public CharacterManager getCharacterManager() { return characterManager; }
+    public ResourceManager getResourceManager() { return resourceManager; }
+    public GameCharacter getCurrentCharacter() { return playerCharacter; }
+    public Board getPlayerBoard() { return playerBoard; }
+    public Board getEnemyBoard() { return enemyBoard; }
+}

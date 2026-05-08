@@ -61,6 +61,7 @@ public class Skye extends GameCharacter {
     public int getCurrentMana() { return currentMana; }
     public int getMaxMana() { return MAX_MANA; }
     public boolean hasEnoughMana(int cost) { return currentMana >= cost; }
+    public boolean isDamaged() { return currentHealth < maxHealth; }
     
     public void spendMana(int cost) {
         if (hasEnoughMana(cost)) {

@@ -1537,12 +1537,34 @@ public class BoardPanel extends JPanel {
             button.setOpaque(false);
             button.setContentAreaFilled(false);
         }
-        else if (cellColor.equals(new Color(255, 200, 100))) { // Revealed ship
-            button.setOpaque(true);
-            button.setContentAreaFilled(true);
-            button.setBackground(new Color(255, 200, 100, 180)); // Semi-transparent orange
-            button.setText("👁️"); // Eye emoji to indicate revealed
-            button.setForeground(Color.BLACK);
+        else if (cellColor.equals(new Color(255, 200, 100))) { // Revealed ship - show ship instead of eye
+            // Treat revealed ships like normally visible ships
+            if (cell.getShip() != null && "Carrier".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                // Make transparent so carrier image shows through from paintComponent
+                button.setOpaque(false);
+                button.setContentAreaFilled(false);
+            } else if (cell.getShip() != null && "Battleship".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                // Make transparent so battleship image shows through from paintComponent
+                button.setOpaque(false);
+                button.setContentAreaFilled(false);
+            } else if (cell.getShip() != null && "Cruiser".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                // Make transparent so cruiser image shows through from paintComponent
+                button.setOpaque(false);
+                button.setContentAreaFilled(false);
+            } else if (cell.getShip() != null && "Submarine".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                // Make transparent so submarine image shows through from paintComponent
+                button.setOpaque(false);
+                button.setContentAreaFilled(false);
+            } else if (cell.getShip() != null && "Destroyer".equals(cell.getShip().getName()) && !cell.getShip().isSunk()) {
+                // Make transparent so destroyer image shows through from paintComponent
+                button.setOpaque(false);
+                button.setContentAreaFilled(false);
+            } else {
+                button.setOpaque(true);
+                button.setContentAreaFilled(true);
+                button.setBackground(new Color(50, 150, 50, 200));
+                button.setText("⛵");
+            }
         }
         else if (cellColor.equals(new Color(200, 200, 150))) { // Revealed empty
             button.setOpaque(true);
