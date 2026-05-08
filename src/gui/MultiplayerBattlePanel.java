@@ -388,8 +388,8 @@ public class MultiplayerBattlePanel extends JPanel {
             this.boardPanel = bp;
             boardHost.removeAll();
 
-            bp.setCellSize(44, 44);
-            bp.setPreferredSize(new Dimension(44 * 10, 44 * 10));
+            bp.setCellSize(60, 60);
+            bp.setPreferredSize(new Dimension(60 * 10, 60 * 10));
 
             GridBagConstraints g = new GridBagConstraints();
             g.gridx = 0; g.gridy = 0;
