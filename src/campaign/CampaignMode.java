@@ -38,7 +38,7 @@ public class CampaignMode {
     private static final int DEFAULT_ENEMY_SKILL_CHANCE = 30;
     private static final int MAX_ENEMY_SKILL_CHANCE = 80;
 
-    private boolean testMode = true;
+    private boolean testMode = false;
     private String testEnemyName = "Flue";
 
     private JPanel jijiPortraitContainer;
@@ -75,6 +75,8 @@ public class CampaignMode {
 
     private JLabel playerShipLabel;
     private JLabel enemyShipLabel;
+
+    private JPanel turnBanner;
 
     private Timer skillPanelRefreshTimer;
     private SkillPanel currentSkillPanel;
@@ -1487,9 +1489,9 @@ private void createBattleUI(CampaignWave wave) {
         @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
+
             int w = getWidth(), h = getHeight();
-            
+
             // Metal bar background
             g2.setPaint(new GradientPaint(0, 0, new Color(0x2A, 0x5A, 0x5E), 0, h, new Color(0x1E, 0x45, 0x48)));
             g2.fillRect(0, 0, w, h);
@@ -1497,7 +1499,7 @@ private void createBattleUI(CampaignWave wave) {
             g2.fillRect(0, h - 3, w, 1);
             g2.setColor(new Color(0x08, 0x18, 0x1A));
             g2.fillRect(0, h - 2, w, 2);
-            
+
             // BACK button (top-left)
             int bw = 110, bh = 36, bx = 16, by = 16;
             g2.setColor(new Color(0x08, 0x18, 0x1A));
@@ -1507,19 +1509,19 @@ private void createBattleUI(CampaignWave wave) {
             g2.setStroke(new BasicStroke(1.6f));
             g2.setColor(new Color(0x3A, 0x7A, 0x7E));
             g2.drawRoundRect(bx, by, bw, bh, 6, 6);
-            
+
             Font smallFont = new Font("Consolas", Font.PLAIN, 11);
             g2.setFont(smallFont);
             g2.setColor(new Color(0x8A, 0xA8, 0xAC));
             String backText = "← BACK";
             FontMetrics fm = g2.getFontMetrics();
             g2.drawString(backText, bx + (bw - fm.stringWidth(backText)) / 2, by + (bh + fm.getAscent()) / 2 - 2);
-            
+
             // Central engraved nameplate with wave info
-            String waveText = String.format("WAVE %d/%d - VS %s — %s", 
-                currentWaveIndex + 1, waves.size(), 
+            String waveText = String.format("WAVE %d/%d - VS %s — %s",
+                currentWaveIndex + 1, waves.size(),
                 currentEnemy.getName(), currentEnemy.getAbilityName());
-            
+
             Font headerFont = new Font("Consolas", Font.BOLD, 18);
             g2.setFont(headerFont);
             fm = g2.getFontMetrics();
@@ -1527,7 +1529,7 @@ private void createBattleUI(CampaignWave wave) {
             int plateH = 56;
             int px = (w - plateW) / 2;
             int py = (h - plateH) / 2;
-            
+
             // Engraved plate
             g2.setColor(new Color(0x08, 0x18, 0x1A));
             g2.fillRoundRect(px + 2, py + 2, plateW, plateH, 8, 8);
@@ -1539,7 +1541,7 @@ private void createBattleUI(CampaignWave wave) {
             g2.setStroke(new BasicStroke(1f));
             g2.setColor(new Color(0x5F, 0xD4, 0xE0, 40));
             g2.drawRoundRect(px + 4, py + 4, plateW - 8, plateH - 8, 6, 6);
-            
+
             // Wave text
             int tx = px + (plateW - fm.stringWidth(waveText)) / 2;
             int ty = py + (plateH + fm.getAscent()) / 2 - 4;
@@ -1547,7 +1549,7 @@ private void createBattleUI(CampaignWave wave) {
             g2.drawString(waveText, tx + 1, ty + 1);
             g2.setColor(Color.YELLOW);
             g2.drawString(waveText, tx, ty);
-            
+
             // Turn indicator on left of plate
             String turnTag = playerTurn ? "YOU" : "AI";
             Color tagColor = playerTurn ? new Color(0x5F, 0xD4, 0xE0) : new Color(0xE0, 0x5F, 0x5F);
@@ -1560,7 +1562,7 @@ private void createBattleUI(CampaignWave wave) {
             g2.drawString(turnTag, tagX + 1, tagY + 1);
             g2.setColor(tagColor);
             g2.drawString(turnTag, tagX, tagY);
-            
+
             g2.dispose();
         }
     };
@@ -1659,8 +1661,18 @@ mainPanel.add(topArea, BorderLayout.NORTH);
     enemyBoardPanel.setCellWidth(92);
     enemyBoardPanel.setCellHeight(61);
     if (playerCharacter instanceof Flue) {
-        ((Flue) playerCharacter).setEnemyBoard(enemyBoard);
+        ((Flue) playerCharacter).updateTurnCounter();
     }
+
+    refreshBoardsOnly();
+
+    if (enemyBoard.allShipsSunk()) {
+        updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
+        waveComplete();
+        return;
+    }
+
+
     
     setupClickHandlers();
     
@@ -1910,9 +1922,9 @@ mainPanel.add(topArea, BorderLayout.NORTH);
         @Override
         public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
             System.out.println("Skill used: " + skillName);
-            
+
             if (turnTimer != null) turnTimer.stopTimer();
-            
+
             if (skillName.equals("Shadow Step")) {
                 System.out.println("🌑 Shadow Step detected - using separate handler!");
                 skillTargeting.waitingForKaelStepSource = true;
@@ -1920,12 +1932,12 @@ mainPanel.add(topArea, BorderLayout.NORTH);
                 updateStatusLabel("🌑 Click on a ship on YOUR board to teleport!", Color.YELLOW);
                 return;
             }
-            
+
             currentSkillNumber = skillNumber;
             skillTargeting.currentSkillName = skillName;
             currentSkillTargetsOwnBoard = targetsOwnBoard;
             currentSkillRequiresDirection = requiresDirection;
-            
+
             if (requiresDirection) {
                 String[] options = {"Horizontal (→)", "Vertical (↓)"};
                 int choice = JOptionPane.showOptionDialog(frame,
@@ -1936,7 +1948,7 @@ mainPanel.add(topArea, BorderLayout.NORTH);
                     null,
                     options,
                     options[0]);
-                
+
                 if (choice < 0) {
                     if (enemyTurnTimer != null) {
                         enemyTurnTimer.stopTimer();
@@ -1951,7 +1963,7 @@ mainPanel.add(topArea, BorderLayout.NORTH);
                 }
                 currentSkillDirectionHorizontal = (choice == 0);
             }
-            
+
             if (requiresTarget) {
                 skillTargeting.waitingForSkillTarget = true;
                 updateStatusLabel("Click on " + (targetsOwnBoard ? "YOUR" : "ENEMY") + " board to target " + skillName + "!", Color.YELLOW);
@@ -6724,12 +6736,7 @@ private void executeSkill(int targetX, int targetY) {
         }
         
         if (shouldEndTurn) {
-            playerTurn = false;
-            
-            if (turnTimer != null) {
-                turnTimer.stopTimer();
-                turnTimer.setVisible(false);
-            }
+    playerTurn = false;
             if (enemyTurnTimer != null) {
                 enemyTurnTimer.setTimerLabel("Enemy Turn");
                 enemyTurnTimer.setVisible(true);
@@ -6741,7 +6748,7 @@ private void executeSkill(int targetX, int targetY) {
         } else {
             refreshUI();
             updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
-            
+
             if (enemyTurnTimer != null) {
                 enemyTurnTimer.stopTimer();
                 enemyTurnTimer.setVisible(false);
@@ -6836,7 +6843,7 @@ private void setupClickHandlers() {
             if (used) {
                 updateStatusLabel("🌑 Shadow Step! Ship teleported successfully!", Color.CYAN);
                 refreshBoardsOnly();
-                
+
                 playerTurn = false;
                 if (turnTimer != null) {
                     turnTimer.stopTimer();
@@ -8105,7 +8112,7 @@ private void enemyTurn() {
         return "YOUR TURN - Click on enemy waters to fire!";
     }
     
- private void onPlayerTurnStart() {
+  private void onPlayerTurnStart() {
     System.out.println("🔄 Player turn started! Checking conditions...");
 
     // Reset Jiji attack animation flag for new turn
