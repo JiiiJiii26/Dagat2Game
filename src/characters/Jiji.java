@@ -448,14 +448,21 @@ return triggered > 0;
     public boolean isFirewallActive() { return firewallActive; }
     public boolean isNextShotEnhanced() { return false; } 
     
+    /**
+     * POLYMORPHISM: Overrides abstract method from GameCharacter
+     * Each character class provides different skill implementations.
+     * CampaignMode calls playerCharacter.useSkill() - runtime determines which implementation runs.
+     */
     @Override
     public boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction) {
+        // INHERITANCE: Switch statement routes to Jiji-specific skill methods
+        // Each case demonstrates different behavior unique to Jiji character
         switch (skillNumber) {
-            case 1: // Data Leech
+            case 1: // Data Leech - Reveals and marks enemy cells
                 return useDataLeech(enemyBoard);
-            case 2: // Overclock
+            case 2: // Overclock - Enhances other skills with synergy effects
                 return useOverclock();
-            case 3: // System Overload
+            case 3: // System Overload - Destroys enemy ships with overclock synergy
                 return useSystemOverload(enemyBoard, x, y);
             default:
                 return false;

@@ -28,37 +28,71 @@ import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 
 
+/**
+ * CampaignMode handles the single-player campaign gameplay.
+ * Manages waves of enemies, player progression, and all campaign-specific UI and logic.
+ * Features turn-based battles with character abilities, skill systems, and enemy AI.
+ *
+ * OOP CONCEPT DEMONSTRATION:
+ * - Inheritance: Extends JPanel (Swing inheritance hierarchy)
+ * - Polymorphism: Uses GameCharacter polymorphism for different character types
+ * - Encapsulation: Private fields with controlled access through methods
+ * - Abstraction: Depends on abstract GameCharacter class for character behavior
+ */
 public class CampaignMode {
 
-    // Constants
+    // UI Constants - Portrait dimensions for character display
     private static final int PORTRAIT_WIDTH = 150;
     private static final int PORTRAIT_HEIGHT = 120;
     private static final int JIJI_PORTRAIT_WIDTH = 250;
     private static final int JIJI_PORTRAIT_HEIGHT = 200;
+
+    // AI Constants - Enemy skill usage probability
     private static final int DEFAULT_ENEMY_SKILL_CHANCE = 30;
     private static final int MAX_ENEMY_SKILL_CHANCE = 80;
 
+    // Debug/Test Mode - Allows testing specific enemies
     private boolean testMode = false;
     private String testEnemyName = "Flue";
 
+    // Character Portrait UI Components
     private JPanel jijiPortraitContainer;
     private JLabel jijiDamageOverlay;
 
+    // Background Assets
     private Image oceanBackground;
     private Image scaledOceanBackground;
+
+    // Game Timing
     private Timer moonPhaseTimer;
+
+    // Core UI Components
     private JFrame frame;
-    private List<GameCharacter> possibleEnemies;  
+
+    // Game State - Enemy pools and wave progression
+    // POLYMORPHISM: List<GameCharacter> demonstrates polymorphism -
+    // can hold any GameCharacter subclass (Jiji, Kael, Valerius, etc.)
+    private List<GameCharacter> possibleEnemies;
     private List<CampaignWave> waves;
     private int currentWaveIndex = 0;
+
+    // Current Game Entities
+    // POLYMORPHISM: playerCharacter and currentEnemy can be any GameCharacter subclass
+    // Runtime binding allows different character behaviors through same interface
     private GameCharacter playerCharacter;
     private GameCharacter currentEnemy;
+
+    // Game Boards - Player's fleet and enemy waters
     private Board playerBoard;
     private Board enemyBoard;
+
+    // UI Status Display
     private JLabel statusLabel;
     private BoardPanel playerBoardPanel;
     private BoardPanel enemyBoardPanel;
     private JLabel waveLabel;
+
+    // Turn Management
     private boolean playerTurn = true;
     private Random random = new Random();
     private int extraTurnsRemaining = 0;
@@ -1140,18 +1174,30 @@ private class WaveBackgroundPanel extends JPanel {
             JOptionPane.INFORMATION_MESSAGE);
     }
     
+    /**
+     * Constructor - Initializes the campaign with the player's chosen character.
+     * Sets up enemy pools, generates random waves, and pre-loads animation assets.
+     */
     public CampaignMode(JFrame frame, GameCharacter playerCharacter) {
         this.frame = frame;
         this.playerCharacter = playerCharacter;
+
+        // Initialize game boards for player and enemy
         this.playerBoard = new Board();
         this.enemyBoard = new Board();
+
+        // Initialize campaign progression data
         this.waves = new ArrayList<>();
         this.possibleEnemies = new ArrayList<>();
-    
-        
+
+        // Set up available enemies (excluding player's chosen character)
         initializePossibleEnemies();
+
+        // Generate randomized wave sequence
         generateRandomWaves();
-        // Pre-load animation frames (commented out - methods not yet implemented)
+
+        // Pre-load character animation frames for performance
+        // Note: Some animation methods are commented out as they're not yet implemented
         initJijiIdleFrames(); initKaelIdleFrames(); initEnemyKaelIdleFrames();
         initValeriusIdleFrames(); initEnemyValeriusIdleFrames(); initSkyeIdleFrames();
         // initEnemySkyeIdleFrames(); initSkyeAttackFrames(); initSkyeDamagedFrames();
@@ -1177,16 +1223,32 @@ private class WaveBackgroundPanel extends JPanel {
         }
     }
     
+    /**
+     * Initializes the pool of possible enemy characters.
+     * Excludes the player's chosen character to avoid fighting yourself.
+     * Shuffles the list for varied gameplay.
+     *
+     * OOP CONCEPT - POLYMORPHISM:
+     * All character objects (jiji, kael, etc.) are instances of different GameCharacter subclasses
+     * but can be treated uniformly through the GameCharacter interface.
+     * This allows the same code to work with different character types.
+     */
     private void initializePossibleEnemies() {
-        Jiji jiji = new Jiji();
-        Kael kael = new Kael();
-        Valerius valerius = new Valerius();
-        Skye skye = new Skye();
-        Morgana morgana = new Morgana(); 
-        Aeris aeris = new Aeris();
-        Selene selene = new Selene(); 
-        Flue flue = new Flue();    
-        
+        // Create instances of all available characters
+        // INHERITANCE: Each character class inherits from GameCharacter
+        // POLYMORPHISM: Different character implementations with shared interface
+        Jiji jiji = new Jiji();     // Jiji extends GameCharacter
+        Kael kael = new Kael();     // Kael extends GameCharacter
+        Valerius valerius = new Valerius(); // Valerius extends GameCharacter
+        Skye skye = new Skye();     // Skye extends GameCharacter
+        Morgana morgana = new Morgana();   // Morgana extends GameCharacter
+        Aeris aeris = new Aeris();   // Aeris extends GameCharacter
+        Selene selene = new Selene(); // Selene extends GameCharacter
+        Flue flue = new Flue();     // Flue extends GameCharacter
+
+        // Add characters to pool, excluding the player's chosen character
+        // POLYMORPHISM: playerCharacter.getName() works regardless of actual character type
+        // All GameCharacter subclasses implement getName() consistently
         if (!playerCharacter.getName().equals(jiji.getName())) {
             possibleEnemies.add(jiji);
         }
@@ -1199,9 +1261,9 @@ private class WaveBackgroundPanel extends JPanel {
         if (!playerCharacter.getName().equals(skye.getName())) {
             possibleEnemies.add(skye);
         }
-        if (!playerCharacter.getName().equals(morgana.getName())) {  
+        if (!playerCharacter.getName().equals(morgana.getName())) {
             possibleEnemies.add(morgana);
-        }  
+        }
         if (!playerCharacter.getName().equals(aeris.getName())) {
             possibleEnemies.add(aeris);
         }
@@ -1212,82 +1274,96 @@ private class WaveBackgroundPanel extends JPanel {
             possibleEnemies.add(flue);
         }
 
+        // Randomize enemy order for varied gameplay
         Collections.shuffle(possibleEnemies);
-        
+
         System.out.println("🎲 Possible enemies: " + possibleEnemies.size());
         for (GameCharacter enemy : possibleEnemies) {
             System.out.println("   - " + enemy.getName());
         }
     }
     
+    /**
+     * Generates the sequence of waves for the campaign.
+     * In test mode, creates a single wave with the specified test enemy.
+     * Otherwise, creates 3-5 random waves using enemies from the pool.
+     */
     private void generateRandomWaves() {
         waves.clear();
-         if (testMode) {
-        System.out.println("🧪 TEST MODE ENABLED - Fighting: " + testEnemyName);
 
-        GameCharacter testEnemy = null;
+        // Test mode - fight a specific enemy for debugging
+        if (testMode) {
+            System.out.println("🧪 TEST MODE ENABLED - Fighting: " + testEnemyName);
 
+            GameCharacter testEnemy = null;
 
-        switch(testEnemyName) {
-            case "Jiji":
-                testEnemy = new Jiji();
-                break;
-            case "Kael":
-                testEnemy = new Kael();
-                break;
-            case "Valerius":
-                testEnemy = new Valerius();
-                break;
-            case "Skye":
-                testEnemy = new Skye();
-                break;
-            case "Morgana":
-                testEnemy = new Morgana();
-                break;
-            case "Aeris":
-                testEnemy = new Aeris();
-                break;
-            case "Selene":
-                testEnemy = new Selene();
-                break;
-            case "Flue":
-                testEnemy = new Flue();
-                break;
-            default:
-                testEnemy = new Skye();
-                break;
+            // Create the specified test enemy
+            switch(testEnemyName) {
+                case "Jiji":
+                    testEnemy = new Jiji();
+                    break;
+                case "Kael":
+                    testEnemy = new Kael();
+                    break;
+                case "Valerius":
+                    testEnemy = new Valerius();
+                    break;
+                case "Skye":
+                    testEnemy = new Skye();
+                    break;
+                case "Morgana":
+                    testEnemy = new Morgana();
+                    break;
+                case "Aeris":
+                    testEnemy = new Aeris();
+                    break;
+                case "Selene":
+                    testEnemy = new Selene();
+                    break;
+                case "Flue":
+                    testEnemy = new Flue();
+                    break;
+                default:
+                    testEnemy = new Skye();
+                    break;
+            }
+
+            waves.add(new CampaignWave(
+                "🧪 TEST WAVE",
+                "Testing: " + testEnemy.getName(),
+                testEnemy,
+                Color.MAGENTA
+            ));
+            return;
         }
 
-        waves.add(new CampaignWave(
-            "🧪 TEST WAVE",
-            "Testing: " + testEnemy.getName(),
-            testEnemy,
-            Color.MAGENTA
-        ));
-        return;
-    }
-        int numWaves = random.nextInt(3) + 3; 
+        // Normal mode - generate 3-5 random waves
+        int numWaves = random.nextInt(3) + 3; // Random number between 3-5
         System.out.println("🎲 Generating " + numWaves + " random waves...");
-        
+
+        // Create a working copy of the enemy pool
         List<GameCharacter> enemyPool = new ArrayList<>(possibleEnemies);
-        
+
         for (int i = 0; i < numWaves; i++) {
+            // Refill and reshuffle pool if exhausted
             if (enemyPool.isEmpty()) {
                 enemyPool = new ArrayList<>(possibleEnemies);
                 Collections.shuffle(enemyPool);
             }
-            
+
+            // Select next enemy from pool
             GameCharacter randomEnemy = enemyPool.remove(0);
             String waveTitle = getRandomWaveTitle(i + 1);
             Color waveColor = getRandomWaveColor();
-            
+
+            // Create wave with random enemy
             waves.add(new CampaignWave(
                 waveTitle,
                 "Enemy: " + randomEnemy.getName(),
                 randomEnemy,
                 waveColor
             ));
-            
+
             System.out.println("   Wave " + (i + 1) + ": " + randomEnemy.getName());
         }
     }
@@ -1319,6 +1395,10 @@ private class WaveBackgroundPanel extends JPanel {
         return colors[random.nextInt(colors.length)];
     }
     
+    /**
+     * Starts the campaign by showing the ship placement screen.
+     * This begins the campaign progression from wave 1.
+     */
     public void start() {
         System.out.println("🎮 Campaign started with: " + playerCharacter.getName());
         System.out.println("🎲 Random waves generated!");
@@ -1436,14 +1516,20 @@ private class WaveBackgroundPanel extends JPanel {
 // Replace your existing createBattleUI method (line 1114 onwards) with this entire method.
 // All animation code is preserved exactly as your teammate built it.
 // 
-private void createBattleUI(CampaignWave wave) {
-    // ===============================================================
-    // STEP 1: Stop all animations from previous battle (PRESERVED)
-    // ===============================================================
-    if (jijiAnimation != null) jijiAnimation.stop();
-    if (kaelAnimation != null) kaelAnimation.stop();
-    if (valeriusAnimation != null) valeriusAnimation.stop();
-    if (skyeAnimation != null) skyeAnimation.stop();
+    /**
+     * Creates the complete battle UI for a campaign wave.
+     * Sets up all visual components including boards, portraits, skill panels, and turn management.
+     * This is called at the start of each wave to refresh the entire interface.
+     */
+    private void createBattleUI(CampaignWave wave) {
+        // ===============================================================
+        // STEP 1: Clean up animations from previous battle
+        // ===============================================================
+        // Stop any running character animations to prevent conflicts
+        if (jijiAnimation != null) jijiAnimation.stop();
+        if (kaelAnimation != null) kaelAnimation.stop();
+        if (valeriusAnimation != null) valeriusAnimation.stop();
+        if (skyeAnimation != null) skyeAnimation.stop();
     // Animation stop methods (commented - not yet implemented)
     // stopEnemyIdleAnimation(); stopEnemyDamagedAnimation(); stopEnemyAttackAnimation();
     // stopEnemyKaelIdleAnimation(); stopEnemyValeriusIdleAnimation(); stopEnemySkyeIdleAnimation();
@@ -1463,29 +1549,29 @@ private void createBattleUI(CampaignWave wave) {
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
 
-    // ===============================================================
-    // STEP 2: Create TideBound visual container
-    // ===============================================================
-    JPanel mainPanel = new JPanel() {
-        @Override protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-            
-            // Deep ocean gradient background
-            g2.setPaint(new GradientPaint(0, 0, new Color(0x0F, 0x23, 0x26), 
-                                          0, getHeight(), new Color(0x08, 0x18, 0x1A)));
-            g2.fillRect(0, 0, getWidth(), getHeight());
-            
-            g2.dispose();
-        }
-    };
-    mainPanel.setLayout(new BorderLayout());
-    mainPanel.setOpaque(true);
+        // ===============================================================
+        // STEP 2: Create main container with ocean-themed background
+        // ===============================================================
+        JPanel mainPanel = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
 
-    // ===============================================================
-    // STEP 3: Turn Banner (top)
-    // ===============================================================
-    JPanel turnBanner = new JPanel() {
+                // Draw deep ocean gradient background for the entire battle scene
+                g2.setPaint(new GradientPaint(0, 0, new Color(0x0F, 0x23, 0x26),
+                                               0, getHeight(), new Color(0x08, 0x18, 0x1A)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+
+                g2.dispose();
+            }
+        };
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setOpaque(true);
+
+        // ===============================================================
+        // STEP 3: Create turn banner (top section) - Shows wave info and turn status
+        // ===============================================================
+        JPanel turnBanner = new JPanel() {
         @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -6484,14 +6570,27 @@ private int[] getRandomUnfiredCellForEnemySkill() {
     return availableCells.get(random.nextInt(availableCells.size()));
 }
 
-private void executeSkill(int targetX, int targetY) {
-    System.out.println("Executing skill: " + skillTargeting.currentSkillName + " at (" + targetX + "," + targetY + ")");
-    boolean success = false;
-    boolean shouldEndTurn = true;
+    /**
+     * Executes a character's skill based on the current skill targeting state.
+     * Routes to the appropriate character-specific skill implementation.
+     * Some skills end the turn immediately, others allow continued actions.
+     *
+     * OOP CONCEPT - POLYMORPHISM:
+     * This method demonstrates runtime polymorphism - playerCharacter.useSkill()
+     * calls different implementations based on the actual character type (Jiji, Kael, etc.)
+     * All character subclasses override useSkill() with their specific behavior.
+     */
+    private void executeSkill(int targetX, int targetY) {
+        System.out.println("Executing skill: " + skillTargeting.currentSkillName + " at (" + targetX + "," + targetY + ")");
+        boolean success = false;
+        boolean shouldEndTurn = true; // Most skills end the turn
     
-    try {
-        if (playerCharacter instanceof Jiji) {
-            Jiji jiji = (Jiji) playerCharacter;
+        try {
+            // POLYMORPHISM: instanceof checks determine the actual character type at runtime
+            // This allows type-specific behavior while maintaining GameCharacter interface
+            if (playerCharacter instanceof Jiji) {
+                // Downcast to access Jiji-specific methods and properties
+                Jiji jiji = (Jiji) playerCharacter;
             switch(currentSkillNumber) {
                 case 1:
                     System.out.println("Using Data Leech");
@@ -7514,9 +7613,14 @@ private void setupClickHandlers() {
         return panel;
     }
     
- private void handlePlayerAttack(int row, int col) {
-    if (enemyBoard.isCellFiredUpon(row, col)) {
-        updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
+    /**
+     * Processes a player's attack on the enemy board.
+     * Handles firing logic, damage calculation, victory conditions, and turn progression.
+     */
+    private void handlePlayerAttack(int row, int col) {
+        // Prevent attacking already targeted cells
+        if (enemyBoard.isCellFiredUpon(row, col)) {
+            updateStatusLabel("⚠️ You already shot at (" + row + "," + col + ")! Choose another cell!", Color.RED);
         
         
         
@@ -7679,11 +7783,15 @@ private void setupClickHandlers() {
     timer.start();
 }
 
-private void enemyTurn() {
-    if (enemyTurnTimer != null) {
-        enemyTurnTimer.setVisible(true);
-    }
-    updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
+    /**
+     * Handles the enemy's turn - AI decision making and attack execution.
+     * Enemy uses skills probabilistically, then attacks the player's board.
+     */
+    private void enemyTurn() {
+        if (enemyTurnTimer != null) {
+            enemyTurnTimer.setVisible(true);
+        }
+        updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
     if (playerCharacter instanceof Flue) {
         Flue flue = (Flue) playerCharacter;
@@ -7908,37 +8016,76 @@ private void enemyTurn() {
         
     }
     
+    /**
+     * Handles wave completion - heals player ships and advances to next wave.
+     * Resets game state for the next encounter and checks for campaign completion.
+     */
     private void waveComplete() {
-         if (moonPhaseTimer != null) {
-        moonPhaseTimer.stop();
+        System.out.println("🎉 Wave " + currentWaveIndex + " completed!");
+
+        // Restore player fleet between waves
+        healPlayerShips();
+
+        // Reset AI difficulty for next wave
+        enemySkillChance = DEFAULT_ENEMY_SKILL_CHANCE;
+
+        // Advance to next wave
+        currentWaveIndex++;
+
+        if (currentWaveIndex < waves.size()) {
+            System.out.println("🎯 Next wave: " + currentWaveIndex);
+            // Load next wave's battle UI
+            createBattleUI(waves.get(currentWaveIndex));
+        } else {
+            // All waves completed - campaign victory!
+            campaignVictory();
+        }
     }
 
+    /**
+     * Handles campaign completion victory - shows congratulations and returns to main menu.
+     */
+    private void campaignVictory() {
+        System.out.println("🏆 CAMPAIGN VICTORY! All waves completed!");
+
+        // Stop battle music and play victory fanfare
         audio.MusicManager.getInstance().stopMusic();
         audio.MusicManager.getInstance().playSound("victory");
 
-        updateStatusLabel("🎉 WAVE CLEAR! Well done!", Color.GREEN);
-        currentWaveIndex++;
-        
-        String message = "🎉 Victory! You defeated " + currentEnemy.getName() + "!\n\n";
-        
-        if (currentWaveIndex < waves.size()) {
-            message += "Next wave: " + waves.get(currentWaveIndex).enemy.getName();
-            healPlayerShips();  
-            updateShipCounters();
-        } else {
-            message += "You've completed all waves!";
-        }
-        
-        int result = JOptionPane.showConfirmDialog(frame,
-            message,
-            "Wave Complete",
-            JOptionPane.YES_NO_OPTION);
-            
-        if (result == JOptionPane.YES_OPTION && currentWaveIndex < waves.size()) {
-            loadWave(currentWaveIndex);
-        } else {
-            Main.showMainMenu();
-        }
+        // Show victory message
+        JOptionPane.showMessageDialog(frame,
+            "🏆 CAMPAIGN COMPLETE!\n\n" +
+            "You have defeated all enemy commanders!\n" +
+            "The seas are now safe thanks to your bravery.\n\n" +
+            "Thank you for playing!",
+            "Victory!",
+            JOptionPane.INFORMATION_MESSAGE);
+
+        // Return to main menu
+        Main.showMainMenu();
+    }
+
+    /**
+     * Handles campaign defeat - shows game over message and returns to main menu.
+     */
+    private void campaignDefeat() {
+        System.out.println("💀 CAMPAIGN DEFEAT! Player fleet destroyed!");
+
+        // Stop battle music and play defeat sound
+        audio.MusicManager.getInstance().stopMusic();
+        audio.MusicManager.getInstance().playSound("defeat");
+
+        // Show defeat message
+        JOptionPane.showMessageDialog(frame,
+            "💀 DEFEAT!\n\n" +
+            "Your fleet has been destroyed.\n" +
+            "The enemy commanders have claimed victory.\n\n" +
+            "Better luck next time!",
+            "Defeat",
+            JOptionPane.ERROR_MESSAGE);
+
+        // Return to main menu
+        Main.showMainMenu();
     }
 
     private void showToastMessage(String message, Color color) {
@@ -7977,14 +8124,23 @@ private void enemyTurn() {
     timer.start();
 }
     
+    /**
+     * Handles game over when player loses a wave.
+     * Shows defeat message and returns to main menu.
+     */
     private void gameOver() {
-         if (moonPhaseTimer != null) {
-        moonPhaseTimer.stop();
-    }
+        // Clean up timers
+        if (moonPhaseTimer != null) {
+            moonPhaseTimer.stop();
+        }
+
+        // Show defeat message
         JOptionPane.showMessageDialog(frame,
             "💀 Game Over! " + currentEnemy.getName() + " has defeated you.\n\nTry again?",
             "Defeat",
             JOptionPane.ERROR_MESSAGE);
+
+        // Return to main menu
         Main.showMainMenu();
     }
     
@@ -8253,7 +8409,22 @@ private void endTurn() {
     
  
     
+    /**
+     * Cancels any pending skill targeting operations.
+     * Called when turns change or skills are interrupted.
+     */
     private void cancelAllSkillTargeting() {
         skillTargeting.cancelAllTargeting();
     }
+
+    // ===================================================================
+    // END OF CAMPAIGNMODE CLASS
+    // ===================================================================
+    // END OF CAMPAIGNMODE CLASS
+    // ===================================================================
+    // This class manages the entire single-player campaign experience,
+    // including wave progression, character abilities, enemy AI, and UI.
+    // Key features: Turn-based battles, character skill systems, enemy AI,
+    // wave progression, victory/defeat conditions, and rich visual feedback.
+    // ===================================================================
 }

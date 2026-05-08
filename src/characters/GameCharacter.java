@@ -4,7 +4,15 @@ import models.Board;
 import models.Ship;
 import java.awt.Color;
 
+/**
+ * ABSTRACT CLASS - OOP CONCEPT DEMONSTRATION:
+ * - ABSTRACTION: Defines common interface and behavior for all characters
+ * - INHERITANCE: Base class that concrete character classes extend
+ * - POLYMORPHISM: Abstract methods ensure consistent interface across different implementations
+ * - ENCAPSULATION: Protected fields accessible only to subclasses, public methods for external access
+ */
 public abstract class GameCharacter {
+    // ENCAPSULATION: Protected fields - accessible to subclasses but not external classes
     protected String name;
     protected String description;
     protected int maxHealth;
@@ -25,11 +33,27 @@ public abstract class GameCharacter {
         this.specialMeter = 0;
         this.characterColor = color;
     }
-    
+
+    /**
+     * ABSTRACT METHOD - ABSTRACTION & POLYMORPHISM:
+     * - ABSTRACTION: Hides implementation details, defines "what" should be done
+     * - POLYMORPHISM: Each character subclass provides different implementation
+     * - INTERFACE: Ensures all characters have this capability
+     */
     public abstract void useSpecialAbility(Board playerBoard, Board enemyBoard);
 
+    /**
+     * ABSTRACT METHOD - POLYMORPHISM:
+     * Each character implements skill usage differently (Jiji's tech skills vs Kael's shadow skills)
+     * CampaignMode calls this on any GameCharacter reference - runtime binding determines behavior
+     */
     public abstract boolean useSkill(int skillNumber, Board playerBoard, Board enemyBoard, int x, int y, boolean direction);
 
+    /**
+     * ABSTRACT METHOD - POLYMORPHISM:
+     * Turn counter updates vary by character (cooldowns, passive effects, etc.)
+     * Allows characters to have unique per-turn mechanics
+     */
     public abstract void updateTurnCounter();
     
     public void chargeSpecial() {
