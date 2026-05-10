@@ -16,7 +16,7 @@ import gui.BoardPanel;
 import audio.MusicManager;
 import gui.PlacementPanel;
 import gui.SkillPanel;
-import gui.TimerPanel;
+
 import models.Board;
 import models.Cell;
 import models.Ship;
@@ -39,6 +39,18 @@ public class CampaignMode {
     private static final int JIJI_PORTRAIT_HEIGHT = 200;
     private static final int DEFAULT_ENEMY_SKILL_CHANCE = 30;
     private static final int MAX_ENEMY_SKILL_CHANCE = 80;
+
+    // Timer UI constants (matching multiplayer)
+    private static final Color FRAME_FILL     = new Color(0x1E, 0x45, 0x48);
+    private static final Color FRAME_FILL_HI  = new Color(0x2A, 0x5A, 0x5E);
+    private static final Color FRAME_BORDER   = new Color(0x3A, 0x7A, 0x7E);
+    private static final Color FRAME_SHADOW   = new Color(0x08, 0x18, 0x1A);
+    private static final Color CYAN_ACCENT    = new Color(0x5F, 0xD4, 0xE0);
+    private static final Color TEXT_LIGHT     = new Color(0xE8, 0xF4, 0xF6);
+    private static final Color TARGET_RED     = new Color(0xE0, 0x5F, 0x5F);
+    private static final Color HIT_GOLD       = new Color(0xE0, 0xC0, 0x5F);
+
+    private static final Font FONT_LABEL = new Font("Consolas", Font.BOLD, 14);
 
     private boolean testMode = false;
     private String testEnemyName = "Flue";
@@ -71,8 +83,7 @@ public class CampaignMode {
     private boolean currentSkillRequiresDirection = false;
     private boolean currentSkillDirectionHorizontal = true;
 
-    private TimerPanel turnTimer;
-    private TimerPanel enemyTurnTimer;
+    private TimerGauge timerGauge; // Single timer for both player and enemy turns
     private boolean timerEnabled = true;
 
     private JLabel playerShipLabel;
@@ -1611,8 +1622,7 @@ private void createBattleUI(CampaignWave wave) {
                 "Confirm Exit",
                 JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                if (turnTimer != null) turnTimer.stopTimer();
-                if (enemyTurnTimer != null) enemyTurnTimer.stopTimer();
+                if (timerGauge != null) timerGauge.stopTimer();
                 if (jijiAnimation != null) jijiAnimation.stop();
                 if (kaelAnimation != null) kaelAnimation.stop();
                 if (valeriusAnimation != null) valeriusAnimation.stop();
@@ -1635,30 +1645,28 @@ private void createBattleUI(CampaignWave wave) {
     }
 });
     
-    // Create timer panels (preserved from original)
-turnTimer = new TimerPanel(30, () -> {
-    System.out.println("⏰ TIME'S UP! Auto-ending turn...");
-    updateStatusLabel("⏰ TIME'S UP! Auto-ending turn...", Color.RED);
-    endTurn();
-});
-
-enemyTurnTimer = new TimerPanel(10, () -> {
-    System.out.println("⏰ ENEMY TIME'S UP! Switching to player...");
-    updateStatusLabel("⏰ Enemy took too long! Your turn!", Color.GREEN);
-    playerTurn = true;
-    if (enemyTurnTimer != null) {
-        enemyTurnTimer.stopTimer();
-        enemyTurnTimer.setVisible(false);
-    }
-    if (turnTimer != null) {
-        turnTimer.setTimerLabel("Your Turn");
-        turnTimer.setVisible(true);
-        turnTimer.startTimer();
-    }
-    onPlayerTurnStart();
-    cancelAllSkillTargeting();
-    if (currentSkillPanel != null) currentSkillPanel.updateUI();
-});
+    // Create single timer gauge (matching multiplayer - 30 seconds for both turns)
+    timerGauge = new TimerGauge(30);
+    timerGauge.setOnExpire(() -> {
+        System.out.println("⏰ TIME'S UP! Auto-ending turn...");
+        updateStatusLabel("⏰ TIME'S UP! Auto-ending turn...", Color.RED);
+        if (playerTurn) {
+            // Player turn timed out - end their turn
+            endTurn();
+        } else {
+            // Enemy turn timed out - switch to player turn
+            System.out.println("⏰ Enemy took too long! Switching to player...");
+            updateStatusLabel("⏰ Enemy took too long! Your turn!", Color.GREEN);
+            playerTurn = true;
+            if (timerGauge != null) {
+                timerGauge.resetTimer(); // Reset for player turn
+                timerGauge.startTimer();
+            }
+            onPlayerTurnStart();
+            cancelAllSkillTargeting();
+            if (currentSkillPanel != null) currentSkillPanel.updateUI();
+        }
+    });
 
 // Create status label
 statusLabel = new JLabel("Initializing battle...", SwingConstants.CENTER);
@@ -1677,14 +1685,9 @@ bottomPanel.add(statusLabel, BorderLayout.CENTER);
 
 JPanel timerPanel = new JPanel(new GridLayout(1, 1, 0, 5));
 timerPanel.setOpaque(false);
-turnTimer.setUseCustomLabel(true);
-turnTimer.setTimerLabel("Your Turn");
-turnTimer.setVisible(true);
-enemyTurnTimer.setUseCustomLabel(true);
-enemyTurnTimer.setTimerLabel("Enemy Turn");
-enemyTurnTimer.setVisible(false);
-timerPanel.add(turnTimer);
-timerPanel.add(enemyTurnTimer);
+// Single TimerGauge shows for current player's turn
+timerGauge.setVisible(true);
+timerPanel.add(timerGauge);
 bottomPanel.add(timerPanel, BorderLayout.EAST);
 
 topArea.add(bottomPanel, BorderLayout.SOUTH);
@@ -1966,7 +1969,11 @@ mainPanel.add(topArea, BorderLayout.NORTH);
         public void onSkillUsed(int skillNumber, String skillName, boolean requiresTarget, boolean requiresDirection, boolean targetsOwnBoard) {
             System.out.println("Skill used: " + skillName);
 
-            if (turnTimer != null) turnTimer.stopTimer();
+            // Hide timer during skill usage
+            if (timerGauge != null) {
+                timerGauge.stopTimer();
+                timerGauge.setVisible(false);
+            }
 
             if (skillName.equals("Shadow Step")) {
                 System.out.println("🌑 Shadow Step detected - using separate handler!");
@@ -1993,15 +2000,6 @@ mainPanel.add(topArea, BorderLayout.NORTH);
                     options[0]);
 
                 if (choice < 0) {
-                    if (enemyTurnTimer != null) {
-                        enemyTurnTimer.stopTimer();
-                        enemyTurnTimer.setVisible(false);
-                    }
-                    if (turnTimer != null && timerEnabled) {
-                        turnTimer.setTimerLabel("Your Turn");
-                        turnTimer.setVisible(true);
-                        turnTimer.startTimer();
-                    }
                     return;
                 }
                 currentSkillDirectionHorizontal = (choice == 0);
@@ -2633,14 +2631,10 @@ mainPanel.add(topArea, BorderLayout.NORTH);
     // ===============================================================
     // STEP 7: Start turn timer (preserved)
     // ===============================================================
-    if (playerTurn && timerEnabled && turnTimer != null) {
-        if (enemyTurnTimer != null) {
-            enemyTurnTimer.stopTimer();
-            enemyTurnTimer.setVisible(false);
-        }
-        turnTimer.setTimerLabel("Your Turn");
-        turnTimer.setVisible(true);
-        turnTimer.startTimer();
+    if (playerTurn && timerEnabled && timerGauge != null) {
+        timerGauge.resetTimer(); // Ensure it starts at 30 seconds
+        timerGauge.setVisible(true);
+        timerGauge.startTimer();
     }
     
     System.out.println("✅ Battle UI created with TideBound design + preserved animations!");
@@ -6777,28 +6771,25 @@ private void executeSkill(int targetX, int targetY) {
         }
         
         if (shouldEndTurn) {
-    playerTurn = false;
-            if (enemyTurnTimer != null) {
-                enemyTurnTimer.setTimerLabel("Enemy Turn");
-                enemyTurnTimer.setVisible(true);
-                enemyTurnTimer.startTimer();
+            playerTurn = false;
+            // Switch to enemy turn - reset and start the shared timer
+            if (timerGauge != null) {
+                timerGauge.resetTimer(); // Reset to 30 seconds for enemy turn
+                timerGauge.setVisible(true);
+                timerGauge.startTimer();
             }
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
             timer.start();
         } else {
+            // Continue player turn - restart the shared timer
             refreshUI();
             updateStatusLabel("YOUR TURN - You get another action!", Color.GREEN);
 
-            if (enemyTurnTimer != null) {
-                enemyTurnTimer.stopTimer();
-                enemyTurnTimer.setVisible(false);
-            }
-            if (turnTimer != null && timerEnabled) {
-                turnTimer.setTimerLabel("Your Turn");
-                turnTimer.setVisible(true);
-                turnTimer.stopTimer();
-                turnTimer.startTimer();
+            if (timerGauge != null && timerEnabled) {
+                timerGauge.resetTimer(); // Reset to 30 seconds for continued player turn
+                timerGauge.setVisible(true);
+                timerGauge.startTimer();
             }
         }
     } else {
@@ -6810,16 +6801,12 @@ private void executeSkill(int targetX, int targetY) {
         currentSkillRequiresDirection = false;
         
         updateStatusLabel("❌ Failed to use " + failedSkillName + "! Check mana/cooldown.", Color.RED);
-        
-        if (enemyTurnTimer != null) {
-            enemyTurnTimer.stopTimer();
-            enemyTurnTimer.setVisible(false);
-        }
-        if (turnTimer != null && timerEnabled && playerTurn) {
-            turnTimer.setTimerLabel("Your Turn");
-            turnTimer.setVisible(true);
-            turnTimer.stopTimer();
-            turnTimer.startTimer();
+
+        // Failed skill - continue player turn, restart the shared timer
+        if (timerGauge != null && timerEnabled && playerTurn) {
+            timerGauge.resetTimer(); // Reset to 30 seconds for continued player turn
+            timerGauge.setVisible(true);
+            timerGauge.startTimer();
         }
     }
 
@@ -6861,7 +6848,7 @@ private void setupClickHandlers() {
     playerBoardPanel.setPlayerClickHandler((row, col) -> {
         
         if (skillTargeting.waitingForSkillTarget && currentSkillTargetsOwnBoard) {
-            if (turnTimer != null) turnTimer.stopTimer();
+            if (timerGauge != null) timerGauge.stopTimer();
             executeSkill(row, col);
             return;
         }
@@ -6886,14 +6873,10 @@ private void setupClickHandlers() {
                 refreshBoardsOnly();
 
                 playerTurn = false;
-                if (turnTimer != null) {
-                    turnTimer.stopTimer();
-                    turnTimer.setVisible(false);
-                }
-                if (enemyTurnTimer != null) {
-                    enemyTurnTimer.setTimerLabel("Enemy Turn");
-                    enemyTurnTimer.setVisible(true);
-                    enemyTurnTimer.startTimer();
+                // Switch to enemy turn after Shadow Step
+                if (timerGauge != null) {
+                    timerGauge.resetTimer(); // Reset for enemy turn
+                    timerGauge.startTimer();
                 }
                 Timer timer = new Timer(1200, e -> enemyTurn());
                 timer.setRepeats(false);
@@ -6918,7 +6901,7 @@ private void setupClickHandlers() {
         
         if (skillTargeting.waitingForSkillTarget && !currentSkillTargetsOwnBoard) {
             System.out.println("🎯 Executing skill target!");
-            if (turnTimer != null) turnTimer.stopTimer();
+            if (timerGauge != null) timerGauge.stopTimer();
             executeSkill(row, col);
             return;
         }
@@ -6966,7 +6949,7 @@ private void setupClickHandlers() {
         }
         
         if (playerTurn) {
-            if (turnTimer != null) turnTimer.stopTimer();
+            if (timerGauge != null) timerGauge.stopTimer();
             handlePlayerAttack(row, col);
         }
     });
@@ -7029,7 +7012,7 @@ private void setupClickHandlers() {
         
         revealBtn.addActionListener(e -> {
             if (isPlayer && playerTurn) {
-                if (turnTimer != null) turnTimer.stopTimer();
+                if (timerGauge != null) timerGauge.stopTimer();
                 updateStatusLabel("🔮 Click on enemy board to reveal area!", Color.YELLOW);
                 skillTargeting.waitingForSeleneVision = true;
                 skillTargeting.currentSeleneVisionCallback = (x, y) -> {
@@ -7055,7 +7038,7 @@ private void setupClickHandlers() {
         
         strikeBtn.addActionListener(e -> {
             if (isPlayer && playerTurn) {
-                if (turnTimer != null) turnTimer.stopTimer();
+                if (timerGauge != null) timerGauge.stopTimer();
                 updateStatusLabel("🌙 Click on enemy board to strike a cross pattern!", Color.YELLOW);
                 skillTargeting.waitingForSeleneCrescent = true;
                 skillTargeting.currentSeleneCrescentCallback = (x, y) -> {
@@ -7086,7 +7069,7 @@ private void setupClickHandlers() {
         
         starfallBtn.addActionListener(e -> {
             if (isPlayer && playerTurn) {
-                if (turnTimer != null) turnTimer.stopTimer();
+                if (timerGauge != null) timerGauge.stopTimer();
                 boolean used = selene.useStarfallLink(enemyBoard);
                 if (used) {
                     updateStatusLabel("⭐ STARFALL LINK ACTIVATED!", Color.YELLOW);
@@ -7467,14 +7450,10 @@ private void setupClickHandlers() {
             refreshBoardsOnly();
             
             playerTurn = false;
-            if (turnTimer != null) {
-                turnTimer.stopTimer();
-                turnTimer.setVisible(false);
-            }
-            if (enemyTurnTimer != null) {
-                enemyTurnTimer.setTimerLabel("Enemy Turn");
-                enemyTurnTimer.setVisible(true);
-                enemyTurnTimer.startTimer();
+            // Switch to enemy turn after Shadow Step
+            if (timerGauge != null) {
+                timerGauge.resetTimer(); // Reset for enemy turn
+                timerGauge.startTimer();
             }
             Timer timer = new Timer(1200, e -> enemyTurn());
             timer.setRepeats(false);
@@ -7488,7 +7467,7 @@ private void setupClickHandlers() {
     
     
     if (skillTargeting.waitingForSkillTarget && currentSkillTargetsOwnBoard) {
-        if (turnTimer != null) turnTimer.stopTimer();
+        if (timerGauge != null) timerGauge.stopTimer();
         executeSkill(row, col);
         return;
     }
@@ -7544,7 +7523,7 @@ private void setupClickHandlers() {
             }
             
             if (playerTurn) {
-                if (turnTimer != null) turnTimer.stopTimer();
+                if (timerGauge != null) timerGauge.stopTimer();
                 handlePlayerAttack(row, col);
             }
         });
@@ -7694,18 +7673,14 @@ private void setupClickHandlers() {
         waveComplete();
         return;
     }
-    
+
     playerTurn = false;
-    if (turnTimer != null) {
-        turnTimer.stopTimer();
-        turnTimer.setVisible(false);
+    // Switch to enemy turn after player attack
+    if (timerGauge != null) {
+        timerGauge.resetTimer(); // Reset for enemy turn
+        timerGauge.startTimer();
     }
-    if (enemyTurnTimer != null) {
-        enemyTurnTimer.setTimerLabel("Enemy Turn");
-        enemyTurnTimer.setVisible(true);
-        enemyTurnTimer.startTimer();
-    }
-    
+
     for (int i = 3; i > 0; i--) {
         final int count = i;
         Timer countTimer = new Timer((4-i) * 300, e -> {
@@ -7721,8 +7696,10 @@ private void setupClickHandlers() {
 }
 
 private void enemyTurn() {
-    if (enemyTurnTimer != null) {
-        enemyTurnTimer.setVisible(true);
+    // Enemy turn uses the shared timer (already reset and started when turn switched)
+    if (timerGauge != null) {
+        timerGauge.setVisible(true);
+        // Timer should already be running from the turn switch
     }
     updateStatusLabel("🤖 ENEMY IS ATTACKING!", Color.RED);
     
@@ -7739,14 +7716,11 @@ private void enemyTurn() {
             if (skye.shouldSkipEnemyTurn()) {
                 updateStatusLabel("🔴 Enemy chasing laser pointer! Turn skipped!", Color.ORANGE);
                 playerTurn = true;
-                if (enemyTurnTimer != null) {
-                    enemyTurnTimer.stopTimer();
-                    enemyTurnTimer.setVisible(false);
-                }
-                if (turnTimer != null) {
-                    turnTimer.setTimerLabel("Your Turn");
-                    turnTimer.setVisible(true);
-                    turnTimer.startTimer();
+                // Enemy turn skipped - switch back to player turn
+                if (timerGauge != null) {
+                    timerGauge.resetTimer(); // Reset for player turn
+                    timerGauge.setVisible(true);
+                    timerGauge.startTimer();
                 }
                 onPlayerTurnStart();
                 
@@ -7913,10 +7887,11 @@ private void enemyTurn() {
     }
         
         playerTurn = true;
-        if (turnTimer != null) {
-            turnTimer.setTimerLabel("Your Turn");
-            turnTimer.setVisible(true);
-            turnTimer.startTimer();
+        // Switch to player turn - reset timer for player
+        if (timerGauge != null) {
+            timerGauge.resetTimer(); // Reset to 30 seconds for player turn
+            timerGauge.setVisible(true);
+            timerGauge.startTimer();
         }
         onPlayerTurnStart();
         cancelAllSkillTargeting();
@@ -7926,7 +7901,7 @@ private void enemyTurn() {
             currentSkillPanel.updateUI();
         }
     });
-    
+
     delayTimer.setRepeats(false);
     delayTimer.start();
 }
@@ -8259,21 +8234,19 @@ private void enemyTurn() {
     
 
     
-    if (timerEnabled && turnTimer != null) {
-        if (enemyTurnTimer != null) {
-            enemyTurnTimer.stopTimer();
-            enemyTurnTimer.setVisible(false);
-        }
-        turnTimer.setTimerLabel("Your Turn");
-        turnTimer.setVisible(true);
-        turnTimer.stopTimer(); 
-        turnTimer.startTimer();
+            if (timerEnabled && timerGauge != null) {
+                timerGauge.resetTimer();
+                timerGauge.setVisible(true);
+                timerGauge.startTimer();
+            }
+
+        // Timer handled by shared timer
     }
-}
-private void endTurn() {
+
+    private void endTurn() {
     
-    if (turnTimer != null) {
-        turnTimer.stopTimer();
+    if (timerGauge != null) {
+        timerGauge.stopTimer();
     }
     
     if (!playerTurn) {
@@ -8293,34 +8266,16 @@ private void endTurn() {
             JOptionPane.WARNING_MESSAGE);
         
         if (confirm != JOptionPane.YES_OPTION) {
-            
-            if (timerEnabled && turnTimer != null) {
-                if (enemyTurnTimer != null) {
-                    enemyTurnTimer.stopTimer();
-                    enemyTurnTimer.setVisible(false);
-                }
-                turnTimer.setTimerLabel("Your Turn");
-                turnTimer.setVisible(true);
-                turnTimer.startTimer();
+            if (timerEnabled && timerGauge != null) {
+                timerGauge.resetTimer();
+                timerGauge.setVisible(true);
+                timerGauge.startTimer();
             }
             return;
         }
         
-        
         cancelAllSkillTargeting();
         updateStatusLabel("Skill cancelled. Ending turn...", Color.ORANGE);
-    }
-    
-    
-    playerTurn = false;
-    if (turnTimer != null) {
-        turnTimer.stopTimer();
-        turnTimer.setVisible(false);
-    }
-    if (enemyTurnTimer != null) {
-        enemyTurnTimer.setTimerLabel("Enemy Turn");
-        enemyTurnTimer.setVisible(true);
-        enemyTurnTimer.startTimer();
     }
     
     
@@ -8341,5 +8296,79 @@ private void endTurn() {
     
     private void cancelAllSkillTargeting() {
         skillTargeting.cancelAllTargeting();
+    }
+
+    // TimerGauge class (matching multiplayer UI)
+    private class TimerGauge extends JPanel {
+        private final int totalSeconds;
+        private int secondsLeft;
+        private Timer ticker;
+        private Runnable onExpire;
+
+        TimerGauge(int total) {
+            this.totalSeconds = total;
+            this.secondsLeft = total;
+            setOpaque(false);
+            setPreferredSize(new Dimension(72, 72));
+        }
+
+        public void setOnExpire(Runnable r) { this.onExpire = r; }
+        public void resetTimer() { secondsLeft = totalSeconds; repaint(); }
+
+        public void startTimer() {
+            stopTimer();
+            ticker = new Timer(1000, e -> {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    secondsLeft = 0;
+                    stopTimer();
+                    if (onExpire != null) onExpire.run();
+                }
+                repaint();
+            });
+            ticker.start();
+        }
+
+        public void stopTimer() {
+            if (ticker != null) { ticker.stop(); ticker = null; }
+        }
+
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth(), h = getHeight();
+            int d = Math.min(w, h) - 6;
+            int cx = (w - d) / 2, cy = (h - d) / 2;
+
+            g2.setColor(FRAME_SHADOW);
+            g2.fillOval(cx + 2, cy + 3, d, d);
+            g2.setPaint(new GradientPaint(0, cy, FRAME_FILL_HI, 0, cy + d, FRAME_FILL));
+            g2.fillOval(cx, cy, d, d);
+
+            float pct = (float) secondsLeft / (float) totalSeconds;
+            Color arcColor = (pct > 0.5f) ? CYAN_ACCENT
+                           : (pct > 0.2f) ? HIT_GOLD : TARGET_RED;
+
+            int arcAngle = (int) Math.round(360 * pct);
+            g2.setStroke(new BasicStroke(4f));
+            g2.setColor(arcColor);
+            g2.drawArc(cx + 4, cy + 4, d - 8, d - 8, 90, -arcAngle);
+            g2.setStroke(new BasicStroke(1f));
+
+            g2.setColor(FRAME_BORDER);
+            g2.drawOval(cx, cy, d, d);
+
+            g2.setFont(FONT_LABEL);
+            String txt = secondsLeft + "s";
+            FontMetrics fm = g2.getFontMetrics();
+            int tx = (w - fm.stringWidth(txt)) / 2;
+            int ty = (h + fm.getAscent()) / 2 - 4;
+            g2.setColor(FRAME_SHADOW);
+            g2.drawString(txt, tx + 1, ty + 1);
+            g2.setColor(TEXT_LIGHT);
+            g2.drawString(txt, tx, ty);
+
+            g2.dispose();
+        }
     }
 }
