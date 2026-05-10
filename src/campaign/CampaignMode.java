@@ -904,6 +904,33 @@ private class WaveBackgroundPanel extends JPanel {
         // Heal player character
         playerCharacter.heal(playerCharacter.getMaxHealth() - playerCharacter.getCurrentHealth());
         System.out.println("❤️ Player character healed between waves");
+
+        // Restore mana/energy to full
+        if (playerCharacter instanceof Jiji) {
+            ((Jiji) playerCharacter).regenerateMana(((Jiji) playerCharacter).getMaxMana() - ((Jiji) playerCharacter).getCurrentMana());
+            System.out.println("💰 Jiji mana restored to full between waves");
+        } else if (playerCharacter instanceof Kael) {
+            ((Kael) playerCharacter).regenerateEnergy(((Kael) playerCharacter).getMaxEnergy() - ((Kael) playerCharacter).getCurrentEnergy());
+            System.out.println("🌑 Kael energy restored to full between waves");
+        } else if (playerCharacter instanceof Valerius) {
+            ((Valerius) playerCharacter).regenerateMana(((Valerius) playerCharacter).getMaxMana() - ((Valerius) playerCharacter).getCurrentMana());
+            System.out.println("🛡️ Valerius mana restored to full between waves");
+        } else if (playerCharacter instanceof Skye) {
+            ((Skye) playerCharacter).regenerateMana(((Skye) playerCharacter).getMaxMana() - ((Skye) playerCharacter).getCurrentMana());
+            System.out.println("🐱 Skye mana restored to full between waves");
+        } else if (playerCharacter instanceof Morgana) {
+            ((Morgana) playerCharacter).regenerateMana(((Morgana) playerCharacter).getMaxMana() - ((Morgana) playerCharacter).getCurrentMana());
+            System.out.println("🌊 Morgana mana restored to full between waves");
+        } else if (playerCharacter instanceof Aeris) {
+            ((Aeris) playerCharacter).regenerateMana(((Aeris) playerCharacter).getMaxMana() - ((Aeris) playerCharacter).getCurrentMana());
+            System.out.println("💪 Aeris mana restored to full between waves");
+        } else if (playerCharacter instanceof Selene) {
+            ((Selene) playerCharacter).regenerateMana(((Selene) playerCharacter).getMaxMana() - ((Selene) playerCharacter).getCurrentMana());
+            System.out.println("🌙 Selene mana restored to full between waves");
+        } else if (playerCharacter instanceof Flue) {
+            ((Flue) playerCharacter).regenerateMana(((Flue) playerCharacter).getMaxMana() - ((Flue) playerCharacter).getCurrentMana());
+            System.out.println("💻 Flue mana restored to full between waves");
+        }
         
         
         for (int i = 0; i < 10; i++) {
