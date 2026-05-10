@@ -1468,21 +1468,10 @@ private void createBattleUI(CampaignWave wave) {
     if (kaelAnimation != null) kaelAnimation.stop();
     if (valeriusAnimation != null) valeriusAnimation.stop();
     if (skyeAnimation != null) skyeAnimation.stop();
-    // Animation stop methods (commented - not yet implemented)
-    // stopEnemyIdleAnimation(); stopEnemyDamagedAnimation(); stopEnemyAttackAnimation();
-    // stopEnemyKaelIdleAnimation(); stopEnemyValeriusIdleAnimation(); stopEnemySkyeIdleAnimation();
-    // stopSkyeAttackAnimation(); stopEnemySkyeAttackAnimation(); stopSkyeDamagedAnimation();
-    // stopEnemySkyeDamagedAnimation(); stopMorganaIdleAnimation(); stopMorganaDamagedAnimation();
-    // stopEnemyMorganaIdleAnimation(); stopEnemyMorganaDamagedAnimation(); stopAerisIdleAnimation();
-    // stopAerisAttackAnimation(); stopAerisDamagedAnimation(); stopSeleneIdleAnimation();
-    // stopEnemyAerisIdleAnimation(); stopEnemyAerisAttackAnimation(); stopEnemyAerisDamagedAnimation();
-    // stopEnemySeleneIdleAnimation(); stopFlueIdleAnimation(); stopEnemyFlueIdleAnimation();
-    // stopSeleneAttackAnimation(); stopSeleneDamagedAnimation(); stopFlueAttackAnimation();
-    // stopEnemySeleneAttackAnimation(); stopEnemySeleneDamagedAnimation(); stopFlueDamagedAnimation();
-    // stopEnemyFlueDamagedAnimation(); stopEnemyFlueAttackAnimation(); stopKaelAttackAnimation();
-    // stopEnemyKaelAttackAnimation(); stopValeriusAttackAnimation(); stopEnemyValeriusAttackAnimation();
-    // stopKaelDamagedAnimation(); stopEnemyKaelDamagedAnimation(); stopValeriusDamagedAnimation();
-    // stopEnemyValeriusDamagedAnimation();
+    if (morganaAnimation != null) morganaAnimation.stop();
+    if (aerisAnimation != null) aerisAnimation.stop();
+    if (seleneAnimation != null) seleneAnimation.stop();
+    if (flueAnimation != null) flueAnimation.stop();
 
     frame.getContentPane().removeAll();
     frame.setLayout(new BorderLayout());
