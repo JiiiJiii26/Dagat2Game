@@ -29,6 +29,8 @@ import java.awt.geom.AffineTransform;
 
 
 public class CampaignMode {
+//for debug
+      private boolean waveCompleting = false; 
 
     // Constants
     private static final int PORTRAIT_WIDTH = 150;
@@ -881,47 +883,54 @@ private class WaveBackgroundPanel extends JPanel {
         }
     }
 
-    private void healPlayerShips() {
-        System.out.println("🏥 Healing player ships between waves...");
-        
-        
-        for (Ship ship : playerBoard.getShips()) {
-            ship.heal();
-            ship.setShielded(false, 0);
+   private void healPlayerShips() {
+    System.out.println("🏥 Healing player ships between waves...");
+    
+    for (Ship ship : playerBoard.getShips()) {
+        ship.heal();
+        ship.setShielded(false, 0);
         System.out.println("🛡️ Removed shield from " + ship.getName());
-        }
+    }
 
-        // Reset Jiji's damage state between waves
-        if (playerCharacter instanceof Jiji) {
-            ((Jiji) playerCharacter).setDamaged(false);
-            System.out.println("🔄 Jiji recovered from damage between waves");
-        }
+    // Reset Jiji's damage state between waves
+    if (playerCharacter instanceof Jiji) {
+        ((Jiji) playerCharacter).setDamaged(false);
+        System.out.println("🔄 Jiji recovered from damage between waves");
+    }
+    
+    // RESET SELENE'S STATE
+    if (playerCharacter instanceof Selene) {
+        Selene selene = (Selene) playerCharacter;
+        selene.resetMoonPhase();
+        selene.resetCooldowns();
+        System.out.println("🌙 Selene's moon phase and cooldowns reset between waves");
+    }
 
-        // Heal player character
-        playerCharacter.heal(playerCharacter.getMaxHealth() - playerCharacter.getCurrentHealth());
-        System.out.println("❤️ Player character healed between waves");
+    // Heal player character
+    playerCharacter.heal(playerCharacter.getMaxHealth() - playerCharacter.getCurrentHealth());
+    System.out.println("❤️ Player character healed between waves");
 
-        // Restore mana/energy to full using polymorphism
-        playerCharacter.restoreResources();
-        System.out.println("✨ " + playerCharacter.getName() + " resources restored to full between waves");
-        
-        
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                Cell cell = playerBoard.getCell(i, j);
-                cell.resetFiredUpon();
-                cell.setRevealed(false);
-            }
+    // Restore mana/energy to full using polymorphism
+    playerCharacter.restoreResources();
+    System.out.println("✨ " + playerCharacter.getName() + " resources restored to full between waves");
+    
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            Cell cell = playerBoard.getCell(i, j);
+            cell.resetFiredUpon();
+            cell.setRevealed(false);
         }
-        if (playerBoardPanel != null) {
+    }
+    if (playerBoardPanel != null) {
         playerBoardPanel.refreshColors();
     }
-        
-        refreshBoardsOnly();
-         updateShipCounters();
+    
+    refreshBoardsOnly();
+    updateShipCounters();
 
-        System.out.println("✅ Player ships healed and shields removed!");
-    }
+    System.out.println("✅ Player ships healed and shields removed!");
+}
+
 
     private void useSeleneEnemySkill() {
         Selene enemySelene = (Selene) currentEnemy;
@@ -1352,6 +1361,21 @@ private class WaveBackgroundPanel extends JPanel {
     currentEnemy = wave.enemy;
     enemyBoard = new Board();
 
+     // RESET SELENE'S STATE COMPLETELY WHEN LOADING A NEW WAVE
+    if (playerCharacter instanceof Selene) {
+        Selene selene = (Selene) playerCharacter;
+        selene.resetMoonPhase();  // Reset moon phase
+        selene.resetCooldowns();  // Reset all cooldowns
+        selene.restoreResources(); // Restore mana to full
+        
+        // Clear any linked cells from previous wave
+        if (selene.isLinkActive()) {
+            // Force clear links
+            selene.resetMoonPhase(); // This already clears links
+        }
+        System.out.println("🌙 Selene's state completely reset for new wave!");
+    }
+
     if (playerCharacter instanceof Aeris) {
         ((Aeris) playerCharacter).setPlayerBoard(playerBoard);
     }
@@ -1666,11 +1690,11 @@ mainPanel.add(topArea, BorderLayout.NORTH);
 
     refreshBoardsOnly();
 
-    if (enemyBoard.allShipsSunk()) {
-        updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
-        waveComplete();
-        return;
-    }
+  //  if (enemyBoard.allShipsSunk()) {
+      //  updateStatusLabel("🎉 VICTORY! All enemy ships destroyed!", Color.ORANGE);
+   //     waveComplete();
+      //  return;
+  //  }
 
 
     
@@ -7904,6 +7928,13 @@ private void enemyTurn() {
     }
     
     private void waveComplete() {
+    
+ if (waveCompleting) {
+        System.out.println("⚠️ Wave completion already in progress, ignoring duplicate call");
+        return;
+    }
+    waveCompleting = true;
+        
          if (moonPhaseTimer != null) {
         moonPhaseTimer.stop();
     }
@@ -8132,28 +8163,30 @@ private void enemyTurn() {
         System.out.println("🦠 Infected cells count: " + flue.getInfectedCellsCount());
     }
     
-    if (playerCharacter instanceof Selene) {
-        Selene selene = (Selene) playerCharacter;
-
-        selene.updateMoonPhase(); // Re-enabled Selene's passive moon phase advancement
-
-
-        if (selene.consumeNightJustStarted()) {
-            System.out.println("🌙 Night just started! Refreshing UI...");
-            updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
-            // audio.MusicManager.getInstance().playMusic("night"); // No night.wav file
-        }
-        
-        
-        if (!selene.isNightTime() && !selene.isEclipseMode()) {
-            System.out.println("🌅 Night has ended. Skills return to normal.");
-            updateStatusLabel("🌅 Night ends. Skills return to normal.", Color.CYAN);
-            if (currentWaveIndex < waves.size()) {
-                createBattleUI(waves.get(currentWaveIndex));
-                // Don't return - continue with normal turn setup
-            }
+   if (playerCharacter instanceof Selene) {
+    Selene selene = (Selene) playerCharacter;
+    
+    // Check if night was active before update
+    boolean wasNight = selene.isNightTime();
+    
+    selene.updateMoonPhase();
+    
+    if (selene.consumeNightJustStarted()) {
+        System.out.println("🌙 Night just started! Refreshing UI...");
+        updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
+    }
+    
+    // Only rebuild UI if night JUST ENDED (was night before, not night now)
+    if (wasNight && !selene.isNightTime() && !selene.isEclipseMode()) {
+        System.out.println("🌅 Night has ended. Refreshing skill panel only.");
+        updateStatusLabel("🌅 Night ends. Skills return to normal.", Color.CYAN);
+        // DON'T rebuild the entire battle UI - just refresh the skill panel
+        if (currentSkillPanel != null) {
+            currentSkillPanel.updateUI();
         }
     }
+}
+
     
     cancelAllSkillTargeting();
     refreshBoardsOnly();
