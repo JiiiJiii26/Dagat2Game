@@ -258,11 +258,17 @@ public class Selene extends GameCharacter {
             maxX = Math.min(9, centerX + 2);
             minY = Math.max(0, centerY - 2);
             maxY = Math.min(9, centerY + 2);
-        } else {
-            // Both night and day use 3x3 area
+        } else if (nightTime) {
+            // Night mode: 3x3 area
             minX = Math.max(0, centerX - 1);
             maxX = Math.min(9, centerX + 1);
             minY = Math.max(0, centerY - 1);
+            maxY = Math.min(9, centerY + 1);
+        } else {
+            // Day mode: 2x2 area
+            minX = Math.max(0, centerX);
+            maxX = Math.min(9, centerX + 1);
+            minY = Math.max(0, centerY);
             maxY = Math.min(9, centerY + 1);
         }
         
@@ -271,18 +277,10 @@ public class Selene extends GameCharacter {
             for (int y = minY; y <= maxY; y++) {
                 Cell cell = enemyBoard.getCell(x, y);
                 if (cell != null) {
-                    if (nightTime || eclipseMode) {
-                        // Enhanced version: damage the cells
-                        if (!cell.isFiredUpon()) {
-                            enemyBoard.fire(x, y);
-                            cellsAffected++;
-                        }
-                    } else {
-                        // Daytime: just reveal cells 
-                        if (!cell.isRevealed()) {
-                            cell.setRevealed(true);
-                            cellsAffected++;
-                        }
+                    // Damage the cells (consistent behavior, mana/cooldown differentiates day/night)
+                    if (!cell.isFiredUpon()) {
+                        enemyBoard.fire(x, y);
+                        cellsAffected++;
                     }
                 }
             }
