@@ -81,8 +81,12 @@ public class Morgana extends GameCharacter {
         }
         System.out.println("🌊 Morgana mana: " + currentMana + "/" + MAX_MANA);
     }
-    
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     public void stealMana(int amount) {
         currentMana += amount;
         if (currentMana > MAX_MANA) {

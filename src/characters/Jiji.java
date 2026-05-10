@@ -106,7 +106,12 @@ public void onShipSunk() {
             currentMana = MAX_MANA;
         }
     }
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     
     
     

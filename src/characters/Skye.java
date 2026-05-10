@@ -77,9 +77,12 @@ public class Skye extends GameCharacter {
         }
         System.out.println("🐱 Skye mana: " + currentMana + "/" + MAX_MANA);
     }
-    
-    
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     
     public int useCatnipExplosion(Board enemyBoard, int centerX, int centerY) {
         if (catnipExplosionCooldown > 0) {

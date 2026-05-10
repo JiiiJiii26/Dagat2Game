@@ -102,8 +102,12 @@ private Board getEnemyBoard() {
         }
         System.out.println("💻 Flue mana: " + currentMana + "/" + MAX_MANA);
     }
-    
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     private void updateStatusMessage(String message, Color color) {
         System.out.println(message);
     }

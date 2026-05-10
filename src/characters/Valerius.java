@@ -81,9 +81,12 @@ public class Valerius extends GameCharacter {
         }
         System.out.println("🛡️ Valerius mana: " + currentMana + "/" + MAX_MANA);
     }
-    
-    
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     public boolean useRadarOverload() {
         if (radarOverloadCooldown > 0) {
             System.out.println("⏳ Radar Overload is on cooldown for " + radarOverloadCooldown + " more turns");

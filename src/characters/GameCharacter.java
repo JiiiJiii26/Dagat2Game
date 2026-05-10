@@ -55,6 +55,13 @@ public abstract class GameCharacter {
      * Allows characters to have unique per-turn mechanics
      */
     public abstract void updateTurnCounter();
+
+    /**
+     * ABSTRACT METHOD - POLYMORPHISM:
+     * Restores character-specific resources (mana, energy, etc.) to full between waves
+     * Each character implements this differently based on their resource type
+     */
+    public abstract void restoreResources();
     
     public void chargeSpecial() {
         if (specialMeter < maxSpecialMeter) {

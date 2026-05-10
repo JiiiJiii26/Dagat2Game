@@ -85,7 +85,12 @@ public class Selene extends GameCharacter {
         }
         System.out.println("🌙 Selene mana: " + currentMana + "/" + MAX_MANA);
     }
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     public boolean consumeNightJustStarted() {
         if (nightStartedThisTurn) {
             nightStartedThisTurn = false;

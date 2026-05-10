@@ -65,8 +65,12 @@ public class Kael extends GameCharacter {
         }
         System.out.println("🌑 Kael energy: " + currentEnergy + "/" + MAX_ENERGY);
     }
-    
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateEnergy(MAX_ENERGY - currentEnergy);
+    }
+
   public boolean useShadowStep(Board playerBoard, int fromX, int fromY, int toX, int toY) {
     if (shadowStepCooldown > 0) {
         System.out.println("⏳ Shadow Step is on cooldown for " + shadowStepCooldown + " more turns");

@@ -89,9 +89,12 @@ public class Aeris extends GameCharacter {
         }
         System.out.println("💪 Aeris mana: " + oldMana + " → " + currentMana + " (+" + (currentMana - oldMana) + ")");
     }
-    
-    
-    
+
+    @Override
+    public void restoreResources() {
+        regenerateMana(MAX_MANA - currentMana);
+    }
+
     
     public boolean useAdaptiveInstinct(Board playerBoard, int targetX, int targetY) {
         if (adaptiveInstinctCooldown > 0) {
