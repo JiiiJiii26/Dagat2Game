@@ -889,6 +889,9 @@ private class WaveBackgroundPanel extends JPanel {
     for (Ship ship : playerBoard.getShips()) {
         ship.heal();
         ship.setShielded(false, 0);
+        ship.setSunk(false); // Reset sunk status for next wave
+        ship.setInfected(false); // Clear any infections
+        ship.setFullyRevealed(false); // Reset reveal status
         System.out.println("🛡️ Removed shield from " + ship.getName());
     }
 
@@ -1273,32 +1276,34 @@ private class WaveBackgroundPanel extends JPanel {
             testEnemy,
             Color.MAGENTA
         ));
+        System.out.println("📋 Waves list now contains " + waves.size() + " waves");
         return;
     }
-        int numWaves = random.nextInt(3) + 3; 
-        System.out.println("🎲 Generating " + numWaves + " random waves...");
-        
+        int numWaves = 5;
+        System.out.println("🎲 Generating " + numWaves + " waves...");
+
         List<GameCharacter> enemyPool = new ArrayList<>(possibleEnemies);
-        
+
         for (int i = 0; i < numWaves; i++) {
             if (enemyPool.isEmpty()) {
                 enemyPool = new ArrayList<>(possibleEnemies);
                 Collections.shuffle(enemyPool);
             }
-            
+
             GameCharacter randomEnemy = enemyPool.remove(0);
             String waveTitle = getRandomWaveTitle(i + 1);
             Color waveColor = getRandomWaveColor();
-            
+
             waves.add(new CampaignWave(
                 waveTitle,
                 "Enemy: " + randomEnemy.getName(),
                 randomEnemy,
                 waveColor
             ));
-            
+
             System.out.println("   Wave " + (i + 1) + ": " + randomEnemy.getName());
         }
+        System.out.println("📋 Waves list now contains " + waves.size() + " waves");
     }
     
     private String getRandomWaveTitle(int waveNumber) {
@@ -1351,7 +1356,9 @@ private class WaveBackgroundPanel extends JPanel {
     }
     
     private void loadWave(int index) {
+    System.out.println("🎯 Loading wave " + (index + 1) + " (index " + index + "), waves.size() = " + waves.size());
     if (index >= waves.size()) {
+        System.out.println("🏆 Campaign complete - no more waves!");
         updateStatusLabel("🏆 CAMPAIGN COMPLETE! Victory!", Color.ORANGE);
         showVictoryScreen();
         return;
@@ -1396,6 +1403,17 @@ private class WaveBackgroundPanel extends JPanel {
     adjustEnemyDifficulty(index + 1);
     placeEnemyShips(currentEnemy, enemyBoard);
     createBattleUI(wave);
+
+    // Re-enable board interaction for new wave
+    if (playerBoardPanel != null) {
+        playerBoardPanel.setEnabled(true);
+    }
+    if (enemyBoardPanel != null) {
+        enemyBoardPanel.setEnabled(true);
+    }
+
+    // Reset wave completion flag
+    waveCompleting = false;
     
     
     if (playerCharacter instanceof Selene) {
@@ -1642,10 +1660,20 @@ enemyTurnTimer = new TimerPanel(10, () -> {
     if (currentSkillPanel != null) currentSkillPanel.updateUI();
 });
 
-// Combine turn banner + timer in top area
+// Create status label
+statusLabel = new JLabel("Initializing battle...", SwingConstants.CENTER);
+statusLabel.setFont(new Font("Consolas", Font.BOLD, 14));
+statusLabel.setForeground(Color.WHITE);
+statusLabel.setOpaque(false);
+
+// Combine turn banner + status + timer in top area
 JPanel topArea = new JPanel(new BorderLayout());
 topArea.setOpaque(false);
 topArea.add(turnBanner, BorderLayout.CENTER);
+
+JPanel bottomPanel = new JPanel(new BorderLayout());
+bottomPanel.setOpaque(false);
+bottomPanel.add(statusLabel, BorderLayout.CENTER);
 
 JPanel timerPanel = new JPanel(new GridLayout(1, 1, 0, 5));
 timerPanel.setOpaque(false);
@@ -1657,7 +1685,9 @@ enemyTurnTimer.setTimerLabel("Enemy Turn");
 enemyTurnTimer.setVisible(false);
 timerPanel.add(turnTimer);
 timerPanel.add(enemyTurnTimer);
-topArea.add(timerPanel, BorderLayout.SOUTH);
+bottomPanel.add(timerPanel, BorderLayout.EAST);
+
+topArea.add(bottomPanel, BorderLayout.SOUTH);
 
 mainPanel.add(topArea, BorderLayout.NORTH);
 
@@ -7917,13 +7947,13 @@ private void enemyTurn() {
     }
     
     private void waveComplete() {
-    
+
  if (waveCompleting) {
         System.out.println("⚠️ Wave completion already in progress, ignoring duplicate call");
         return;
     }
     waveCompleting = true;
-        
+
          if (moonPhaseTimer != null) {
         moonPhaseTimer.stop();
     }
@@ -7932,28 +7962,68 @@ private void enemyTurn() {
         audio.MusicManager.getInstance().playSound("victory");
 
         updateStatusLabel("🎉 WAVE CLEAR! Well done!", Color.GREEN);
+        System.out.println("🎉 Wave " + (currentWaveIndex + 1) + " completed! Incrementing to wave " + (currentWaveIndex + 2));
         currentWaveIndex++;
-        
+
+        // Disable board interaction during wave completion
+        if (playerBoardPanel != null) {
+            playerBoardPanel.setEnabled(false);
+        }
+        if (enemyBoardPanel != null) {
+            enemyBoardPanel.setEnabled(false);
+        }
+
         String message = "🎉 Victory! You defeated " + currentEnemy.getName() + "!\n\n";
-        
+
         if (currentWaveIndex < waves.size()) {
             message += "Next wave: " + waves.get(currentWaveIndex).enemy.getName();
-            healPlayerShips();  
+            System.out.println("🏥 Healing player ships for next wave...");
+            healPlayerShips();
             updateShipCounters();
         } else {
             message += "You've completed all waves!";
+            System.out.println("🏆 All waves completed!");
         }
         
-        int result = JOptionPane.showConfirmDialog(frame,
-            message,
-            "Wave Complete",
-            JOptionPane.YES_NO_OPTION);
-            
-        if (result == JOptionPane.YES_OPTION && currentWaveIndex < waves.size()) {
-            loadWave(currentWaveIndex);
-        } else {
-            Main.showMainMenu();
-        }
+        System.out.println("🎯 Showing wave completion dialog...");
+        System.out.println("   Current wave index: " + currentWaveIndex);
+        System.out.println("   Total waves: " + waves.size());
+        System.out.println("   Message: " + message);
+
+        // Show dialog on EDT to ensure visibility
+        final String dialogMessage = message;
+        final int currentIndex = currentWaveIndex;
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Make sure frame is visible and focused
+                frame.setVisible(true);
+                frame.toFront();
+                frame.requestFocus();
+
+                int result = JOptionPane.showConfirmDialog(frame,
+                    dialogMessage + "\n\nCongratulations!",
+                    "Wave Complete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE);
+
+                System.out.println("🎯 Dialog result: " + result + " (YES_OPTION=" + JOptionPane.YES_OPTION + ", NO_OPTION=" + JOptionPane.NO_OPTION + ")");
+
+                if (result == JOptionPane.YES_OPTION && currentIndex < waves.size()) {
+                    System.out.println("✅ User chose to continue to wave " + (currentIndex + 1));
+                    loadWave(currentIndex);
+                } else {
+                    System.out.println("❌ User chose not to continue or no more waves");
+                    Main.showMainMenu();
+                }
+
+                // Reset the flag after completion
+                waveCompleting = false;
+            } catch (Exception e) {
+                System.out.println("❌ Error showing dialog: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+
     }
 
     private void showToastMessage(String message, Color color) {
