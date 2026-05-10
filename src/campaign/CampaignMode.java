@@ -113,11 +113,7 @@ private static final int[] VALERIUS_IDLE_SEQUENCE = {0,1,2,3};
 private CharacterAnimation kaelAnimation;
 private Runnable kaelStartIdle = () -> {
     if (kaelAnimation != null) {
-        if (playerCharacter.isDamaged()) {
-            kaelAnimation.start(CharacterAnimation.State.DAMAGED);
-        } else {
-            kaelAnimation.start(CharacterAnimation.State.IDLE);
-        }
+        kaelAnimation.start(CharacterAnimation.State.IDLE);
     }
 };
 private CharacterAnimation valeriusAnimation;
@@ -7788,10 +7784,7 @@ private void enemyTurn() {
             } else if (result == ShotResult.SUNK) {
                 playerCharacter.takeDamage(100);
                 System.out.println("💀 " + playerCharacter.getName() + " takes 100 damage from sunk ship!");
-            }
-            // Refresh portrait if damaged
-            if (playerCharacter.isDamaged()) {
-                // Assuming there's a refresh method, but for now, perhaps trigger animation
+                // Trigger damaged animation only when ships are sunk
                 if (playerCharacter instanceof Kael && kaelAnimation != null) {
                     kaelAnimation.start(CharacterAnimation.State.DAMAGED);
                 } else if (playerCharacter instanceof Valerius && valeriusAnimation != null) {
@@ -8142,15 +8135,14 @@ private void enemyTurn() {
     if (playerCharacter instanceof Selene) {
         Selene selene = (Selene) playerCharacter;
 
+        selene.updateMoonPhase(); // Re-enabled Selene's passive moon phase advancement
 
-        // selene.updateMoonPhase(); // Disabled Selene's passive moon phase advancement
 
-
-        // if (selene.consumeNightJustStarted()) {
-        //     System.out.println("🌙 Night just started! Refreshing UI...");
-        //     updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
-        //     // audio.MusicManager.getInstance().playMusic("night"); // No night.wav file
-        // }
+        if (selene.consumeNightJustStarted()) {
+            System.out.println("🌙 Night just started! Refreshing UI...");
+            updateStatusLabel("🌙✨ NIGHT FALLS! All skills are ready and enhanced!", Color.YELLOW);
+            // audio.MusicManager.getInstance().playMusic("night"); // No night.wav file
+        }
         
         
         if (!selene.isNightTime() && !selene.isEclipseMode()) {
