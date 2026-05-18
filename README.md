@@ -131,7 +131,7 @@ java -cp bin main.Main
 
 **Team Omen**
 - Christian Jay S. Peña
-- Nicco - IT Student, Cebu
+- Nicco Victor P. Maldo
 - Justin P. Maquiling
 - Khylla Laine C. Menardo
 
